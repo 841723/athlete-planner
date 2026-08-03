@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "23316516537",
+  "sport": "open_water_swimming",
+  "name": "Alcanar Natación en aguas abiertas",
+  "start_date_local": "2026-06-20T13:10:40",
+  "distance_m": 1607.12,
+  "moving_time_s": 2785,
+  "elapsed_time_s": 3254,
+  "avg_speed_ms": 0.494,
+  "max_speed_ms": 1.286,
+  "avg_heartrate": 137,
+  "max_heartrate": 164,
+  "average_temp_c": 28,
+  "training_effect": 3.2,
+  "calories_kcal": 630,
+  "best_efforts": []
+}

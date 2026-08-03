@@ -1,0 +1,20 @@
+{
+  "schema_version": 2,
+  "id": "19453712718",
+  "sport": "paddelball",
+  "name": "Zaragoza Pádel",
+  "start_date_local": "2025-06-16T19:40:48",
+  "distance_m": 4150.41,
+  "moving_time_s": 3631,
+  "elapsed_time_s": 6921,
+  "avg_speed_ms": 0.6,
+  "avg_pace_s_per_km": 1667,
+  "max_speed_ms": 6.513,
+  "avg_heartrate": 141,
+  "max_heartrate": 177,
+  "average_temp_c": 32.5,
+  "training_effect": 3.3,
+  "calories_kcal": 1065,
+  "segments": [],
+  "best_efforts": []
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "22297357973",
+  "sport": "running",
+  "name": "Zaragoza Carrera",
+  "start_date_local": "2026-03-25T17:58:28",
+  "distance_m": 7837.41,
+  "moving_time_s": 2606,
+  "elapsed_time_s": 2620,
+  "avg_speed_ms": 2.991,
+  "avg_pace_s_per_km": 334,
+  "max_speed_ms": 3.639,
+  "avg_heartrate": 156,
+  "max_heartrate": 175,
+  "avg_watts": 350,
+  "max_watts": 550,
+  "total_elevation_gain_m": 70,
+  "average_temp_c": 24.5,
+  "training_effect": 3.7,
+  "calories_kcal": 621,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 294
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 496
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1625
+    }
+  ]
+}

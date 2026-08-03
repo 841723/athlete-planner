@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "20499273385",
+  "sport": "running",
+  "name": "Zaragoza - S4-3 Tempo",
+  "start_date_local": "2025-09-25T19:31:00",
+  "distance_m": 7498.52,
+  "moving_time_s": 2454,
+  "elapsed_time_s": 2556,
+  "avg_speed_ms": 3.032,
+  "avg_pace_s_per_km": 330,
+  "max_speed_ms": 3.975,
+  "avg_heartrate": 149,
+  "max_heartrate": 172,
+  "avg_watts": 340,
+  "max_watts": 509,
+  "total_elevation_gain_m": 24,
+  "average_temp_c": 28,
+  "training_effect": 3.7,
+  "calories_kcal": 555,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 265
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 434
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1362
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "22729321676",
+  "sport": "tennis_v2",
+  "name": "Zaragoza Tenis",
+  "start_date_local": "2026-05-01T19:40:45",
+  "distance_m": 672.47,
+  "moving_time_s": 640,
+  "elapsed_time_s": 1020,
+  "avg_speed_ms": 0.659,
+  "max_speed_ms": 2.986,
+  "avg_heartrate": 133,
+  "max_heartrate": 163,
+  "average_temp_c": 30.5,
+  "training_effect": 2,
+  "calories_kcal": 189,
+  "best_efforts": []
+}

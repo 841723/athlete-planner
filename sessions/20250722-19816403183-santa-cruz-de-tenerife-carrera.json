@@ -1,0 +1,23 @@
+{
+  "schema_version": 2,
+  "id": "19816403183",
+  "sport": "running",
+  "name": "Santa Cruz de Tenerife Carrera",
+  "start_date_local": "2025-07-22T19:45:02",
+  "distance_m": 458,
+  "moving_time_s": 122,
+  "elapsed_time_s": 131,
+  "avg_speed_ms": 3.492,
+  "avg_pace_s_per_km": 286,
+  "max_speed_ms": 4.992,
+  "avg_heartrate": 147,
+  "max_heartrate": 168,
+  "avg_watts": 367,
+  "max_watts": 610,
+  "total_elevation_gain_m": 2,
+  "average_temp_c": 24.5,
+  "training_effect": 0.9,
+  "calories_kcal": 28,
+  "segments": [],
+  "best_efforts": []
+}

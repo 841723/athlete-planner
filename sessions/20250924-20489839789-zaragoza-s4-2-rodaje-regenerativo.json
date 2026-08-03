@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "20489839789",
+  "sport": "running",
+  "name": "Zaragoza - S4-2 Rodaje Regenerativo",
+  "start_date_local": "2025-09-24T20:14:35",
+  "distance_m": 5605.45,
+  "moving_time_s": 2091,
+  "elapsed_time_s": 2094,
+  "avg_speed_ms": 2.678,
+  "avg_pace_s_per_km": 373,
+  "max_speed_ms": 3.518,
+  "avg_heartrate": 132,
+  "max_heartrate": 141,
+  "avg_watts": 311,
+  "max_watts": 407,
+  "total_elevation_gain_m": 35,
+  "average_temp_c": 26.5,
+  "training_effect": 2.5,
+  "calories_kcal": 415,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 354
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 586
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1863
+    }
+  ]
+}

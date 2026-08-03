@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "20479682612",
+  "sport": "walking",
+  "name": "Zaragoza Caminar",
+  "start_date_local": "2025-09-23T20:43:48",
+  "distance_m": 1628.7,
+  "moving_time_s": 1377,
+  "elapsed_time_s": 1516,
+  "avg_speed_ms": 1.074,
+  "avg_pace_s_per_km": 931,
+  "max_speed_ms": 11.271,
+  "avg_heartrate": 77,
+  "max_heartrate": 99,
+  "total_elevation_gain_m": 14,
+  "average_temp_c": 26,
+  "training_effect": 0.2,
+  "calories_kcal": 96,
+  "segments": [],
+  "best_efforts": []
+}

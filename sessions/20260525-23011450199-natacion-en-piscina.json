@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "23011450199",
+  "sport": "lap_swimming",
+  "name": "Natación en piscina",
+  "start_date_local": "2026-05-25T20:43:57",
+  "distance_m": 574,
+  "moving_time_s": 948,
+  "elapsed_time_s": 2006,
+  "avg_speed_ms": 0.606,
+  "max_speed_ms": 1.28,
+  "avg_heartrate": 107,
+  "max_heartrate": 143,
+  "average_temp_c": 26.5,
+  "training_effect": 1.4,
+  "calories_kcal": 239,
+  "best_efforts": []
+}

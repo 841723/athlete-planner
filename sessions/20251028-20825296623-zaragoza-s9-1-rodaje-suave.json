@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "20825296623",
+  "sport": "running",
+  "name": "Zaragoza - S9-1 Rodaje Suave",
+  "start_date_local": "2025-10-28T20:54:28",
+  "distance_m": 7007.59,
+  "moving_time_s": 2527,
+  "elapsed_time_s": 2589,
+  "avg_speed_ms": 2.707,
+  "avg_pace_s_per_km": 369,
+  "max_speed_ms": 4.581,
+  "avg_heartrate": 132,
+  "max_heartrate": 160,
+  "avg_watts": 306,
+  "max_watts": 544,
+  "total_elevation_gain_m": 33,
+  "average_temp_c": 25,
+  "training_effect": 2.9,
+  "calories_kcal": 531,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 325
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 529
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1747
+    }
+  ]
+}

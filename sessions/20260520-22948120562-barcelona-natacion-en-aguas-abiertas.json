@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "22948120562",
+  "sport": "open_water_swimming",
+  "name": "Barcelona Natación en aguas abiertas",
+  "start_date_local": "2026-05-20T15:09:44",
+  "distance_m": 1061.81,
+  "moving_time_s": 1806,
+  "elapsed_time_s": 1935,
+  "avg_speed_ms": 0.549,
+  "max_speed_ms": 1.214,
+  "avg_heartrate": 123,
+  "max_heartrate": 144,
+  "average_temp_c": 23.5,
+  "training_effect": 2.1,
+  "calories_kcal": 308,
+  "best_efforts": []
+}

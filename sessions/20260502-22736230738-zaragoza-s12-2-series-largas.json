@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "22736230738",
+  "sport": "running",
+  "name": "Zaragoza - S12-2 Series Largas",
+  "start_date_local": "2026-05-02T12:14:52",
+  "distance_m": 7220.54,
+  "moving_time_s": 2807,
+  "elapsed_time_s": 2850,
+  "avg_speed_ms": 2.534,
+  "max_speed_ms": 4.106,
+  "avg_heartrate": 138,
+  "max_heartrate": 171,
+  "avg_watts": 280,
+  "max_watts": 589,
+  "total_elevation_gain_m": 38,
+  "average_temp_c": 30,
+  "training_effect": 3.1,
+  "calories_kcal": 545,
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 369
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 547
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1883
+    }
+  ]
+}

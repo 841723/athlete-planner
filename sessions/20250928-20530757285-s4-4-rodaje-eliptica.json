@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "id": "20530757285",
+  "sport": "elliptical",
+  "name": "S4-4 Rodaje Eliptica",
+  "start_date_local": "2025-09-28T18:39:43",
+  "elapsed_time_s": 3311,
+  "avg_heartrate": 109,
+  "max_heartrate": 150,
+  "average_temp_c": 31,
+  "training_effect": 1.4,
+  "calories_kcal": 351,
+  "segments": [],
+  "best_efforts": []
+}

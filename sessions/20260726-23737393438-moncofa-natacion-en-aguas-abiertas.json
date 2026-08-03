@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "23737393438",
+  "sport": "open_water_swimming",
+  "name": "Moncofa Natación en aguas abiertas",
+  "start_date_local": "2026-07-26T12:26:09",
+  "distance_m": 422.88,
+  "moving_time_s": 759,
+  "elapsed_time_s": 769,
+  "avg_speed_ms": 0.55,
+  "max_speed_ms": 1.053,
+  "avg_heartrate": 138,
+  "max_heartrate": 154,
+  "average_temp_c": 29.5,
+  "training_effect": 2.4,
+  "calories_kcal": 159,
+  "best_efforts": []
+}

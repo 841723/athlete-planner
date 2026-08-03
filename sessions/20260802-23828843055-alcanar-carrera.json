@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "23828843055",
+  "sport": "running",
+  "name": "Alcanar Carrera",
+  "start_date_local": "2026-08-02T20:17:27",
+  "distance_m": 10099.69,
+  "moving_time_s": 3872,
+  "elapsed_time_s": 3876,
+  "avg_speed_ms": 2.605,
+  "max_speed_ms": 3.172,
+  "avg_heartrate": 135,
+  "max_heartrate": 145,
+  "avg_watts": 292,
+  "max_watts": 412,
+  "total_elevation_gain_m": 58,
+  "average_temp_c": 33.5,
+  "training_effect": 3.2,
+  "calories_kcal": 740,
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 350
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 574
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1857
+    },
+    {
+      "name": "10K",
+      "distance_m": 10000,
+      "elapsed_time_s": 3832
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "18816113999",
+  "sport": "running",
+  "name": "Jaca - 25' @ 5:45",
+  "start_date_local": "2025-04-13T14:24:38",
+  "distance_m": 5045.4,
+  "moving_time_s": 1823,
+  "elapsed_time_s": 1852,
+  "avg_speed_ms": 2.734,
+  "avg_pace_s_per_km": 366,
+  "max_speed_ms": 3.732,
+  "avg_heartrate": 146,
+  "max_heartrate": 168,
+  "avg_watts": 307,
+  "max_watts": 526,
+  "total_elevation_gain_m": 38,
+  "average_temp_c": 30,
+  "training_effect": 3,
+  "calories_kcal": 389,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 335
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 544
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1845
+    }
+  ]
+}

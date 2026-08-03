@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "id": "23837299058",
+  "sport": "virtual_ride",
+  "name": "Adliswil Ciclismo virtual",
+  "start_date_local": "2026-07-27T18:23:37",
+  "distance_m": 25519.32,
+  "moving_time_s": 3600,
+  "elapsed_time_s": 3653,
+  "avg_speed_ms": 6.986,
+  "avg_pace_s_per_km": 143,
+  "max_speed_ms": 14.914,
+  "avg_watts": 118,
+  "max_watts": 317,
+  "total_elevation_gain_m": 117,
+  "calories_kcal": 433,
+  "segments": [],
+  "best_efforts": []
+}

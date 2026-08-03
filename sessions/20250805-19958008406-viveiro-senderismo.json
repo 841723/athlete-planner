@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "19958008406",
+  "sport": "hiking",
+  "name": "Viveiro Senderismo",
+  "start_date_local": "2025-08-05T13:26:49",
+  "distance_m": 2506.49,
+  "moving_time_s": 1947,
+  "elapsed_time_s": 3172,
+  "avg_speed_ms": 0.79,
+  "avg_pace_s_per_km": 1266,
+  "max_speed_ms": 2.071,
+  "avg_heartrate": 78,
+  "max_heartrate": 97,
+  "total_elevation_gain_m": 15,
+  "average_temp_c": 31,
+  "training_effect": 0.1,
+  "calories_kcal": 131,
+  "segments": [],
+  "best_efforts": []
+}

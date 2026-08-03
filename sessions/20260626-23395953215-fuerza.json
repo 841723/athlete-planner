@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "23395953215",
+  "sport": "strength_training",
+  "name": "Fuerza",
+  "start_date_local": "2026-06-26T18:43:04",
+  "moving_time_s": 1155,
+  "elapsed_time_s": 3875,
+  "avg_heartrate": 83,
+  "max_heartrate": 134,
+  "average_temp_c": 34.5,
+  "training_effect": 0.3,
+  "calories_kcal": 219,
+  "best_efforts": []
+}

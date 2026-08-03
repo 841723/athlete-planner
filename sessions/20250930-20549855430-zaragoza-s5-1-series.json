@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "20549855430",
+  "sport": "running",
+  "name": "Zaragoza - S5-1 Series",
+  "start_date_local": "2025-09-30T19:45:15",
+  "distance_m": 8584.96,
+  "moving_time_s": 3169,
+  "elapsed_time_s": 3223,
+  "avg_speed_ms": 2.674,
+  "avg_pace_s_per_km": 374,
+  "max_speed_ms": 5.58,
+  "avg_heartrate": 141,
+  "max_heartrate": 175,
+  "avg_watts": 283,
+  "max_watts": 627,
+  "total_elevation_gain_m": 22,
+  "average_temp_c": 27.5,
+  "training_effect": 3.4,
+  "calories_kcal": 651,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 333
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 494
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1691
+    }
+  ]
+}

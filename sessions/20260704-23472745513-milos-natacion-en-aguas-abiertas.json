@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "23472745513",
+  "sport": "open_water_swimming",
+  "name": "Milos Natación en aguas abiertas",
+  "start_date_local": "2026-07-04T10:34:41",
+  "distance_m": 414.03,
+  "moving_time_s": 658,
+  "elapsed_time_s": 890,
+  "avg_speed_ms": 0.534,
+  "max_speed_ms": 1.5,
+  "avg_heartrate": 132,
+  "max_heartrate": 160,
+  "average_temp_c": 25.5,
+  "training_effect": 2.2,
+  "calories_kcal": 153,
+  "best_efforts": []
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "23120201788",
+  "sport": "indoor_cycling",
+  "name": "Ciclismo en sala",
+  "start_date_local": "2026-06-03T20:11:11",
+  "elapsed_time_s": 4245,
+  "avg_heartrate": 115,
+  "max_heartrate": 128,
+  "average_temp_c": 32.5,
+  "training_effect": 1.8,
+  "calories_kcal": 461,
+  "best_efforts": []
+}

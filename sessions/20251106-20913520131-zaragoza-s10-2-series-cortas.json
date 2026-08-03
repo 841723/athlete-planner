@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "20913520131",
+  "sport": "running",
+  "name": "Zaragoza - S10-2 Series Cortas",
+  "start_date_local": "2025-11-06T20:47:52",
+  "distance_m": 7761.31,
+  "moving_time_s": 2806,
+  "elapsed_time_s": 2981,
+  "avg_speed_ms": 2.604,
+  "avg_pace_s_per_km": 384,
+  "max_speed_ms": 5.001,
+  "avg_heartrate": 140,
+  "max_heartrate": 177,
+  "avg_watts": 284,
+  "max_watts": 645,
+  "total_elevation_gain_m": 26,
+  "average_temp_c": 25.5,
+  "training_effect": 3.4,
+  "calories_kcal": 619,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 320
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 548
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1781
+    }
+  ]
+}

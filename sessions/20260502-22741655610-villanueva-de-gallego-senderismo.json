@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "22741655610",
+  "sport": "hiking",
+  "name": "Villanueva de Gállego Senderismo",
+  "start_date_local": "2026-05-02T19:51:29",
+  "distance_m": 1894.64,
+  "moving_time_s": 1107,
+  "elapsed_time_s": 2442,
+  "avg_speed_ms": 0.776,
+  "max_speed_ms": 3.088,
+  "avg_heartrate": 80,
+  "max_heartrate": 100,
+  "total_elevation_gain_m": 8,
+  "average_temp_c": 28.5,
+  "training_effect": 0.1,
+  "calories_kcal": 127,
+  "best_efforts": []
+}

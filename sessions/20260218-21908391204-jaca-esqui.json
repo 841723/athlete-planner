@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "21908391204",
+  "sport": "other",
+  "name": "Jaca Esqui",
+  "start_date_local": "2026-02-18T09:29:32",
+  "distance_m": 62572.63,
+  "moving_time_s": 14378,
+  "elapsed_time_s": 21951,
+  "avg_speed_ms": 2.85,
+  "avg_pace_s_per_km": 351,
+  "max_speed_ms": 19.968,
+  "avg_heartrate": 120,
+  "max_heartrate": 170,
+  "total_elevation_gain_m": 6347,
+  "average_temp_c": 27.5,
+  "training_effect": 3.3,
+  "calories_kcal": 2586,
+  "segments": [],
+  "best_efforts": []
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "22870842997",
+  "sport": "cycling",
+  "name": "Zaragoza Ciclismo",
+  "start_date_local": "2026-05-13T19:48:00",
+  "distance_m": 20520,
+  "moving_time_s": 2877,
+  "elapsed_time_s": 2924,
+  "avg_speed_ms": 3.688,
+  "max_speed_ms": 11.113,
+  "avg_heartrate": 127,
+  "max_heartrate": 162,
+  "total_elevation_gain_m": 98,
+  "average_temp_c": 22.5,
+  "training_effect": 2.2,
+  "calories_kcal": 445,
+  "best_efforts": []
+}

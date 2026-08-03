@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "18857168927",
+  "sport": "walking",
+  "name": "Sant Carles de la Ràpita Caminar",
+  "start_date_local": "2025-04-17T19:14:52",
+  "distance_m": 3479.25,
+  "moving_time_s": 3494,
+  "elapsed_time_s": 5617,
+  "avg_speed_ms": 0.967,
+  "avg_pace_s_per_km": 1034,
+  "max_speed_ms": 6.345,
+  "avg_heartrate": 80,
+  "max_heartrate": 94,
+  "total_elevation_gain_m": 20,
+  "average_temp_c": 26,
+  "training_effect": 0.2,
+  "calories_kcal": 223,
+  "segments": [],
+  "best_efforts": []
+}

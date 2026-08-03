@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "18894517623",
+  "sport": "running",
+  "name": "Alcanar - Base",
+  "start_date_local": "2025-04-21T18:33:28",
+  "distance_m": 9013.3,
+  "moving_time_s": 3060,
+  "elapsed_time_s": 3067,
+  "avg_speed_ms": 2.941,
+  "avg_pace_s_per_km": 340,
+  "max_speed_ms": 3.284,
+  "avg_heartrate": 147,
+  "max_heartrate": 158,
+  "avg_watts": 334,
+  "max_watts": 388,
+  "total_elevation_gain_m": 47,
+  "average_temp_c": 28,
+  "training_effect": 3.2,
+  "calories_kcal": 671,
+  "segments": [],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 323
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 530
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1692
+    }
+  ]
+}

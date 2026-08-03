@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "21732257662",
+  "sport": "other",
+  "name": "Sallent de Gállego Esqui",
+  "start_date_local": "2026-02-01T10:42:30",
+  "distance_m": 77388.48,
+  "moving_time_s": 16508,
+  "elapsed_time_s": 21292,
+  "avg_speed_ms": 3.635,
+  "avg_pace_s_per_km": 275,
+  "max_speed_ms": 18.484,
+  "avg_heartrate": 114,
+  "max_heartrate": 174,
+  "total_elevation_gain_m": 6891,
+  "average_temp_c": 28,
+  "training_effect": 3.1,
+  "calories_kcal": 2388,
+  "segments": [],
+  "best_efforts": []
+}

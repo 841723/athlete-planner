@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "23560454009",
+  "sport": "hiking",
+  "name": "Canfranc Senderismo",
+  "start_date_local": "2026-07-11T11:46:17",
+  "distance_m": 10339.91,
+  "moving_time_s": 8096,
+  "elapsed_time_s": 19074,
+  "avg_speed_ms": 0.772,
+  "max_speed_ms": 2.669,
+  "avg_heartrate": 105,
+  "max_heartrate": 143,
+  "total_elevation_gain_m": 674,
+  "average_temp_c": 33,
+  "training_effect": 1.7,
+  "calories_kcal": 1149,
+  "best_efforts": []
+}

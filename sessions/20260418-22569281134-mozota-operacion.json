@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "22569281134",
+  "sport": "other",
+  "name": "Mozota Operacion",
+  "start_date_local": "2026-04-18T13:08:41",
+  "distance_m": 4572.64,
+  "moving_time_s": 559,
+  "elapsed_time_s": 626,
+  "avg_speed_ms": 7.307,
+  "avg_pace_s_per_km": 137,
+  "max_speed_ms": 15.265,
+  "avg_heartrate": 115,
+  "max_heartrate": 164,
+  "total_elevation_gain_m": 17,
+  "average_temp_c": 30.5,
+  "training_effect": 0.9,
+  "calories_kcal": 87,
+  "segments": [],
+  "best_efforts": []
+}
