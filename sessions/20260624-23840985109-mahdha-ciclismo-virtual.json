@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985109",
+  "sport": "virtual_ride",
+  "name": "Mahdha Ciclismo virtual",
+  "start_date_local": "2026-06-24T21:52:47",
+  "distance_m": 30934.77,
+  "moving_time_s": 4500,
+  "elapsed_time_s": 4559,
+  "avg_speed_ms": 6.785,
+  "avg_pace_s_per_km": 147,
+  "max_speed_ms": 15.973,
+  "avg_heartrate": 109,
+  "max_heartrate": 124,
+  "avg_watts": 114,
+  "max_watts": 177,
+  "total_elevation_gain_m": 138,
+  "calories_kcal": 521,
+  "segments": [],
+  "best_efforts": []
+}

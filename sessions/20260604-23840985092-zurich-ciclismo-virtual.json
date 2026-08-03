@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985092",
+  "sport": "virtual_ride",
+  "name": "Zurich Ciclismo virtual",
+  "start_date_local": "2026-06-04T20:35:29",
+  "distance_m": 28389.33,
+  "moving_time_s": 3900,
+  "elapsed_time_s": 3986,
+  "avg_speed_ms": 7.122,
+  "avg_pace_s_per_km": 140,
+  "max_speed_ms": 11.52,
+  "avg_heartrate": 109,
+  "max_heartrate": 124,
+  "avg_watts": 116,
+  "max_watts": 405,
+  "total_elevation_gain_m": 81,
+  "calories_kcal": 464,
+  "segments": [],
+  "best_efforts": []
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985077",
+  "sport": "virtual_ride",
+  "name": "Mendocino County Ciclismo virtual",
+  "start_date_local": "2026-05-27T19:57:40",
+  "distance_m": 22462.43,
+  "moving_time_s": 3600,
+  "elapsed_time_s": 3666,
+  "avg_speed_ms": 6.127,
+  "avg_pace_s_per_km": 163,
+  "max_speed_ms": 17.411,
+  "avg_heartrate": 114,
+  "max_heartrate": 127,
+  "avg_watts": 119,
+  "max_watts": 220,
+  "total_elevation_gain_m": 245,
+  "calories_kcal": 438,
+  "segments": [],
+  "best_efforts": []
+}

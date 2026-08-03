@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985101",
+  "sport": "virtual_ride",
+  "name": "Ciclismo virtual",
+  "start_date_local": "2026-06-16T21:10:52",
+  "distance_m": 23349.81,
+  "moving_time_s": 4500,
+  "elapsed_time_s": 4515,
+  "avg_speed_ms": 5.172,
+  "avg_pace_s_per_km": 193,
+  "max_speed_ms": 13.979,
+  "avg_heartrate": 107,
+  "max_heartrate": 127,
+  "avg_watts": 111,
+  "max_watts": 211,
+  "total_elevation_gain_m": 417,
+  "calories_kcal": 505,
+  "segments": [],
+  "best_efforts": []
+}

@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: hsl(var(--border, 240 10% 25%));
+  }
+  :root {
+    --border: 240 10% 25%;
+  }
+  body {
+    @apply bg-dark-50 text-gray-100 font-sans antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-300;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-dark-200 rounded-2xl border border-dark-400 shadow-lg shadow-black/20;
+  }
+  .card-hover {
+    @apply card hover:border-gray-600 hover:shadow-xl hover:shadow-black/30 transition-all duration-200;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-dark shadow-md shadow-accent/20;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-gray-300 hover:bg-dark-300 hover:text-gray-100;
+  }
+  .btn-icon {
+    @apply btn w-9 h-9 p-0 rounded-lg;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-running {
+    @apply bg-pink-500/15 text-pink-400 border border-pink-500/20;
+  }
+  .badge-cycling {
+    @apply bg-yellow-500/15 text-yellow-400 border border-yellow-500/20;
+  }
+  .badge-swimming {
+    @apply bg-blue-500/15 text-blue-400 border border-blue-500/20;
+  }
+  .badge-strength {
+    @apply bg-gray-500/15 text-gray-400 border border-gray-500/20;
+  }
+  .badge-hiking {
+    @apply bg-green-500/15 text-green-400 border border-green-500/20;
+  }
+  .badge-walking {
+    @apply bg-violet-500/15 text-violet-400 border border-violet-500/20;
+  }
+  .badge-other {
+    @apply bg-gray-500/10 text-gray-500 border border-gray-500/10;
+  }
+  .badge-planned {
+    @apply border-dashed border-gray-500/40 text-gray-400;
+  }
+  .stat-value {
+    @apply text-2xl font-bold tracking-tight text-white;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-gray-400 uppercase tracking-wider;
+  }
+  .progress-bar {
+    @apply h-2 rounded-full bg-dark-400 overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full rounded-full bg-accent transition-all duration-500 ease-out;
+  }
+  .tooltip {
+    @apply absolute z-50 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none whitespace-nowrap;
+  }
+  .skeleton {
+    @apply animate-pulse bg-dark-300 rounded-lg;
+  }
+  .input {
+    @apply w-full px-3 py-2 bg-dark-300 border border-dark-400 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 transition-all;
+  }
+  .select {
+    @apply w-full px-3 py-2 bg-dark-300 border border-dark-400 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 transition-all appearance-none cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent to-pink-400;
+  }
+  .glass {
+    @apply bg-dark-200/60 backdrop-blur-xl border border-white/5;
+  }
+}

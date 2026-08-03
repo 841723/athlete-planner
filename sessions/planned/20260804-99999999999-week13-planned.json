@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "id": "99999999999",
+  "sport": "running",
+  "name": "Week 13 - Carrera Planificada",
+  "start_date_local": "2026-08-04T07:00:00",
+  "distance_m": 21097,
+  "moving_time_s": 7200,
+  "elapsed_time_s": 7200,
+  "avg_speed_ms": 2.93,
+  "avg_pace_s_per_km": 341,
+  "avg_heartrate": 140,
+  "max_heartrate": 155,
+  "avg_watts": 250,
+  "max_watts": 300,
+  "total_elevation_gain_m": 100,
+  "average_temp_c": 22,
+  "training_effect": 3.5,
+  "calories_kcal": 950,
+  "segments": [],
+  "best_efforts": []
+}

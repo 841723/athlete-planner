@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985124",
+  "sport": "virtual_ride",
+  "name": "Bruges Ciclismo virtual",
+  "start_date_local": "2026-06-22T20:40:52",
+  "distance_m": 37345.3,
+  "moving_time_s": 5040,
+  "elapsed_time_s": 5092,
+  "avg_speed_ms": 7.334,
+  "avg_pace_s_per_km": 136,
+  "max_speed_ms": 8.049,
+  "avg_heartrate": 107,
+  "max_heartrate": 126,
+  "avg_watts": 111,
+  "max_watts": 211,
+  "total_elevation_gain_m": 4,
+  "calories_kcal": 567,
+  "segments": [],
+  "best_efforts": []
+}

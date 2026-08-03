@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985096",
+  "sport": "virtual_ride",
+  "name": "Villanueva Ciclismo virtual",
+  "start_date_local": "2026-05-23T19:53:15",
+  "distance_m": 28145.1,
+  "moving_time_s": 3120,
+  "elapsed_time_s": 3911,
+  "avg_speed_ms": 7.196,
+  "avg_pace_s_per_km": 139,
+  "max_speed_ms": 13.726,
+  "avg_heartrate": 123,
+  "max_heartrate": 146,
+  "avg_watts": 122,
+  "max_watts": 228,
+  "total_elevation_gain_m": 97,
+  "calories_kcal": 477,
+  "segments": [],
+  "best_efforts": []
+}

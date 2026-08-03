@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985078",
+  "sport": "virtual_ride",
+  "name": "Abu Dhabi Ciclismo virtual",
+  "start_date_local": "2026-05-19T19:53:07",
+  "distance_m": 21793.74,
+  "moving_time_s": 3300,
+  "elapsed_time_s": 3310,
+  "avg_speed_ms": 6.584,
+  "avg_pace_s_per_km": 152,
+  "max_speed_ms": 11.751,
+  "avg_heartrate": 110,
+  "max_heartrate": 142,
+  "avg_watts": 109,
+  "max_watts": 345,
+  "total_elevation_gain_m": 88,
+  "calories_kcal": 360,
+  "segments": [],
+  "best_efforts": []
+}

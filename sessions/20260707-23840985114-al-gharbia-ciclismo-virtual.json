@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985114",
+  "sport": "virtual_ride",
+  "name": "Al Gharbia Ciclismo virtual",
+  "start_date_local": "2026-07-07T18:55:06",
+  "distance_m": 19944.6,
+  "moving_time_s": 4200,
+  "elapsed_time_s": 4210,
+  "avg_speed_ms": 4.737,
+  "avg_pace_s_per_km": 211,
+  "max_speed_ms": 17.079,
+  "avg_heartrate": 111,
+  "max_heartrate": 129,
+  "avg_watts": 115,
+  "max_watts": 360,
+  "total_elevation_gain_m": 400,
+  "calories_kcal": 486,
+  "segments": [],
+  "best_efforts": []
+}

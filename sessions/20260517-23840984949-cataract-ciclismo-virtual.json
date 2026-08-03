@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840984949",
+  "sport": "virtual_ride",
+  "name": "Cataract Ciclismo virtual",
+  "start_date_local": "2026-05-17T19:27:05",
+  "distance_m": 16856.01,
+  "moving_time_s": 2844,
+  "elapsed_time_s": 2852,
+  "avg_speed_ms": 5.91,
+  "avg_pace_s_per_km": 169,
+  "max_speed_ms": 18.22,
+  "avg_heartrate": 115,
+  "max_heartrate": 169,
+  "avg_watts": 112,
+  "max_watts": 390,
+  "total_elevation_gain_m": 244,
+  "calories_kcal": 320,
+  "segments": [],
+  "best_efforts": []
+}

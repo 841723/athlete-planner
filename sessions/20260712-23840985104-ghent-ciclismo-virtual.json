@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985104",
+  "sport": "virtual_ride",
+  "name": "Ghent Ciclismo virtual",
+  "start_date_local": "2026-07-12T20:46:05",
+  "distance_m": 21247.15,
+  "moving_time_s": 3900,
+  "elapsed_time_s": 3915,
+  "avg_speed_ms": 5.427,
+  "avg_pace_s_per_km": 184,
+  "max_speed_ms": 16.572,
+  "avg_heartrate": 114,
+  "max_heartrate": 128,
+  "avg_watts": 120,
+  "max_watts": 324,
+  "total_elevation_gain_m": 274,
+  "calories_kcal": 470,
+  "segments": [],
+  "best_efforts": []
+}

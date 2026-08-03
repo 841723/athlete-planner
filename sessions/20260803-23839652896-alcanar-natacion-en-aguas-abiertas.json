@@ -1,0 +1,91 @@
+{
+  "schema_version": 2,
+  "id": "23839652896",
+  "sport": "open_water_swimming",
+  "name": "Alcanar Natación en aguas abiertas",
+  "start_date_local": "2026-08-03T19:23:23",
+  "distance_m": 1703.1,
+  "moving_time_s": 3123,
+  "elapsed_time_s": 3577,
+  "avg_speed_ms": 0.476,
+  "avg_pace_s_per_km": 2101,
+  "max_speed_ms": 1.322,
+  "avg_heartrate": 126,
+  "max_heartrate": 146,
+  "average_temp_c": 31,
+  "training_effect": 2.5,
+  "calories_kcal": 564,
+  "segments": [
+    {
+      "distance_m": 264.05,
+      "time_s": 552,
+      "avg_pace_s_per_km": 2092,
+      "avg_heartrate": 121,
+      "max_heartrate": 139
+    },
+    {
+      "distance_m": 22.62,
+      "time_s": 68,
+      "avg_pace_s_per_km": 3021,
+      "avg_heartrate": 120,
+      "max_heartrate": 136
+    },
+    {
+      "distance_m": 52.39,
+      "time_s": 121,
+      "avg_pace_s_per_km": 2304,
+      "avg_heartrate": 123,
+      "max_heartrate": 132
+    },
+    {
+      "distance_m": 326.5,
+      "time_s": 462,
+      "avg_pace_s_per_km": 1414,
+      "avg_heartrate": 128,
+      "max_heartrate": 134
+    },
+    {
+      "distance_m": 27.83,
+      "time_s": 133,
+      "avg_pace_s_per_km": 4785,
+      "avg_heartrate": 102,
+      "max_heartrate": 131
+    },
+    {
+      "distance_m": 262.81,
+      "time_s": 532,
+      "avg_pace_s_per_km": 2024,
+      "avg_heartrate": 127,
+      "max_heartrate": 135
+    },
+    {
+      "distance_m": 15.46,
+      "time_s": 69,
+      "avg_pace_s_per_km": 4484,
+      "avg_heartrate": 106,
+      "max_heartrate": 127
+    },
+    {
+      "distance_m": 372.64,
+      "time_s": 699,
+      "avg_pace_s_per_km": 1876,
+      "avg_heartrate": 131,
+      "max_heartrate": 137
+    },
+    {
+      "distance_m": 17.6,
+      "time_s": 84,
+      "avg_pace_s_per_km": 4785,
+      "avg_heartrate": 108,
+      "max_heartrate": 133
+    },
+    {
+      "distance_m": 341.21,
+      "time_s": 857,
+      "avg_pace_s_per_km": 2513,
+      "avg_heartrate": 133,
+      "max_heartrate": 146
+    }
+  ],
+  "best_efforts": []
+}

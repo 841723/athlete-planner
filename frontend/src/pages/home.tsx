@@ -1,0 +1,45 @@
+import { HeroStats } from "@/components/home/hero-stats";
+import { TodayTomorrow } from "@/components/home/today-tomorrow";
+import { UpcomingGoals } from "@/components/home/upcoming-goals";
+import { StreakCard } from "@/components/home/streak-card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSessions } from "@/hooks/use-sessions";
+
+export function HomePage() {
+  const { data, isLoading } = useSessions();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const completed = data?.completed ?? [];
+  const planned = data?.planned ?? [];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <HeroStats completed={completed} planned={planned} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <TodayTomorrow completed={completed} planned={planned} />
+        </div>
+        <div className="space-y-4">
+          <UpcomingGoals completed={completed} />
+          <StreakCard completed={completed} />
+        </div>
+      </div>
+    </div>
+  );
+}

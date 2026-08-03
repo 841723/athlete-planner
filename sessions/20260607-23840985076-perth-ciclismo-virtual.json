@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985076",
+  "sport": "virtual_ride",
+  "name": "Perth Ciclismo virtual",
+  "start_date_local": "2026-06-07T20:45:50",
+  "distance_m": 15691.42,
+  "moving_time_s": 3300,
+  "elapsed_time_s": 3328,
+  "avg_speed_ms": 4.715,
+  "avg_pace_s_per_km": 212,
+  "max_speed_ms": 18.84,
+  "avg_heartrate": 114,
+  "max_heartrate": 129,
+  "avg_watts": 120,
+  "max_watts": 225,
+  "total_elevation_gain_m": 324,
+  "calories_kcal": 400,
+  "segments": [],
+  "best_efforts": []
+}

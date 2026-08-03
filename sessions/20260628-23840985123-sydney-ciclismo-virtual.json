@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985123",
+  "sport": "virtual_ride",
+  "name": "Sydney Ciclismo virtual",
+  "start_date_local": "2026-06-28T12:19:22",
+  "distance_m": 29344.6,
+  "moving_time_s": 3900,
+  "elapsed_time_s": 4274,
+  "avg_speed_ms": 6.866,
+  "avg_pace_s_per_km": 146,
+  "max_speed_ms": 12.649,
+  "avg_heartrate": 116,
+  "max_heartrate": 130,
+  "avg_watts": 122,
+  "max_watts": 294,
+  "total_elevation_gain_m": 247,
+  "calories_kcal": 523,
+  "segments": [],
+  "best_efforts": []
+}

@@ -6,6 +6,9 @@ const args = process.argv.slice(2);
 const force = args.includes("--force");
 const rest = args.filter((a) => a !== "--force");
 
+// Solo se sincronizan entrenamientos desde esta fecha (inclusive).
+const MIN_DATE = "2026-05-12";
+
 const [listPath, detailsDir, sessionsDir = "sessions"] = rest;
 if (!listPath || !detailsDir) {
   console.error("Uso: node scripts/sync-sessions.mjs <list.json> <detailsDir> [sessionsDir] [--force]");
@@ -136,8 +139,14 @@ function segments(a) {
 let written = 0;
 let skipped = 0;
 let missing = 0;
+let filtered = 0;
 for (const a of activities) {
   const id = String(a.activityId);
+  const startDate = (a.startTimeLocal?.datetime ?? "").slice(0, 10);
+  if (startDate < MIN_DATE) {
+    filtered++;
+    continue;
+  }
   if (!force && existing.has(id)) {
     skipped++;
     continue;
@@ -151,4 +160,4 @@ for (const a of activities) {
   written++;
   if (!details.has(id)) missing++;
 }
-console.log(`Sincronizadas: ${written} | Omitidas: ${skipped} | Sin detalles (sin segmentos): ${missing} | Total: ${activities.length}`);
+console.log(`Sincronizadas: ${written} | Omitidas: ${skipped} | Filtradas (antes de ${MIN_DATE}): ${filtered} | Sin detalles (sin segmentos): ${missing} | Total: ${activities.length}`);

@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "23840985056",
+  "sport": "virtual_ride",
+  "name": "Townsville Ciclismo virtual",
+  "start_date_local": "2026-05-31T20:04:02",
+  "distance_m": 18075.21,
+  "moving_time_s": 2700,
+  "elapsed_time_s": 2724,
+  "avg_speed_ms": 6.636,
+  "avg_pace_s_per_km": 151,
+  "max_speed_ms": 15.038,
+  "avg_heartrate": 111,
+  "max_heartrate": 129,
+  "avg_watts": 115,
+  "max_watts": 206,
+  "total_elevation_gain_m": 106,
+  "calories_kcal": 314,
+  "segments": [],
+  "best_efforts": []
+}
