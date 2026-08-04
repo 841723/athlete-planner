@@ -1,5 +1,6 @@
 import { parseISO, differenceInDays, eachDayOfInterval, format } from "date-fns";
 import type { Session } from "@/types/session";
+import { getSessionTime } from "@/lib/utils";
 
 interface StreakCardProps {
   completed: Session[];
@@ -20,7 +21,7 @@ export function StreakCard({ completed }: StreakCardProps) {
 
   const totalDistance = completed.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
   const totalHours = completed.reduce(
-    (sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600,
+    (sum, s) => sum + getSessionTime(s) / 3600,
     0
   );
 

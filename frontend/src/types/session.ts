@@ -77,6 +77,9 @@ export interface Session {
   segments?: SessionSegment[];
   best_efforts?: SessionBestEffort[];
   hr_zones?: HrZone[];
+  workout?: PlannedWorkout;
+  hr_from?: number;
+  hr_to?: number;
 }
 
 export interface SessionSegment {
@@ -97,6 +100,23 @@ export interface HrZone {
   zoneNumber: number;
   zoneLowBoundary: number;
   secsInZone: number;
+}
+
+export interface WorkoutBlock {
+  type?: "steady" | "intervals";
+  repeat?: number;
+  distance_m?: number;
+  time_s?: number;
+  pace_s_per_km?: number;
+  rest_s?: number;
+  hr_from?: number;
+  hr_to?: number;
+}
+
+export interface PlannedWorkout {
+  warmup_s?: number;
+  cooldown_s?: number;
+  blocks?: WorkoutBlock[];
 }
 
 export interface SessionBestEffort {

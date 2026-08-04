@@ -9,7 +9,7 @@ interface CalendarDayProps {
   date: Date;
   sessions: SessionWithStatus[];
   goal?: RaceGoal;
-  onClick: (session: Session) => void;
+  onClick: (session: SessionWithStatus) => void;
   dimmed?: boolean;
 }
 

@@ -8,6 +8,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { Session } from "@/types/session";
+import { getSessionTime } from "@/lib/utils";
 
 interface VolumeEvolutionChartProps {
   sessions: Session[];
@@ -22,7 +23,7 @@ export function VolumeEvolutionChart({ sessions }: VolumeEvolutionChartProps) {
   let cumulativeDist = 0;
 
   const data = sorted.map((s) => {
-    cumulativeHours += (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600;
+    cumulativeHours += getSessionTime(s) / 3600;
     cumulativeDist += (s.distance_m ?? 0) / 1000;
     return {
       date: s.start_date_local.slice(0, 10),

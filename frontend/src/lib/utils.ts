@@ -1,6 +1,15 @@
 import { format, parseISO, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { SportCategory, SPORT_CATEGORIES, SPORT_COLORS, SPORT_LABELS, Session } from "@/types/session";
 
+export const RACKET_SPORTS = new Set(["paddelball", "tennis_v2"]);
+
+export function getSessionTime(s: Session): number {
+  const racket = RACKET_SPORTS.has(s.sport);
+  const primary = racket ? s.elapsed_time_s : s.moving_time_s;
+  const fallback = racket ? s.moving_time_s : s.elapsed_time_s;
+  return primary ?? fallback ?? 0;
+}
+
 export function formatDistance(meters: number | undefined): string {
   if (meters == null) return "—";
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;

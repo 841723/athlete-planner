@@ -1,6 +1,7 @@
 import { format, parseISO, addDays } from "date-fns";
 import type { Session } from "@/types/session";
-import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace } from "@/lib/utils";
+import { getSportColor, getSportLabel, formatDistance, formatDuration, getSessionTime } from "@/lib/utils";
+import { buildObjectives } from "@/lib/objectives";
 
 interface TodayTomorrowProps {
   completed: Session[];
@@ -11,6 +12,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const tomorrowStr = format(addDays(today, 1), "yyyy-MM-dd");
+  const plannedIds = new Set(planned.map((s) => s.id));
 
   const todaySessions = [...completed, ...planned].filter(
     (s) => s.start_date_local.startsWith(todayStr)
@@ -32,7 +34,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
           ) : (
             <div className="space-y-2">
               {todaySessions.map((s) => (
-                <SessionCard key={s.id} session={s} />
+                <SessionCard key={s.id} session={s} isPlanned={plannedIds.has(s.id)} />
               ))}
             </div>
           )}
@@ -46,7 +48,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
           ) : (
             <div className="space-y-2">
               {tomorrowSessions.map((s) => (
-                <SessionCard key={s.id} session={s} />
+                <SessionCard key={s.id} session={s} isPlanned={plannedIds.has(s.id)} />
               ))}
             </div>
           )}
@@ -56,9 +58,40 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
   );
 }
 
-function SessionCard({ session }: { session: Session }) {
+function SessionCard({ session, isPlanned }: { session: Session; isPlanned: boolean }) {
   const color = getSportColor(session.sport);
   const label = getSportLabel(session.sport);
+  const time = getSessionTime(session);
+  const objectives = isPlanned ? buildObjectives(session) : [];
+
+  if (isPlanned) {
+    return (
+      <div className="flex items-start gap-3 p-3 rounded-xl border border-dashed border-dark-400 bg-dark-300/30">
+        <div className="w-3 h-3 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: color }} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium truncate">{session.title ?? session.name}</span>
+            <span className="badge badge-planned">Plan</span>
+          </div>
+          <div className="text-xs text-gray-500">
+            <span>{label}</span>
+            <span className="mx-1">·</span>
+            <span>{format(parseISO(session.start_date_local), "d MMM")}</span>
+          </div>
+          {objectives.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {objectives.map((obj, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs">
+                  {obj.label && <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-accent/20 text-accent-light">{obj.label}</span>}
+                  <span className="text-gray-300">{obj.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-dark-300/50 hover:bg-dark-300 transition-colors">
@@ -69,7 +102,7 @@ function SessionCard({ session }: { session: Session }) {
       </div>
       <div className="text-right text-xs text-gray-400 flex-shrink-0">
         {session.distance_m ? formatDistance(session.distance_m) : ""}
-        {session.moving_time_s && ` · ${formatDuration(session.moving_time_s)}`}
+        {time > 0 && ` · ${formatDuration(time)}`}
       </div>
     </div>
   );

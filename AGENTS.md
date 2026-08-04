@@ -123,6 +123,28 @@ Cada archivo de sesión debe cumplir este esquema:
 - Campos que Garmin no devuelva: omítelos, no uses `null` inventado. Si el deporte
   es natación y no hay potencia, omite los campos de watts.
 
+## Sesiones planificadas
+
+Las sesiones planificadas están en `sessions/planned/`. Usan el mismo esquema que las
+sesiones completadas, con los siguientes campos opcionales adicionales:
+
+- `title`: tipo de entrenamiento (ej. "Carrera en Z2", "5K", "Series de 400m").
+  El frontend lo interpreta para generar objetivos.
+- `workout`: pasos estructurados del entrenamiento:
+  ```json
+  {
+    "warmup_s": 600,
+    "blocks": [
+      { "type": "intervals", "repeat": 4, "distance_m": 400, "pace_s_per_km": 225, "rest_s": 120 },
+      { "type": "steady", "time_s": 2400, "hr_from": 130, "hr_to": 138 }
+    ],
+    "cooldown_s": 600
+  }
+  ```
+- `hr_from` / `hr_to`: rango de FC objetivo (para Z2, Z3, etc. sin workout).
+- Sin `workout` ni `title`: el frontend genera objetivos genéricos de distancia,
+  ritmo, tiempo, FC según los campos numéricos disponibles.
+
 ## Trabajar con los datos
 
 - Para leer/analizar varias sesiones, usa las herramientas de búsqueda del proyecto

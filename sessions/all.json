@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-04T00:25:06.828Z",
-  "count": 59,
+  "generated_at": "2026-08-04T11:51:59.259Z",
+  "count": 60,
   "sessions": [
     {
       "id": "22859095649",
@@ -755,6 +755,18 @@
       "avg_heartrate": 126,
       "avg_pace_s_per_km": 2101,
       "segments": 10
+    },
+    {
+      "id": "23846209247",
+      "date": "2026-08-04",
+      "sport": "paddelball",
+      "name": "Alcanar Pádel",
+      "title": "Padel",
+      "distance_m": 2328.11,
+      "moving_time_s": 1519,
+      "avg_heartrate": 111,
+      "avg_pace_s_per_km": 1898,
+      "segments": 1
     }
   ]
 }

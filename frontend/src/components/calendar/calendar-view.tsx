@@ -15,7 +15,8 @@ import { CalendarDay } from "./calendar-day";
 import { CalendarFilters } from "./calendar-filters";
 import type { SportCategory } from "@/types/session";
 import { RACE_GOALS } from "@/lib/goals";
-import { getWeekNumber, getSportCategory } from "@/lib/utils";
+import { getWeekNumber, getSportCategory, getSessionTime, getSportLabel } from "@/lib/utils";
+import { buildObjectives } from "@/lib/objectives";
 
 interface CalendarViewProps {
   completed: SessionWithStatus[];
@@ -31,7 +32,7 @@ interface CalendarViewProps {
 
 export function CalendarView({ completed, planned, filters, setSport, setDateFrom, setDateTo, setShowCompleted, setShowPlanned, resetFilters }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [selectedSession, setSelectedSession] = useState<SessionWithStatus | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const monthStart = startOfMonth(currentMonth);
@@ -145,18 +146,44 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedSession(null)}>
           <div className="card p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">{selectedSession.title ?? selectedSession.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold">{selectedSession.title ?? selectedSession.name}</h3>
+                {selectedSession.status === "planned" && <span className="badge badge-planned">Plan</span>}
+              </div>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">Fecha</span><span>{selectedSession.start_date_local}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{selectedSession.sport}</span></div>
-              {selectedSession.distance_m && <div className="flex justify-between"><span className="text-gray-400">Distancia</span><span>{(selectedSession.distance_m / 1000).toFixed(2)} km</span></div>}
-              {selectedSession.moving_time_s && <div className="flex justify-between"><span className="text-gray-400">Tiempo</span><span>{(selectedSession.moving_time_s / 60).toFixed(0)} min</span></div>}
-              {selectedSession.avg_heartrate && <div className="flex justify-between"><span className="text-gray-400">FC media</span><span>{selectedSession.avg_heartrate} bpm</span></div>}
-              {selectedSession.training_effect && <div className="flex justify-between"><span className="text-gray-400">Efecto</span><span>{selectedSession.training_effect}</span></div>}
-              {selectedSession.calories_kcal && <div className="flex justify-between"><span className="text-gray-400">Calorías</span><span>{selectedSession.calories_kcal} kcal</span></div>}
-              {selectedSession.total_elevation_gain_m && <div className="flex justify-between"><span className="text-gray-400">Desnivel</span><span>{selectedSession.total_elevation_gain_m} m</span></div>}
+              {selectedSession.status === "planned" ? (
+                <div className="flex justify-between"><span className="text-gray-400">Fecha planificada</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>
+              ) : (
+                <div className="flex justify-between"><span className="text-gray-400">Fecha</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>
+              )}
+              <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{getSportLabel(selectedSession.sport)}</span></div>
+              {selectedSession.status !== "planned" && selectedSession.distance_m && <div className="flex justify-between"><span className="text-gray-400">Distancia</span><span>{(selectedSession.distance_m / 1000).toFixed(2)} km</span></div>}
+              {selectedSession.status !== "planned" && (() => {
+                const t = getSessionTime(selectedSession);
+                return t > 0 ? <div className="flex justify-between"><span className="text-gray-400">Tiempo</span><span>{(t / 60).toFixed(0)} min</span></div> : null;
+              })()}
+              {selectedSession.status !== "planned" && selectedSession.avg_heartrate && <div className="flex justify-between"><span className="text-gray-400">FC media</span><span>{selectedSession.avg_heartrate} bpm</span></div>}
+              {selectedSession.status !== "planned" && selectedSession.training_effect && <div className="flex justify-between"><span className="text-gray-400">Efecto</span><span>{selectedSession.training_effect}</span></div>}
+              {selectedSession.status !== "planned" && selectedSession.calories_kcal && <div className="flex justify-between"><span className="text-gray-400">Calorías</span><span>{selectedSession.calories_kcal} kcal</span></div>}
+              {selectedSession.status !== "planned" && selectedSession.total_elevation_gain_m && <div className="flex justify-between"><span className="text-gray-400">Desnivel</span><span>{selectedSession.total_elevation_gain_m} m</span></div>}
+              {selectedSession.status === "planned" && (() => {
+                const objectives = buildObjectives(selectedSession);
+                return objectives.length > 0 ? (
+                  <div className="pt-2 border-t border-dark-400">
+                    <span className="text-gray-400 text-xs uppercase tracking-wider">Objetivos</span>
+                    <div className="mt-2 space-y-1.5">
+                      {objectives.map((obj, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          {obj.label && <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/20 text-accent-light">{obj.label}</span>}
+                          <span className="text-sm">{obj.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>

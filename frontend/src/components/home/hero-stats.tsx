@@ -1,6 +1,6 @@
 import { format, parseISO, differenceInDays } from "date-fns";
 import type { Session } from "@/types/session";
-import { getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
+import { getSportColor, getSportLabel, formatDistance, formatDuration, getSessionTime } from "@/lib/utils";
 
 interface HeroStatsProps {
   completed: Session[];
@@ -24,7 +24,7 @@ export function HeroStats({ completed, planned }: HeroStatsProps) {
 
   const totalDistance = allSessions.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
   const totalHours = allSessions.reduce(
-    (sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600,
+    (sum, s) => sum + getSessionTime(s) / 3600,
     0
   );
   const totalSessions = allSessions.length;

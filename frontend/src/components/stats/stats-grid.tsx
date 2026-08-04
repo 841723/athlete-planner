@@ -5,6 +5,7 @@ import {
   formatNumber,
   getSportCategory,
   getWeekNumber,
+  getSessionTime,
 } from "@/lib/utils";
 import type { Session, SportCategory } from "@/types/session";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -86,8 +87,8 @@ function buildSportStats(
   speedMaxSessions?: Session[]
 ): SportStats {
   const dist = list.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
-  const hours = list.reduce((sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600, 0);
-  const durations = list.map((s) => s.moving_time_s ?? s.elapsed_time_s ?? 0);
+  const hours = list.reduce((sum, s) => sum + getSessionTime(s) / 3600, 0);
+  const durations = list.map((s) => getSessionTime(s));
   const avgDur = avg(durations);
   const maxDur = durations.length > 0 ? Math.max(...durations) : null;
   const hrList = list.filter((s) => s.avg_heartrate).map((s) => s.avg_heartrate!);
@@ -111,7 +112,7 @@ function buildSportStats(
 
   const totalHours = Math.max(
     0.0001,
-    all.reduce((sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600, 0)
+    all.reduce((sum, s) => sum + getSessionTime(s) / 3600, 0)
   );
 
   return {
@@ -159,10 +160,10 @@ export function StatsGrid() {
     const cyclingOutdoor = sportSessions.cycling.filter((s) => !RODILLO_SPORTS.has(s.sport));
 
     const totalDistance = all.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
-    const totalHours = all.reduce((sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600, 0);
+    const totalHours = all.reduce((sum, s) => sum + getSessionTime(s) / 3600, 0);
     const totalElevation = all.reduce((sum, s) => sum + (s.total_elevation_gain_m ?? 0), 0);
     const totalCalories = all.reduce((sum, s) => sum + (s.calories_kcal ?? 0), 0);
-    const totalMovingSec = all.reduce((sum, s) => sum + (s.moving_time_s ?? s.elapsed_time_s ?? 0), 0);
+    const totalMovingSec = all.reduce((sum, s) => sum + getSessionTime(s), 0);
 
     const bySport: Record<SportCategory, SportStats> = {
       running: buildSportStats("running", sportSessions.running, all),

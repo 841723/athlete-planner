@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { startOfWeek, endOfWeek, parseISO } from "date-fns";
 import type { Session, WeeklySummary, SportCategory, SessionWithStatus } from "@/types/session";
-import { getSportCategory, getWeekNumber } from "@/lib/utils";
+import { getSportCategory, getWeekNumber, getSessionTime } from "@/lib/utils";
 
 export function useWeeklySummary(completed: Session[], planned: Session[]) {
   const summary = useMemo(() => {
@@ -44,7 +44,7 @@ export function useWeeklySummary(completed: Session[], planned: Session[]) {
       for (const s of weekCompleted) {
         const cat = getSportCategory(s.sport);
         bySport[cat] = (bySport[cat] ?? 0) + 1;
-        totalHours += (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600;
+        totalHours += getSessionTime(s) / 3600;
         totalDistance += (s.distance_m ?? 0) / 1000;
         totalElevation += s.total_elevation_gain_m ?? 0;
       }
@@ -53,7 +53,7 @@ export function useWeeklySummary(completed: Session[], planned: Session[]) {
       let plannedHours = 0;
       for (const s of weekPlanned) {
         plannedDistance += (s.distance_m ?? 0) / 1000;
-        plannedHours += (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600;
+        plannedHours += getSessionTime(s) / 3600;
       }
 
       weeks.push({

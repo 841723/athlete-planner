@@ -8,7 +8,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { Session } from "@/types/session";
-import { getWeekNumber } from "@/lib/utils";
+import { getWeekNumber, getSessionTime } from "@/lib/utils";
 
 interface TrainingLoadChartProps {
   sessions: Session[];
@@ -22,7 +22,7 @@ export function TrainingLoadChart({ sessions }: TrainingLoadChartProps) {
     const weekStart = new Date(date);
     weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
     const key = weekStart.toISOString().slice(0, 10);
-    const hours = (s.moving_time_s ?? s.elapsed_time_s ?? 0) / 3600;
+    const hours = getSessionTime(s) / 3600;
     byWeek[key] = (byWeek[key] ?? 0) + hours;
   }
 
