@@ -7,20 +7,38 @@ interface SessionModalProps {
   onClose: () => void;
 }
 
+function intensityBadge(intensity: string): { label: string; className: string } {
+  switch (intensity) {
+    case "ACTIVE":
+      return { label: "Serie", className: "bg-accent/20 text-accent-light" };
+    case "REST":
+      return { label: "Recuperación", className: "bg-dark-400/50 text-gray-300" };
+    case "WARMUP":
+      return { label: "Calentamiento", className: "bg-yellow-500/15 text-yellow-400" };
+    case "COOLDOWN":
+      return { label: "Vuelta a la calma", className: "bg-sky-500/15 text-sky-400" };
+    default:
+      return { label: "Lap", className: "bg-dark-400/50 text-gray-300" };
+  }
+}
+
 export function SessionModal({ session, onClose }: SessionModalProps) {
   const color = getSportColor(session.sport);
   const label = getSportLabel(session.sport);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in" onClick={onClose}>
-      <div className="card p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <div className="card p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
-            <h3 className="text-xl font-bold">{session.name}</h3>
+            <h3 className="text-xl font-bold">{session.title ?? session.name}</h3>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
         </div>
+        {session.title && session.title !== session.name && (
+          <p className="text-xs text-gray-500 -mt-3 mb-4">{session.name}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <InfoItem label="Fecha" value={format(parseISO(session.start_date_local), "d MMM yyyy")} />
@@ -37,21 +55,61 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           {session.avg_speed_ms && <InfoItem label="Velocidad" value={formatSpeed(session.avg_speed_ms)} />}
           {session.avg_pace_s_per_km && <InfoItem label="Ritmo" value={formatPace(session.avg_pace_s_per_km)} />}
           {session.training_effect && <InfoItem label="Efecto entrenamiento" value={`${session.training_effect}`} />}
+          {session.rpe != null && <InfoItem label="RPE" value={`${session.rpe} / 100`} />}
+          {session.feel != null && <InfoItem label="Sensación" value={`${session.feel} / 100`} />}
           {session.average_temp_c && <InfoItem label="Temperatura" value={`${session.average_temp_c}°C`} />}
         </div>
 
         {session.segments && session.segments.length > 0 && (
           <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-300 mb-2">Segmentos</h4>
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">
+              Segmentos
+              <span className="text-gray-500 font-normal ml-1">({session.segments.length})</span>
+            </h4>
             <div className="space-y-2">
-              {session.segments.map((seg, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-dark-300/50">
-                  <span className="text-gray-400 w-16">Lap {i + 1}</span>
-                  <span className="flex-1">{seg.distance_m ? formatDistance(seg.distance_m) : "—"}</span>
-                  <span>{seg.time_s ? formatDuration(seg.time_s) : "—"}</span>
-                  {seg.avg_heartrate && <span className="text-gray-500">{seg.avg_heartrate} bpm</span>}
-                </div>
-              ))}
+              {session.segments.map((seg, i) => {
+                const badge = intensityBadge(seg.intensity ?? "Lap");
+                return (
+                  <div key={i} className="text-sm p-2.5 rounded-lg bg-dark-300/50">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${badge.className}`}>
+                        {badge.label}
+                      </span>
+                      <span className="text-gray-400">{i + 1}</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1">
+                      <SegStat label="Distancia" value={seg.distance_m ? formatDistance(seg.distance_m) : "—"} />
+                      <SegStat label="Tiempo" value={seg.time_s ? formatDuration(seg.time_s) : "—"} />
+                      <SegStat label="Ritmo" value={seg.avg_pace_s_per_km ? formatPace(seg.avg_pace_s_per_km) : seg.avg_speed_ms ? formatSpeed(seg.avg_speed_ms) : "—"} />
+                      <SegStat label="FC" value={seg.avg_heartrate ? `${seg.avg_heartrate}${seg.max_heartrate ? `/${seg.max_heartrate}` : ""} bpm` : "—"} />
+                      <SegStat label="Potencia" value={seg.avg_watts ? `${seg.avg_watts}${seg.max_watts ? `/${seg.max_watts}` : ""} W` : "—"} />
+                      <SegStat label="Desnivel" value={seg.total_elevation_gain_m ? `${seg.total_elevation_gain_m} m` : "—"} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {session.hr_zones && session.hr_zones.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Tiempo por zonas de FC</h4>
+            <div className="flex items-end gap-1 h-20">
+              {session.hr_zones.map((z) => {
+                const total = session.hr_zones!.reduce((s, x) => s + x.secsInZone, 0) || 1;
+                const pct = (z.secsInZone / total) * 100;
+                return (
+                  <div key={z.zoneNumber} className="flex flex-col items-center flex-1 gap-1">
+                    <span className="text-[10px] text-gray-400">{formatDuration(z.secsInZone)}</span>
+                    <div
+                      className="w-full rounded-t bg-gradient-to-t from-accent/30 to-accent-light"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                    />
+                    <span className="text-[10px] text-gray-500">Z{z.zoneNumber}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -98,6 +156,15 @@ function InfoItem({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-gray-400">{label}</span>
       <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function SegStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between sm:flex-col sm:justify-start text-xs">
+      <span className="text-gray-500 sm:mb-0.5">{label}</span>
+      <span className="font-medium text-gray-200">{value}</span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { startOfWeek, endOfWeek, parseISO, getWeek } from "date-fns";
+import { startOfWeek, endOfWeek, parseISO } from "date-fns";
 import type { Session, WeeklySummary, SportCategory, SessionWithStatus } from "@/types/session";
-import { getSportCategory } from "@/lib/utils";
+import { getSportCategory, getWeekNumber } from "@/lib/utils";
 
 export function useWeeklySummary(completed: Session[], planned: Session[]) {
   const summary = useMemo(() => {
@@ -15,8 +15,7 @@ export function useWeeklySummary(completed: Session[], planned: Session[]) {
     for (const session of allSessions) {
       const date = parseISO(session.start_date_local);
       const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
-      const key = `${weekStart.toISOString()}-${weekEnd.toISOString()}`;
+      const key = weekStart.toISOString().slice(0, 10);
 
       if (!weekMap.has(key)) {
         weekMap.set(key, { completed: [], planned: [] });
@@ -32,8 +31,10 @@ export function useWeeklySummary(completed: Session[], planned: Session[]) {
 
     const weeks: WeeklySummary[] = [];
     for (const [key, { completed: weekCompleted, planned: weekPlanned }] of weekMap) {
-      const firstDate = parseISO(key.split("-")[0]);
-      const weekNum = getWeek(firstDate, { weekStartsOn: 1 });
+      const firstDate = parseISO(key);
+      const weekStart = startOfWeek(firstDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(firstDate, { weekStartsOn: 1 });
+      const weekNum = getWeekNumber(firstDate);
 
       const bySport = {} as Record<SportCategory, number>;
       let totalHours = 0;
@@ -56,8 +57,8 @@ export function useWeeklySummary(completed: Session[], planned: Session[]) {
       }
 
       weeks.push({
-        weekStart: key.split("-")[0],
-        weekEnd: key.split("-")[1].replace(/T.*$/, ""),
+        weekStart: weekStart.toISOString().slice(0, 10),
+        weekEnd: weekEnd.toISOString().slice(0, 10),
         weekNumber: weekNum,
         sessions: weekCompleted.length,
         hours: Math.round(totalHours * 10) / 10,

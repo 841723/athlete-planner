@@ -52,6 +52,7 @@ export interface Session {
   id: string;
   sport: string;
   name: string;
+  title?: string;
   start_date_local: string;
   distance_m?: number;
   moving_time_s?: number;
@@ -67,16 +68,31 @@ export interface Session {
   average_temp_c?: number;
   training_effect?: number;
   calories_kcal?: number;
+  rpe?: number;
+  feel?: number;
   segments?: SessionSegment[];
   best_efforts?: SessionBestEffort[];
+  hr_zones?: HrZone[];
 }
 
 export interface SessionSegment {
   distance_m?: number;
   time_s?: number;
+  avg_speed_ms?: number;
   avg_pace_s_per_km?: number;
+  max_speed_ms?: number;
   avg_heartrate?: number;
   max_heartrate?: number;
+  avg_watts?: number;
+  max_watts?: number;
+  total_elevation_gain_m?: number;
+  intensity?: "ACTIVE" | "REST" | "WARMUP" | "COOLDOWN" | string;
+}
+
+export interface HrZone {
+  zoneNumber: number;
+  zoneLowBoundary: number;
+  secsInZone: number;
 }
 
 export interface SessionBestEffort {

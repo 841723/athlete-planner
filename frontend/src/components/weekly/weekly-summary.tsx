@@ -51,9 +51,12 @@ export function WeeklySummary({ weekly, completed, planned }: WeeklySummaryProps
                     setSelectedWeek(selectedWeek === w ? null : w)
                   }
                 >
-                  <td className="py-2 px-3 font-medium">
-                    {format(parseISO(w.weekStart), "d MMM")} –{" "}
-                    {format(parseISO(w.weekEnd), "d MMM")}
+                  <td className="py-2 px-3 font-medium whitespace-nowrap">
+                    <span className="text-accent-light font-semibold">W{w.weekNumber}</span>{" "}
+                    <span className="text-gray-400">
+                      {format(parseISO(w.weekStart), "d MMM")} –{" "}
+                      {format(parseISO(w.weekEnd), "d MMM")}
+                    </span>
                   </td>
                   <td className="text-right py-2 px-3">{w.sessions}</td>
                   <td className="text-right py-2 px-3">{w.hours}h</td>

@@ -1,16 +1,14 @@
 ---
-description: Sincroniza los entrenamientos de Garmin Connect y los guarda en sessions/.
+description: Sincroniza los entrenamientos de Garmin Connect que faltan y guarda el resumen en sessions/all.json.
 agent: build
 ---
 
-Sincroniza mis entrenamientos de Garmin Connect y guárdalos en `sessions/` siguiendo el workflow de AGENTS.md.
+Sincroniza mis entrenamientos de Garmin Connect y guárdalos en `sessions/` siguiendo el workflow de AGENTS.md, usando la API directa de Garmin (sin MCP).
 
-Pasos:
-1. Lista los archivos en `sessions/` y extrae los `<activity_id>` ya sincronizados (cada nombre de archivo contiene el ID: `AAAAMMDD-<activity_id>-<slug>.json`).
-2. Usa `garmin_query_activities` (MCP `garmin`) para listar mis actividades con paginación, hasta cubrir lo que no esté sincronizado (por defecto las más recientes). El listado ya incluye el resumen y las métricas del esquema de sesión.
-3. Guarda el JSON completo de la respuesta en un archivo temporal (por ejemplo `/tmp/opencode/raw-activities.json`) y ejecuta el normalizador:
-   `node scripts/sync-sessions.mjs /tmp/opencode/raw-activities.json`
-   El script genera `sessions/AAAAMMDD-<activity_id>-<slug>.json` por actividad nueva (deduplicación por `<activity_id>`) siguiendo el esquema de AGENTS.md (resumen + métricas, sin streams).
-4. Si para alguna actividad hicieran falta campos extra que el listado no trae (gear, etc.), usa `garmin_get_activity_details` solo en ese caso.
-5. No modifiques archivos ya existentes en `sessions/`.
-6. Al terminar, resume: cuántas sincronizadas, cuántas omitidas por duplicado y cuáles son.
+Este comando es un alias de `/sync-all`. Ejecuta exactamente el workflow de `.opencode/command/sync-all.md`:
+1. Recupera los IDs de Garmin (`scripts/garmin-fetch.py ids`) y compara con `sessions/` para saber cuáles faltan.
+2. Descarga listado y detalles solo de las que faltan (`scripts/garmin-fetch.py list` + `details` por id).
+3. Normaliza con `node scripts/sync-sessions.mjs <listado> <detalles> --ids=<faltantes>`.
+4. Regenera el resumen con `node scripts/build-summary.mjs`.
+5. No modifiques archivos ya existentes en `sessions/` y no sobreescribas el campo `title` editado a mano (añade `--force` solo si hace falta re-normalizar conservándolo).
+6. Al terminar, resume: cuántas sincronizadas, cuántas omitidas por duplicado, cuántas filtradas y cuáles son.

@@ -1,12 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, ChartBar, Target, Home, Menu, X, Trophy } from "lucide-react";
+import { Calendar, ChartBar, Home, Menu, X, Trophy } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { path: "/", label: "Inicio", icon: Home },
   { path: "/calendar", label: "Calendario", icon: Calendar },
   { path: "/weekly", label: "Semanal", icon: ChartBar },
-  { path: "/goals", label: "Objetivos", icon: Target },
   { path: "/stats", label: "Estadísticas", icon: Trophy },
 ];
 

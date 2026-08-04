@@ -15,6 +15,7 @@ import { CalendarDay } from "./calendar-day";
 import { CalendarFilters } from "./calendar-filters";
 import type { SportCategory } from "@/types/session";
 import { RACE_GOALS } from "@/lib/goals";
+import { getWeekNumber, getSportCategory } from "@/lib/utils";
 
 interface CalendarViewProps {
   completed: SessionWithStatus[];
@@ -47,8 +48,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
     ];
     return sessions.filter((s) => {
       if (filters.sport !== "all") {
-        const cat = s.sport.toLowerCase().replace("_", " ").split(" ")[0];
-        if (cat !== filters.sport) return false;
+        if (getSportCategory(s.sport) !== filters.sport) return false;
       }
       return true;
     });
@@ -109,27 +109,32 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
           resetFilters={resetFilters}
         />
       )}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-[2.5rem_repeat(7,minmax(0,1fr))] gap-1">
+        <div />
         {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((day) => (
           <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
             {day}
           </div>
         ))}
-        {days.map((day) => {
+        {days.map((day, i) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const daySessions = sessionsByDate.get(dateStr) ?? [];
           const isOtherMonth = !isSameMonth(day, currentMonth);
+          const isWeekStart = day.getDay() === 1;
 
           return (
-            <div
-              key={dateStr}
-              className={`${isOtherMonth ? "opacity-30" : ""}`}
-            >
+            <div key={dateStr} className="contents">
+              {isWeekStart && (
+                <div className={`flex items-center justify-center text-xs font-semibold select-none ${isOtherMonth ? "text-gray-600" : "text-gray-500"}`}>
+                  W{getWeekNumber(day)}
+                </div>
+              )}
               <CalendarDay
                 date={day}
                 sessions={daySessions}
                 goal={goalsByDate.get(dateStr)}
                 onClick={setSelectedSession}
+                dimmed={isOtherMonth}
               />
             </div>
           );
@@ -140,7 +145,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedSession(null)}>
           <div className="card p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">{selectedSession.name}</h3>
+              <h3 className="text-lg font-bold">{selectedSession.title ?? selectedSession.name}</h3>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-white">✕</button>
             </div>
             <div className="space-y-3 text-sm">

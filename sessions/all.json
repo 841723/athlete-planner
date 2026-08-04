@@ -1,0 +1,603 @@
+{
+  "generated_at": "2026-08-04T00:00:55.670Z",
+  "count": 59,
+  "sessions": [
+    {
+      "id": "22859095649",
+      "date": "2026-05-12",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1775,
+      "moving_time_s": 3046,
+      "avg_heartrate": 129,
+      "segments": 0
+    },
+    {
+      "id": "22870842997",
+      "date": "2026-05-13",
+      "sport": "cycling",
+      "name": "Zaragoza Ciclismo",
+      "distance_m": 20520,
+      "moving_time_s": 2877,
+      "avg_heartrate": 127,
+      "segments": 0
+    },
+    {
+      "id": "22904374413",
+      "date": "2026-05-16",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 6474.97,
+      "moving_time_s": 2583,
+      "avg_heartrate": 132,
+      "segments": 0
+    },
+    {
+      "id": "23840984949",
+      "date": "2026-05-17",
+      "sport": "virtual_ride",
+      "name": "Cataract Ciclismo virtual",
+      "distance_m": 16856.01,
+      "moving_time_s": 2844,
+      "avg_heartrate": 115,
+      "avg_pace_s_per_km": 169,
+      "segments": 0
+    },
+    {
+      "id": "22928121303",
+      "date": "2026-05-18",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 1089,
+      "avg_heartrate": 98,
+      "segments": 0
+    },
+    {
+      "id": "23840985078",
+      "date": "2026-05-19",
+      "sport": "virtual_ride",
+      "name": "Abu Dhabi Ciclismo virtual",
+      "distance_m": 21793.74,
+      "moving_time_s": 3300,
+      "avg_heartrate": 110,
+      "avg_pace_s_per_km": 152,
+      "segments": 0
+    },
+    {
+      "id": "22948120562",
+      "date": "2026-05-20",
+      "sport": "open_water_swimming",
+      "name": "Barcelona Natación en aguas abiertas",
+      "distance_m": 1061.81,
+      "moving_time_s": 1806,
+      "avg_heartrate": 123,
+      "segments": 0
+    },
+    {
+      "id": "22975632987",
+      "date": "2026-05-22",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 7078.76,
+      "moving_time_s": 3005,
+      "avg_heartrate": 133,
+      "segments": 0
+    },
+    {
+      "id": "23840985096",
+      "date": "2026-05-23",
+      "sport": "virtual_ride",
+      "name": "Villanueva Ciclismo virtual",
+      "distance_m": 28145.1,
+      "moving_time_s": 3120,
+      "avg_heartrate": 123,
+      "avg_pace_s_per_km": 139,
+      "segments": 0
+    },
+    {
+      "id": "22995185785",
+      "date": "2026-05-24",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 7790.46,
+      "moving_time_s": 3511,
+      "avg_heartrate": 136,
+      "segments": 0
+    },
+    {
+      "id": "23011450199",
+      "date": "2026-05-25",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 574,
+      "moving_time_s": 948,
+      "avg_heartrate": 107,
+      "segments": 0
+    },
+    {
+      "id": "23023309653",
+      "date": "2026-05-26",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1204,
+      "moving_time_s": 1838,
+      "avg_heartrate": 118,
+      "segments": 0
+    },
+    {
+      "id": "23840985077",
+      "date": "2026-05-27",
+      "sport": "virtual_ride",
+      "name": "Mendocino County Ciclismo virtual",
+      "distance_m": 22462.43,
+      "moving_time_s": 3600,
+      "avg_heartrate": 114,
+      "avg_pace_s_per_km": 163,
+      "segments": 0
+    },
+    {
+      "id": "23047453560",
+      "date": "2026-05-28",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1694,
+      "moving_time_s": 2459,
+      "avg_heartrate": 119,
+      "segments": 0
+    },
+    {
+      "id": "23084055937",
+      "date": "2026-05-31",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 4701.16,
+      "moving_time_s": 1628,
+      "avg_heartrate": 139,
+      "segments": 0
+    },
+    {
+      "id": "23840985056",
+      "date": "2026-05-31",
+      "sport": "virtual_ride",
+      "name": "Townsville Ciclismo virtual",
+      "distance_m": 18075.21,
+      "moving_time_s": 2700,
+      "avg_heartrate": 111,
+      "avg_pace_s_per_km": 151,
+      "segments": 0
+    },
+    {
+      "id": "23094865576",
+      "date": "2026-06-01",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 3019,
+      "avg_heartrate": 86,
+      "segments": 0
+    },
+    {
+      "id": "23108116516",
+      "date": "2026-06-02",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1862,
+      "moving_time_s": 2685,
+      "avg_heartrate": 124,
+      "segments": 0
+    },
+    {
+      "id": "23120201788",
+      "date": "2026-06-03",
+      "sport": "indoor_cycling",
+      "name": "Ciclismo en sala",
+      "avg_heartrate": 115,
+      "segments": 0
+    },
+    {
+      "id": "23840985092",
+      "date": "2026-06-04",
+      "sport": "virtual_ride",
+      "name": "Zurich Ciclismo virtual",
+      "distance_m": 28389.33,
+      "moving_time_s": 3900,
+      "avg_heartrate": 109,
+      "avg_pace_s_per_km": 140,
+      "segments": 0
+    },
+    {
+      "id": "23156160050",
+      "date": "2026-06-06",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1554,
+      "moving_time_s": 2458,
+      "avg_heartrate": 122,
+      "segments": 0
+    },
+    {
+      "id": "23168674746",
+      "date": "2026-06-07",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 4214.79,
+      "moving_time_s": 1464,
+      "avg_heartrate": 137,
+      "segments": 0
+    },
+    {
+      "id": "23840985076",
+      "date": "2026-06-07",
+      "sport": "virtual_ride",
+      "name": "Perth Ciclismo virtual",
+      "distance_m": 15691.42,
+      "moving_time_s": 3300,
+      "avg_heartrate": 114,
+      "avg_pace_s_per_km": 212,
+      "segments": 0
+    },
+    {
+      "id": "23179697647",
+      "date": "2026-06-08",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 1310,
+      "avg_heartrate": 87,
+      "segments": 0
+    },
+    {
+      "id": "23199700185",
+      "date": "2026-06-10",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1820,
+      "moving_time_s": 2697,
+      "avg_heartrate": 123,
+      "segments": 0
+    },
+    {
+      "id": "23233487600",
+      "date": "2026-06-13",
+      "sport": "open_water_swimming",
+      "name": "Alcanar Natación en aguas abiertas",
+      "distance_m": 1169.11,
+      "moving_time_s": 1747,
+      "avg_heartrate": 137,
+      "segments": 0
+    },
+    {
+      "id": "23250684400",
+      "date": "2026-06-14",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 11042.76,
+      "moving_time_s": 4232,
+      "avg_heartrate": 133,
+      "segments": 0
+    },
+    {
+      "id": "23261175294",
+      "date": "2026-06-15",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 557,
+      "avg_heartrate": 98,
+      "segments": 0
+    },
+    {
+      "id": "23840985101",
+      "date": "2026-06-16",
+      "sport": "virtual_ride",
+      "name": "Ciclismo virtual",
+      "distance_m": 23349.81,
+      "moving_time_s": 4500,
+      "avg_heartrate": 107,
+      "avg_pace_s_per_km": 193,
+      "segments": 0
+    },
+    {
+      "id": "23840985110",
+      "date": "2026-06-18",
+      "sport": "virtual_ride",
+      "name": "Um Jder Al Saman Ciclismo virtual",
+      "distance_m": 24532.62,
+      "moving_time_s": 4200,
+      "avg_heartrate": 110,
+      "avg_pace_s_per_km": 173,
+      "segments": 0
+    },
+    {
+      "id": "23316516537",
+      "date": "2026-06-20",
+      "sport": "open_water_swimming",
+      "name": "Alcanar Natación en aguas abiertas",
+      "distance_m": 1607.12,
+      "moving_time_s": 2785,
+      "avg_heartrate": 137,
+      "segments": 0
+    },
+    {
+      "id": "23333709898",
+      "date": "2026-06-21",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 7819.75,
+      "moving_time_s": 3071,
+      "avg_heartrate": 130,
+      "segments": 0
+    },
+    {
+      "id": "23840985124",
+      "date": "2026-06-22",
+      "sport": "virtual_ride",
+      "name": "Bruges Ciclismo virtual",
+      "distance_m": 37345.3,
+      "moving_time_s": 5040,
+      "avg_heartrate": 107,
+      "avg_pace_s_per_km": 136,
+      "segments": 0
+    },
+    {
+      "id": "23356288937",
+      "date": "2026-06-23",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1764,
+      "moving_time_s": 2592,
+      "avg_heartrate": 116,
+      "segments": 0
+    },
+    {
+      "id": "23840985109",
+      "date": "2026-06-24",
+      "sport": "virtual_ride",
+      "name": "Mahdha Ciclismo virtual",
+      "distance_m": 30934.77,
+      "moving_time_s": 4500,
+      "avg_heartrate": 109,
+      "avg_pace_s_per_km": 147,
+      "segments": 0
+    },
+    {
+      "id": "23395953215",
+      "date": "2026-06-26",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 1155,
+      "avg_heartrate": 83,
+      "segments": 0
+    },
+    {
+      "id": "23840985123",
+      "date": "2026-06-28",
+      "sport": "virtual_ride",
+      "name": "Sydney Ciclismo virtual",
+      "distance_m": 29344.6,
+      "moving_time_s": 3900,
+      "avg_heartrate": 116,
+      "avg_pace_s_per_km": 146,
+      "segments": 0
+    },
+    {
+      "id": "23430315882",
+      "date": "2026-06-30",
+      "sport": "open_water_swimming",
+      "name": "Thira Natación en aguas abiertas",
+      "distance_m": 339.86,
+      "moving_time_s": 534,
+      "avg_heartrate": 129,
+      "segments": 0
+    },
+    {
+      "id": "23472745513",
+      "date": "2026-07-04",
+      "sport": "open_water_swimming",
+      "name": "Milos Natación en aguas abiertas",
+      "distance_m": 414.03,
+      "moving_time_s": 658,
+      "avg_heartrate": 132,
+      "segments": 0
+    },
+    {
+      "id": "23840985114",
+      "date": "2026-07-07",
+      "sport": "virtual_ride",
+      "name": "Al Gharbia Ciclismo virtual",
+      "distance_m": 19944.6,
+      "moving_time_s": 4200,
+      "avg_heartrate": 111,
+      "avg_pace_s_per_km": 211,
+      "segments": 0
+    },
+    {
+      "id": "23527817201",
+      "date": "2026-07-08",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1078,
+      "moving_time_s": 1672,
+      "avg_heartrate": 128,
+      "segments": 0
+    },
+    {
+      "id": "23539867586",
+      "date": "2026-07-09",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 7017.31,
+      "moving_time_s": 2728,
+      "avg_heartrate": 134,
+      "segments": 0
+    },
+    {
+      "id": "23560454009",
+      "date": "2026-07-11",
+      "sport": "hiking",
+      "name": "Canfranc Senderismo",
+      "distance_m": 10339.91,
+      "moving_time_s": 8096,
+      "avg_heartrate": 105,
+      "segments": 0
+    },
+    {
+      "id": "23575000807",
+      "date": "2026-07-12",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 3713.6,
+      "moving_time_s": 1232,
+      "avg_heartrate": 142,
+      "segments": 0
+    },
+    {
+      "id": "23840985104",
+      "date": "2026-07-12",
+      "sport": "virtual_ride",
+      "name": "Ghent Ciclismo virtual",
+      "distance_m": 21247.15,
+      "moving_time_s": 3900,
+      "avg_heartrate": 114,
+      "avg_pace_s_per_km": 184,
+      "segments": 0
+    },
+    {
+      "id": "23587248356",
+      "date": "2026-07-13",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 935,
+      "avg_heartrate": 92,
+      "segments": 0
+    },
+    {
+      "id": "23598368898",
+      "date": "2026-07-14",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1498,
+      "moving_time_s": 2364,
+      "avg_heartrate": 122,
+      "segments": 0
+    },
+    {
+      "id": "23840985112",
+      "date": "2026-07-15",
+      "sport": "virtual_ride",
+      "name": "Montlay-en-Auxois Ciclismo virtual",
+      "distance_m": 22588.51,
+      "moving_time_s": 3600,
+      "avg_heartrate": 116,
+      "avg_pace_s_per_km": 161,
+      "segments": 0
+    },
+    {
+      "id": "23623484131",
+      "date": "2026-07-16",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 9276.18,
+      "moving_time_s": 3759,
+      "avg_heartrate": 137,
+      "segments": 0
+    },
+    {
+      "id": "23651238396",
+      "date": "2026-07-19",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1392,
+      "moving_time_s": 1648,
+      "avg_heartrate": 117,
+      "segments": 0
+    },
+    {
+      "id": "23669530065",
+      "date": "2026-07-20",
+      "sport": "strength_training",
+      "name": "Fuerza",
+      "moving_time_s": 940,
+      "avg_heartrate": 85,
+      "segments": 0
+    },
+    {
+      "id": "23698716738",
+      "date": "2026-07-22",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 8963.05,
+      "moving_time_s": 3700,
+      "avg_heartrate": 134,
+      "segments": 0
+    },
+    {
+      "id": "23719455178",
+      "date": "2026-07-24",
+      "sport": "running",
+      "name": "Moncofa Carrera",
+      "distance_m": 5598.58,
+      "moving_time_s": 2101,
+      "avg_heartrate": 143,
+      "segments": 0
+    },
+    {
+      "id": "23737393438",
+      "date": "2026-07-26",
+      "sport": "open_water_swimming",
+      "name": "Moncofa Natación en aguas abiertas",
+      "distance_m": 422.88,
+      "moving_time_s": 759,
+      "avg_heartrate": 138,
+      "segments": 0
+    },
+    {
+      "id": "23837299058",
+      "date": "2026-07-27",
+      "sport": "virtual_ride",
+      "name": "Adliswil Ciclismo virtual",
+      "distance_m": 25519.32,
+      "moving_time_s": 3600,
+      "avg_pace_s_per_km": 143,
+      "segments": 0
+    },
+    {
+      "id": "23765318045",
+      "date": "2026-07-28",
+      "sport": "lap_swimming",
+      "name": "Natación en piscina",
+      "distance_m": 1666,
+      "moving_time_s": 2544,
+      "avg_heartrate": 130,
+      "segments": 0
+    },
+    {
+      "id": "23772203870",
+      "date": "2026-07-29",
+      "sport": "running",
+      "name": "Zaragoza Carrera",
+      "distance_m": 6950.03,
+      "moving_time_s": 2587,
+      "avg_heartrate": 133,
+      "segments": 0
+    },
+    {
+      "id": "23828843055",
+      "date": "2026-08-02",
+      "sport": "running",
+      "name": "Alcanar Carrera",
+      "distance_m": 10099.69,
+      "moving_time_s": 3872,
+      "avg_heartrate": 135,
+      "segments": 0
+    },
+    {
+      "id": "23839652896",
+      "date": "2026-08-03",
+      "sport": "open_water_swimming",
+      "name": "Alcanar Natación en aguas abiertas",
+      "distance_m": 1703.1,
+      "moving_time_s": 3123,
+      "avg_heartrate": 126,
+      "avg_pace_s_per_km": 2101,
+      "segments": 10
+    }
+  ]
+}

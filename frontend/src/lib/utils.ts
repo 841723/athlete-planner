@@ -1,4 +1,4 @@
-import { format, parseISO, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, getWeek } from "date-fns";
+import { format, parseISO, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { SportCategory, SPORT_CATEGORIES, SPORT_COLORS, SPORT_LABELS, Session } from "@/types/session";
 
 export function formatDistance(meters: number | undefined): string {
@@ -11,7 +11,7 @@ export function formatDuration(seconds: number | undefined): string {
   if (seconds == null) return "—";
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
@@ -20,7 +20,7 @@ export function formatDuration(seconds: number | undefined): string {
 export function formatPace(paceSperKm: number | undefined): string {
   if (paceSperKm == null) return "—";
   const min = Math.floor(paceSperKm / 60);
-  const sec = paceSperKm % 60;
+  const sec = Math.floor(paceSperKm % 60);
   return `${min}:${sec.toString().padStart(2, "0")} min/km`;
 }
 
@@ -64,8 +64,21 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+export const TRAINING_WEEK_ONE_START = "2026-05-11";
+
+export function formatNumber(value: number | undefined | null, maxDecimals = 0): string {
+  if (value == null || !isFinite(value)) return "—";
+  const fixed = maxDecimals > 0 ? Number(value.toFixed(maxDecimals)) : Math.round(value);
+  const parts = String(fixed).split(".");
+  const int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.length > 1 ? `${int},${parts[1]}` : int;
+}
+
 export function getWeekNumber(date: Date): number {
-  return getWeek(date, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+  const anchor = parseISO(TRAINING_WEEK_ONE_START);
+  const diffDays = differenceInDays(weekStart, anchor);
+  return Math.floor(diffDays / 7) + 1;
 }
 
 export function getWeekStart(date: Date): Date {

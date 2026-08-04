@@ -10,6 +10,7 @@ interface CalendarDayProps {
   sessions: SessionWithStatus[];
   goal?: RaceGoal;
   onClick: (session: Session) => void;
+  dimmed?: boolean;
 }
 
 function getCellBackground(sessions: SessionWithStatus[]): CSSProperties | undefined {
@@ -29,7 +30,7 @@ function getCellBackground(sessions: SessionWithStatus[]): CSSProperties | undef
   return { backgroundImage: `linear-gradient(135deg, ${stops})` };
 }
 
-export function CalendarDay({ date, sessions, goal, onClick }: CalendarDayProps) {
+export function CalendarDay({ date, sessions, goal, onClick, dimmed }: CalendarDayProps) {
   const dateStr = format(date, "yyyy-MM-dd");
   const isToday = dateStr === format(new Date(), "yyyy-MM-dd");
   const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -37,7 +38,7 @@ export function CalendarDay({ date, sessions, goal, onClick }: CalendarDayProps)
 
   return (
     <div
-      className={`min-h-[80px] lg:min-h-[100px] p-2 rounded-xl transition-all cursor-pointer ${
+      className={`min-h-[80px] lg:min-h-[100px] p-2 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
         isToday
           ? "border-4 border-[#C8102E] ring-2 ring-[#C8102E]/30"
           : goal
@@ -45,7 +46,7 @@ export function CalendarDay({ date, sessions, goal, onClick }: CalendarDayProps)
           : isPast
           ? "border-2 border-dark-400"
           : "border-2 border-dark-400/50 hover:border-dark-400/80"
-      }`}
+      } ${dimmed ? "opacity-30" : ""}`}
       style={background}
       onClick={() => {
         if (sessions.length === 1) onClick(sessions[0]);
@@ -89,7 +90,7 @@ export function CalendarDay({ date, sessions, goal, onClick }: CalendarDayProps)
                 }}
               />
               <span className={`truncate flex-1 font-medium ${isPlanned ? "text-white/60" : "text-white"}`}>
-                {label}
+                {s.title ?? s.name}
               </span>
               {isPlanned && (
                 <span className="text-[9px] uppercase tracking-wide text-white/40 flex-shrink-0">

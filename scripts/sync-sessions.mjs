@@ -4,14 +4,22 @@ import path from "node:path";
 
 const args = process.argv.slice(2);
 const force = args.includes("--force");
-const rest = args.filter((a) => a !== "--force");
+const idsOnly = new Set();
+for (const a of args) {
+  if (a.startsWith("--ids=")) {
+    for (const id of a.slice("--ids=".length).split(",")) {
+      if (id) idsOnly.add(String(id));
+    }
+  }
+}
+const rest = args.filter((a) => a !== "--force" && !a.startsWith("--ids="));
 
 // Solo se sincronizan entrenamientos desde esta fecha (inclusive).
 const MIN_DATE = "2026-05-12";
 
 const [listPath, detailsDir, sessionsDir = "sessions"] = rest;
 if (!listPath || !detailsDir) {
-  console.error("Uso: node scripts/sync-sessions.mjs <list.json> <detailsDir> [sessionsDir] [--force]");
+  console.error("Uso: node scripts/sync-sessions.mjs <list.json> <detailsDir> [sessionsDir] [--force] [--ids=id1,id2]");
   process.exit(1);
 }
 
@@ -63,7 +71,7 @@ const BEST_EFFORT_KEYS = [
 
 function summary(a) {
   const s = {
-    schema_version: 2,
+    schema_version: 4,
     id: String(a.activityId),
     sport: a.activityType?.typeKey,
     name: a.activityName,
@@ -94,6 +102,8 @@ function summary(a) {
   if (maxW) s.max_watts = Math.round(maxW);
   const elev = num(a.elevationGain?.meters);
   if (elev) s.total_elevation_gain_m = Math.round(elev);
+  const elevLoss = num(a.elevationLoss);
+  if (elevLoss) s.total_elevation_loss_m = Math.round(elevLoss);
   const tMin = num(a.minTemperature);
   const tMax = num(a.maxTemperature);
   if (tMin !== undefined && tMax !== undefined) s.average_temp_c = round((tMin + tMax) / 2, 1);
@@ -112,8 +122,22 @@ function bestEfforts(a) {
   return best;
 }
 
-function segments(a) {
-  const laps = a?.data?.splits?.lapDTOs ?? [];
+function selfEvaluation(d) {
+  const summaryDto =
+    d?.data?.activity?.summaryDTO ??
+    d?.data?.summaryDTO ??
+    d?.data?.activity?.metadataDTO ??
+    {};
+  const rpe = num(summaryDto.directWorkoutRpe);
+  const feel = num(summaryDto.directWorkoutFeel);
+  const result = {};
+  if (rpe !== undefined) result.rpe = Math.round(rpe);
+  if (feel !== undefined) result.feel = Math.round(feel);
+  return Object.keys(result).length ? result : undefined;
+}
+
+function segments(d) {
+  const laps = d?.data?.splits?.lapDTOs ?? [];
   const segs = [];
   for (const lap of laps) {
     const distance = num(lap.distance);
@@ -124,16 +148,104 @@ function segments(a) {
     if (dur) seg.time_s = Math.round(dur);
     const speed = num(lap.averageSpeed);
     if (speed) {
+      seg.avg_speed_ms = round(speed, 3);
       const pace = pacePerKm(speed);
       if (pace !== undefined) seg.avg_pace_s_per_km = pace;
     }
+    const maxSpeed = num(lap.maxSpeed);
+    if (maxSpeed) seg.max_speed_ms = round(maxSpeed, 3);
     const avgHr = num(lap.averageHR);
     const maxHr = num(lap.maxHR);
     if (avgHr) seg.avg_heartrate = Math.round(avgHr);
     if (maxHr) seg.max_heartrate = Math.round(maxHr);
+    const avgW = num(lap.averagePower);
+    const maxW = num(lap.maxPower);
+    if (avgW) seg.avg_watts = Math.round(avgW);
+    if (maxW) seg.max_watts = Math.round(maxW);
+    const elev = num(lap.elevationGain);
+    if (elev) seg.total_elevation_gain_m = Math.round(elev);
+    const elevLoss = num(lap.elevationLoss);
+    if (elevLoss) seg.total_elevation_loss_m = Math.round(elevLoss);
+    if (lap.intensityType) seg.intensity = lap.intensityType;
     segs.push(seg);
   }
   return segs;
+}
+
+function hrZones(d) {  const zones = d?.data?.hr_zones ?? [];
+  if (!zones.length) return undefined;
+  return zones.map((z) => ({
+    zoneNumber: z.zoneNumber,
+    zoneLowBoundary: z.zoneLowBoundary,
+    secsInZone: Math.round(z.secsInZone ?? 0),
+  }));
+}
+
+function hrZoneForAvg(d, avgHr) {
+  const zones = d?.data?.hr_zones ?? [];
+  if (!zones.length || avgHr == null) return null;
+  let zone = null;
+  for (const z of zones) {
+    if (avgHr >= z.zoneLowBoundary) zone = z.zoneNumber;
+  }
+  return zone;
+}
+
+function detectIntervals(d, segs) {
+  const hasInt = d?.data?.activity?.hasIntensityIntervals;
+  const laps = d?.data?.splits?.lapDTOs ?? [];
+  const hasRest = laps.some((l) => l.intensityType === "REST");
+  if (!hasInt && !hasRest) return null;
+  const active = segs.filter((s) => s.intensity === "ACTIVE");
+  const counts = {};
+  for (const s of active) {
+    const key = Math.round(s.distance_m / 100) * 100;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  let best = null;
+  let bestCount = 0;
+  for (const [dist, count] of Object.entries(counts)) {
+    if (count > bestCount) {
+      bestCount = count;
+      best = Number(dist);
+    }
+  }
+  return bestCount >= 2 ? best : null;
+}
+
+function interpretTitle(a, d, segs) {
+  const sport = a.sport;
+  const zone = hrZoneForAvg(d, a.avg_heartrate);
+  const zlabel = zone ? `Z${zone}` : null;
+  const intervalDist = detectIntervals(d, segs);
+
+  if (sport === "open_water_swimming") {
+    return intervalDist ? `Series de ${intervalDist}m aguas abiertas` : "Natación aguas abiertas";
+  }
+  if (sport === "lap_swimming" || sport === "swimming") {
+    return intervalDist ? `Series de ${intervalDist}m piscina` : "Natación piscina";
+  }
+  if (sport === "strength_training" || sport === "strength") return "Fuerza";
+  if (sport === "hiking") return "Senderismo";
+  if (sport === "walking") return "Caminata";
+
+  if (sport === "running") {
+    if (intervalDist) return `Series de ${intervalDist}m`;
+    return zlabel ? `Carrera en ${zlabel}` : "Carrera";
+  }
+
+  if (sport === "cycling" || sport === "virtual_ride" || sport === "indoor_cycling") {
+    if (intervalDist) return `Series de ${intervalDist}m en bici`;
+    const base =
+      sport === "virtual_ride" ? "Bici virtual" : sport === "indoor_cycling" ? "Bici indoor" : "Bici";
+    const distKm = a.distance_m ? a.distance_m / 1000 : 0;
+    const elevPerKm =
+      distKm > 0 && a.total_elevation_gain_m != null ? a.total_elevation_gain_m / distKm : null;
+    const label = base === "Bici" && elevPerKm != null && elevPerKm < 10 ? "Bici llana" : base;
+    return zlabel ? `${label} en ${zlabel}` : label;
+  }
+
+  return null;
 }
 
 let written = 0;
@@ -147,15 +259,34 @@ for (const a of activities) {
     filtered++;
     continue;
   }
+  if (idsOnly.size && !idsOnly.has(id)) {
+    skipped++;
+    continue;
+  }
   if (!force && existing.has(id)) {
     skipped++;
     continue;
   }
   const session = summary(a);
-  session.segments = segments(details.get(id));
+  const d = details.get(id);
+  session.segments = segments(d);
   session.best_efforts = bestEfforts(a);
+  const zones = hrZones(d);
+  if (zones) session.hr_zones = zones;
+  const self = selfEvaluation(d);
+  if (self) Object.assign(session, self);
+  const title = interpretTitle(session, d, session.segments);
+  if (title) session.title = title;
   const date = (session.start_date_local ?? "").slice(0, 10).replace(/-/g, "") || "sinfecha";
   const file = path.join(sessionsDir, `${date}-${id}-${slugify(session.name)}.json`);
+  if (force && fs.existsSync(file)) {
+    try {
+      const old = JSON.parse(fs.readFileSync(file, "utf8"));
+      if (old.title) session.title = old.title;
+    } catch {
+      /* ignorar archivo previo inválido */
+    }
+  }
   fs.writeFileSync(file, JSON.stringify(session, null, 2) + "\n");
   written++;
   if (!details.has(id)) missing++;
