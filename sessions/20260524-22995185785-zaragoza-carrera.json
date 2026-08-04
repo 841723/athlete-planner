@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "22995185785",
   "sport": "running",
   "name": "Zaragoza Carrera",
@@ -8,15 +8,123 @@
   "moving_time_s": 3511,
   "elapsed_time_s": 3519,
   "avg_speed_ms": 2.214,
+  "avg_pace_s_per_km": 452,
   "max_speed_ms": 2.827,
   "avg_heartrate": 136,
   "max_heartrate": 146,
   "avg_watts": 252,
   "max_watts": 364,
   "total_elevation_gain_m": 26,
+  "total_elevation_loss_m": 24,
   "average_temp_c": 36,
   "training_effect": 2.4,
   "calories_kcal": 574,
+  "segments": [
+    {
+      "distance_m": 1000,
+      "time_s": 418,
+      "avg_speed_ms": 2.394,
+      "avg_pace_s_per_km": 418,
+      "max_speed_ms": 2.827,
+      "avg_heartrate": 125,
+      "max_heartrate": 137,
+      "avg_watts": 282,
+      "max_watts": 352,
+      "total_elevation_gain_m": 7,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 420,
+      "avg_speed_ms": 2.379,
+      "avg_pace_s_per_km": 420,
+      "max_speed_ms": 2.585,
+      "avg_heartrate": 135,
+      "max_heartrate": 139,
+      "avg_watts": 276,
+      "max_watts": 364,
+      "total_elevation_gain_m": 6,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 435,
+      "avg_speed_ms": 2.298,
+      "avg_pace_s_per_km": 435,
+      "max_speed_ms": 2.473,
+      "avg_heartrate": 137,
+      "max_heartrate": 140,
+      "avg_watts": 255,
+      "max_watts": 293,
+      "total_elevation_gain_m": 4,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 442,
+      "avg_speed_ms": 2.26,
+      "avg_pace_s_per_km": 442,
+      "max_speed_ms": 2.342,
+      "avg_heartrate": 137,
+      "max_heartrate": 141,
+      "avg_watts": 256,
+      "max_watts": 285,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 457,
+      "avg_speed_ms": 2.189,
+      "avg_pace_s_per_km": 457,
+      "max_speed_ms": 2.277,
+      "avg_heartrate": 138,
+      "max_heartrate": 141,
+      "avg_watts": 252,
+      "max_watts": 296,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 461,
+      "avg_speed_ms": 2.171,
+      "avg_pace_s_per_km": 461,
+      "max_speed_ms": 2.295,
+      "avg_heartrate": 138,
+      "max_heartrate": 142,
+      "avg_watts": 248,
+      "max_watts": 312,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 487,
+      "avg_speed_ms": 2.052,
+      "avg_pace_s_per_km": 487,
+      "max_speed_ms": 2.202,
+      "avg_heartrate": 140,
+      "max_heartrate": 145,
+      "avg_watts": 234,
+      "max_watts": 274,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 790.46,
+      "time_s": 398,
+      "avg_speed_ms": 1.985,
+      "avg_pace_s_per_km": 504,
+      "max_speed_ms": 2.202,
+      "avg_heartrate": 136,
+      "max_heartrate": 146,
+      "avg_watts": 213,
+      "max_watts": 266,
+      "total_elevation_gain_m": 3,
+      "intensity": "ACTIVE"
+    }
+  ],
   "best_efforts": [
     {
       "name": "1K",
@@ -33,5 +141,35 @@
       "distance_m": 5000,
       "elapsed_time_s": 2165
     }
-  ]
+  ],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 99,
+      "secsInZone": 82
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 117,
+      "secsInZone": 2187
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 139,
+      "secsInZone": 1229
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 158,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 178,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 60,
+  "feel": 25,
+  "title": "Carrera en Z2"
 }

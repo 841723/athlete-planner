@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985109",
   "sport": "virtual_ride",
   "name": "Mahdha Ciclismo virtual",
@@ -15,7 +15,139 @@
   "avg_watts": 114,
   "max_watts": 177,
   "total_elevation_gain_m": 138,
+  "total_elevation_loss_m": 114,
   "calories_kcal": 521,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 3255.91,
+      "time_s": 600,
+      "avg_speed_ms": 5.417,
+      "avg_pace_s_per_km": 185,
+      "max_speed_ms": 9.484,
+      "avg_heartrate": 93,
+      "max_heartrate": 106,
+      "avg_watts": 80,
+      "max_watts": 154,
+      "total_elevation_gain_m": 6,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 6412.75,
+      "time_s": 900,
+      "avg_speed_ms": 7.117,
+      "avg_pace_s_per_km": 141,
+      "max_speed_ms": 11.661,
+      "avg_heartrate": 113,
+      "max_heartrate": 124,
+      "avg_watts": 134,
+      "max_watts": 155,
+      "total_elevation_gain_m": 23,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2225.3,
+      "time_s": 300,
+      "avg_speed_ms": 7.393,
+      "avg_pace_s_per_km": 135,
+      "max_speed_ms": 10.532,
+      "avg_heartrate": 105,
+      "max_heartrate": 120,
+      "avg_watts": 90,
+      "max_watts": 177,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 6518.56,
+      "time_s": 900,
+      "avg_speed_ms": 7.235,
+      "avg_pace_s_per_km": 138,
+      "max_speed_ms": 15.973,
+      "avg_heartrate": 117,
+      "max_heartrate": 123,
+      "avg_watts": 134,
+      "max_watts": 148,
+      "total_elevation_gain_m": 56,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2265.55,
+      "time_s": 300,
+      "avg_speed_ms": 7.527,
+      "avg_pace_s_per_km": 133,
+      "max_speed_ms": 11.706,
+      "avg_heartrate": 104,
+      "max_heartrate": 119,
+      "avg_watts": 89,
+      "max_watts": 141,
+      "total_elevation_gain_m": 4,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 6491.05,
+      "time_s": 900,
+      "avg_speed_ms": 7.204,
+      "avg_pace_s_per_km": 139,
+      "max_speed_ms": 12.506,
+      "avg_heartrate": 116,
+      "max_heartrate": 124,
+      "avg_watts": 135,
+      "max_watts": 159,
+      "total_elevation_gain_m": 20,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2043.91,
+      "time_s": 300,
+      "avg_speed_ms": 6.79,
+      "avg_pace_s_per_km": 147,
+      "max_speed_ms": 8.846,
+      "avg_heartrate": 104,
+      "max_heartrate": 122,
+      "avg_watts": 90,
+      "max_watts": 135,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1525.6,
+      "time_s": 300,
+      "avg_speed_ms": 5.068,
+      "avg_pace_s_per_km": 197,
+      "max_speed_ms": 5.819,
+      "avg_heartrate": 101,
+      "max_heartrate": 104,
+      "avg_watts": 90,
+      "max_watts": 125,
+      "total_elevation_gain_m": 5,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 146
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

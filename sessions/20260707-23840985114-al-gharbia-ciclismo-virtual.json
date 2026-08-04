@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985114",
   "sport": "virtual_ride",
   "name": "Al Gharbia Ciclismo virtual",
@@ -15,7 +15,128 @@
   "avg_watts": 115,
   "max_watts": 360,
   "total_elevation_gain_m": 400,
+  "total_elevation_loss_m": 325,
   "calories_kcal": 486,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 1525.18,
+      "time_s": 600,
+      "avg_speed_ms": 2.538,
+      "avg_pace_s_per_km": 394,
+      "max_speed_ms": 13.185,
+      "avg_heartrate": 92,
+      "max_heartrate": 101,
+      "avg_watts": 87,
+      "max_watts": 145,
+      "total_elevation_gain_m": 47,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4840.25,
+      "time_s": 900,
+      "avg_speed_ms": 5.372,
+      "avg_pace_s_per_km": 186,
+      "max_speed_ms": 17.079,
+      "avg_heartrate": 111,
+      "max_heartrate": 122,
+      "avg_watts": 129,
+      "max_watts": 360,
+      "total_elevation_gain_m": 91,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1603.74,
+      "time_s": 300,
+      "avg_speed_ms": 5.328,
+      "avg_pace_s_per_km": 188,
+      "max_speed_ms": 14.516,
+      "avg_heartrate": 107,
+      "max_heartrate": 118,
+      "avg_watts": 91,
+      "max_watts": 129,
+      "total_elevation_gain_m": 15,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5737.84,
+      "time_s": 900,
+      "avg_speed_ms": 6.368,
+      "avg_pace_s_per_km": 157,
+      "max_speed_ms": 16.139,
+      "avg_heartrate": 117,
+      "max_heartrate": 125,
+      "avg_watts": 130,
+      "max_watts": 169,
+      "total_elevation_gain_m": 70,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 467.29,
+      "time_s": 300,
+      "avg_speed_ms": 1.552,
+      "avg_pace_s_per_km": 644,
+      "max_speed_ms": 8.808,
+      "avg_heartrate": 109,
+      "max_heartrate": 118,
+      "avg_watts": 90,
+      "max_watts": 188,
+      "total_elevation_gain_m": 28,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4686.6,
+      "time_s": 900,
+      "avg_speed_ms": 5.202,
+      "avg_pace_s_per_km": 192,
+      "max_speed_ms": 17.053,
+      "avg_heartrate": 119,
+      "max_heartrate": 127,
+      "avg_watts": 130,
+      "max_watts": 215,
+      "total_elevation_gain_m": 88,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1069.68,
+      "time_s": 300,
+      "avg_speed_ms": 3.554,
+      "avg_pace_s_per_km": 281,
+      "max_speed_ms": 12.279,
+      "avg_heartrate": 111,
+      "max_heartrate": 129,
+      "avg_watts": 90,
+      "max_watts": 136,
+      "total_elevation_gain_m": 26,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 483
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

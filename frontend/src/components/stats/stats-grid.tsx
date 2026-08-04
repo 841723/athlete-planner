@@ -150,7 +150,7 @@ export function StatsGrid() {
     const all = [...data.completed];
 
     const sportSessions: Record<SportCategory, Session[]> = {
-      running: [], cycling: [], swimming: [], strength: [], hiking: [], walking: [], other: [],
+      running: [], cycling: [], swimming: [], strength: [], hiking: [], walking: [], padel: [], other: [],
     };
     for (const s of all) {
       sportSessions[getSportCategory(s.sport)].push(s);
@@ -171,6 +171,7 @@ export function StatsGrid() {
       strength: buildSportStats("strength", sportSessions.strength, all),
       hiking: buildSportStats("hiking", sportSessions.hiking, all),
       walking: buildSportStats("walking", sportSessions.walking, all),
+      padel: buildSportStats("padel", sportSessions.padel, all),
       other: buildSportStats("other", sportSessions.other, all),
     };
 
@@ -277,7 +278,7 @@ export function StatsGrid() {
   });
 
   const sportIcon: Record<SportCategory, string> = {
-    running: "🏃", cycling: "🚴", swimming: "🏊", strength: "🏋️", hiking: "🥾", walking: "🚶", other: "🎽",
+    running: "🏃", cycling: "🚴", swimming: "🏊", strength: "🏋️", hiking: "🥾", walking: "🚶", padel: "🎾", other: "🎽",
   };
 
   const running = bySport.running;

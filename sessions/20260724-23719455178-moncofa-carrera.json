@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23719455178",
   "sport": "running",
   "name": "Moncofa Carrera",
@@ -8,15 +8,95 @@
   "moving_time_s": 2101,
   "elapsed_time_s": 2104,
   "avg_speed_ms": 2.662,
+  "avg_pace_s_per_km": 376,
   "max_speed_ms": 3.042,
   "avg_heartrate": 143,
   "max_heartrate": 161,
   "avg_watts": 302,
   "max_watts": 426,
   "total_elevation_gain_m": 10,
+  "total_elevation_loss_m": 11,
   "average_temp_c": 33,
   "training_effect": 3.1,
   "calories_kcal": 438,
+  "segments": [
+    {
+      "distance_m": 1000,
+      "time_s": 379,
+      "avg_speed_ms": 2.636,
+      "avg_pace_s_per_km": 379,
+      "max_speed_ms": 2.818,
+      "avg_heartrate": 132,
+      "max_heartrate": 142,
+      "avg_watts": 295,
+      "max_watts": 426,
+      "total_elevation_gain_m": 5,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 377,
+      "avg_speed_ms": 2.654,
+      "avg_pace_s_per_km": 377,
+      "max_speed_ms": 2.771,
+      "avg_heartrate": 141,
+      "max_heartrate": 147,
+      "avg_watts": 286,
+      "max_watts": 324,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 382,
+      "avg_speed_ms": 2.621,
+      "avg_pace_s_per_km": 382,
+      "max_speed_ms": 2.799,
+      "avg_heartrate": 146,
+      "max_heartrate": 150,
+      "avg_watts": 293,
+      "max_watts": 366,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 391,
+      "avg_speed_ms": 2.555,
+      "avg_pace_s_per_km": 391,
+      "max_speed_ms": 2.678,
+      "avg_heartrate": 141,
+      "max_heartrate": 148,
+      "avg_watts": 297,
+      "max_watts": 335,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 369,
+      "avg_speed_ms": 2.707,
+      "avg_pace_s_per_km": 369,
+      "max_speed_ms": 2.771,
+      "avg_heartrate": 147,
+      "max_heartrate": 159,
+      "avg_watts": 322,
+      "max_watts": 350,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 598.58,
+      "time_s": 205,
+      "avg_speed_ms": 2.918,
+      "avg_pace_s_per_km": 343,
+      "max_speed_ms": 3.042,
+      "avg_heartrate": 156,
+      "max_heartrate": 161,
+      "avg_watts": 337,
+      "max_watts": 364,
+      "intensity": "ACTIVE"
+    }
+  ],
   "best_efforts": [
     {
       "name": "1K",
@@ -33,5 +113,35 @@
       "distance_m": 5000,
       "elapsed_time_s": 1876
     }
-  ]
+  ],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 98,
+      "secsInZone": 23
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 116,
+      "secsInZone": 224
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 137,
+      "secsInZone": 1734
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 157,
+      "secsInZone": 115
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 176,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 60,
+  "feel": 100,
+  "title": "Carrera en Z3"
 }

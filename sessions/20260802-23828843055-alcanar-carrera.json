@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23828843055",
   "sport": "running",
   "name": "Alcanar Carrera",
@@ -8,15 +8,171 @@
   "moving_time_s": 3872,
   "elapsed_time_s": 3876,
   "avg_speed_ms": 2.605,
+  "avg_pace_s_per_km": 384,
   "max_speed_ms": 3.172,
   "avg_heartrate": 135,
   "max_heartrate": 145,
   "avg_watts": 292,
   "max_watts": 412,
   "total_elevation_gain_m": 58,
+  "total_elevation_loss_m": 59,
   "average_temp_c": 33.5,
   "training_effect": 3.2,
   "calories_kcal": 740,
+  "segments": [
+    {
+      "distance_m": 1000,
+      "time_s": 405,
+      "avg_speed_ms": 2.467,
+      "avg_pace_s_per_km": 405,
+      "max_speed_ms": 2.715,
+      "avg_heartrate": 121,
+      "max_heartrate": 130,
+      "avg_watts": 299,
+      "max_watts": 360,
+      "total_elevation_gain_m": 23,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 365,
+      "avg_speed_ms": 2.738,
+      "avg_pace_s_per_km": 365,
+      "max_speed_ms": 2.837,
+      "avg_heartrate": 129,
+      "max_heartrate": 136,
+      "avg_watts": 290,
+      "max_watts": 355,
+      "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 17,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 354,
+      "avg_speed_ms": 2.826,
+      "avg_pace_s_per_km": 354,
+      "max_speed_ms": 3.126,
+      "avg_heartrate": 135,
+      "max_heartrate": 139,
+      "avg_watts": 308,
+      "max_watts": 351,
+      "total_elevation_gain_m": 2,
+      "total_elevation_loss_m": 15,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 376,
+      "avg_speed_ms": 2.656,
+      "avg_pace_s_per_km": 377,
+      "max_speed_ms": 2.837,
+      "avg_heartrate": 138,
+      "max_heartrate": 144,
+      "avg_watts": 292,
+      "max_watts": 412,
+      "total_elevation_gain_m": 6,
+      "total_elevation_loss_m": 8,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 380,
+      "avg_speed_ms": 2.631,
+      "avg_pace_s_per_km": 380,
+      "max_speed_ms": 2.771,
+      "avg_heartrate": 137,
+      "max_heartrate": 141,
+      "avg_watts": 293,
+      "max_watts": 322,
+      "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 388,
+      "avg_speed_ms": 2.574,
+      "avg_pace_s_per_km": 389,
+      "max_speed_ms": 2.687,
+      "avg_heartrate": 137,
+      "max_heartrate": 145,
+      "avg_watts": 284,
+      "max_watts": 319,
+      "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 390,
+      "avg_speed_ms": 2.562,
+      "avg_pace_s_per_km": 390,
+      "max_speed_ms": 2.659,
+      "avg_heartrate": 138,
+      "max_heartrate": 144,
+      "avg_watts": 287,
+      "max_watts": 331,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 403,
+      "avg_speed_ms": 2.479,
+      "avg_pace_s_per_km": 403,
+      "max_speed_ms": 2.669,
+      "avg_heartrate": 136,
+      "max_heartrate": 140,
+      "avg_watts": 280,
+      "max_watts": 341,
+      "total_elevation_gain_m": 9,
+      "total_elevation_loss_m": 9,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 402,
+      "avg_speed_ms": 2.489,
+      "avg_pace_s_per_km": 402,
+      "max_speed_ms": 2.697,
+      "avg_heartrate": 137,
+      "max_heartrate": 141,
+      "avg_watts": 291,
+      "max_watts": 383,
+      "total_elevation_gain_m": 10,
+      "total_elevation_loss_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 374,
+      "avg_speed_ms": 2.676,
+      "avg_pace_s_per_km": 374,
+      "max_speed_ms": 3.172,
+      "avg_heartrate": 139,
+      "max_heartrate": 144,
+      "avg_watts": 293,
+      "max_watts": 360,
+      "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 5,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 99.69,
+      "time_s": 38,
+      "avg_speed_ms": 2.64,
+      "avg_pace_s_per_km": 379,
+      "max_speed_ms": 2.771,
+      "avg_heartrate": 142,
+      "max_heartrate": 143,
+      "avg_watts": 296,
+      "max_watts": 319,
+      "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 1,
+      "intensity": "ACTIVE"
+    }
+  ],
   "best_efforts": [
     {
       "name": "1K",
@@ -38,5 +194,35 @@
       "distance_m": 10000,
       "elapsed_time_s": 3832
     }
-  ]
+  ],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 98,
+      "secsInZone": 22
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 115,
+      "secsInZone": 1882
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 137,
+      "secsInZone": 1954
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 156,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 176,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 60,
+  "feel": 75,
+  "title": "Carrera en Z2"
 }

@@ -5,20 +5,22 @@ export type SportCategory =
   | "strength"
   | "hiking"
   | "walking"
+  | "padel"
   | "other";
 
 export const SPORT_CATEGORIES: Record<string, SportCategory> = {
   running: "running",
+  trail_running: "running",
   cycling: "cycling",
   virtual_ride: "cycling",
   indoor_cycling: "cycling",
-  paddelball: "cycling",
   swimming: "swimming",
   lap_swimming: "swimming",
   open_water_swimming: "swimming",
   strength_training: "strength",
   hiking: "hiking",
   walking: "walking",
+  paddelball: "padel",
   other: "other",
   breathwork: "other",
   assistance: "other",
@@ -34,6 +36,7 @@ export const SPORT_COLORS: Record<SportCategory, string> = {
   strength: "#a1a1aa",
   hiking: "#4ade80",
   walking: "#a78bfa",
+  padel: "#84cc16",
   other: "#6b7280",
 };
 
@@ -44,6 +47,7 @@ export const SPORT_LABELS: Record<SportCategory, string> = {
   strength: "Fuerza",
   hiking: "Senderismo",
   walking: "Caminar",
+  padel: "Padel",
   other: "Otros",
 };
 

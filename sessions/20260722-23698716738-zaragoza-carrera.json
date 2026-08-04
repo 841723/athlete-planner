@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23698716738",
   "sport": "running",
   "name": "Zaragoza Carrera",
@@ -8,15 +8,135 @@
   "moving_time_s": 3700,
   "elapsed_time_s": 3715,
   "avg_speed_ms": 2.413,
+  "avg_pace_s_per_km": 414,
   "max_speed_ms": 3.9,
   "avg_heartrate": 134,
   "max_heartrate": 152,
   "avg_watts": 265,
   "max_watts": 473,
   "total_elevation_gain_m": 28,
+  "total_elevation_loss_m": 44,
   "average_temp_c": 34,
   "training_effect": 2.9,
   "calories_kcal": 676,
+  "segments": [
+    {
+      "distance_m": 1000,
+      "time_s": 432,
+      "avg_speed_ms": 2.314,
+      "avg_pace_s_per_km": 432,
+      "max_speed_ms": 2.575,
+      "avg_heartrate": 113,
+      "max_heartrate": 124,
+      "avg_watts": 254,
+      "max_watts": 288,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 418,
+      "avg_speed_ms": 2.392,
+      "avg_pace_s_per_km": 418,
+      "max_speed_ms": 2.641,
+      "avg_heartrate": 125,
+      "max_heartrate": 130,
+      "avg_watts": 262,
+      "max_watts": 299,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 424,
+      "avg_speed_ms": 2.358,
+      "avg_pace_s_per_km": 424,
+      "max_speed_ms": 2.519,
+      "avg_heartrate": 130,
+      "max_heartrate": 141,
+      "avg_watts": 265,
+      "max_watts": 374,
+      "total_elevation_gain_m": 6,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 420,
+      "avg_speed_ms": 2.382,
+      "avg_pace_s_per_km": 420,
+      "max_speed_ms": 2.976,
+      "avg_heartrate": 132,
+      "max_heartrate": 138,
+      "avg_watts": 266,
+      "max_watts": 372,
+      "total_elevation_gain_m": 6,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 399,
+      "avg_speed_ms": 2.506,
+      "avg_pace_s_per_km": 399,
+      "max_speed_ms": 2.65,
+      "avg_heartrate": 138,
+      "max_heartrate": 144,
+      "avg_watts": 272,
+      "max_watts": 306,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 412,
+      "avg_speed_ms": 2.425,
+      "avg_pace_s_per_km": 412,
+      "max_speed_ms": 2.631,
+      "avg_heartrate": 140,
+      "max_heartrate": 148,
+      "avg_watts": 271,
+      "max_watts": 337,
+      "total_elevation_gain_m": 4,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 424,
+      "avg_speed_ms": 2.359,
+      "avg_pace_s_per_km": 424,
+      "max_speed_ms": 2.976,
+      "avg_heartrate": 140,
+      "max_heartrate": 147,
+      "avg_watts": 264,
+      "max_watts": 346,
+      "total_elevation_gain_m": 5,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 396,
+      "avg_speed_ms": 2.523,
+      "avg_pace_s_per_km": 396,
+      "max_speed_ms": 3.9,
+      "avg_heartrate": 143,
+      "max_heartrate": 151,
+      "avg_watts": 268,
+      "max_watts": 473,
+      "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 963.05,
+      "time_s": 388,
+      "avg_speed_ms": 2.479,
+      "avg_pace_s_per_km": 403,
+      "max_speed_ms": 2.585,
+      "avg_heartrate": 142,
+      "max_heartrate": 152,
+      "avg_watts": 268,
+      "max_watts": 302,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    }
+  ],
   "best_efforts": [
     {
       "name": "1K",
@@ -33,5 +153,35 @@
       "distance_m": 5000,
       "elapsed_time_s": 2030
     }
-  ]
+  ],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 99,
+      "secsInZone": 191
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 116,
+      "secsInZone": 1780
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 138,
+      "secsInZone": 1713
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 158,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 177,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 30,
+  "feel": 100,
+  "title": "Carrera en Z2"
 }

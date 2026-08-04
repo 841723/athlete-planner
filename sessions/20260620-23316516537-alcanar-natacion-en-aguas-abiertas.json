@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23316516537",
   "sport": "open_water_swimming",
   "name": "Alcanar Natación en aguas abiertas",
@@ -8,11 +8,134 @@
   "moving_time_s": 2785,
   "elapsed_time_s": 3254,
   "avg_speed_ms": 0.494,
+  "avg_pace_s_per_km": 2024,
   "max_speed_ms": 1.286,
   "avg_heartrate": 137,
   "max_heartrate": 164,
   "average_temp_c": 28,
   "training_effect": 3.2,
   "calories_kcal": 630,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 73.37,
+      "time_s": 95,
+      "avg_speed_ms": 0.768,
+      "avg_pace_s_per_km": 1302,
+      "max_speed_ms": 1.129,
+      "avg_heartrate": 117,
+      "max_heartrate": 122,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 23.75,
+      "time_s": 112,
+      "avg_speed_ms": 0.212,
+      "avg_pace_s_per_km": 4717,
+      "max_speed_ms": 0.482,
+      "avg_heartrate": 115,
+      "max_heartrate": 127,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 394.16,
+      "time_s": 601,
+      "avg_speed_ms": 0.655,
+      "avg_pace_s_per_km": 1527,
+      "max_speed_ms": 0.821,
+      "avg_heartrate": 130,
+      "max_heartrate": 164,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 43.09,
+      "time_s": 120,
+      "avg_speed_ms": 0.359,
+      "avg_pace_s_per_km": 2786,
+      "max_speed_ms": 0.511,
+      "avg_heartrate": 128,
+      "max_heartrate": 150,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 359.73,
+      "time_s": 604,
+      "avg_speed_ms": 0.596,
+      "avg_pace_s_per_km": 1678,
+      "max_speed_ms": 1.125,
+      "avg_heartrate": 136,
+      "max_heartrate": 153,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 22.05,
+      "time_s": 158,
+      "avg_speed_ms": 0.139,
+      "avg_pace_s_per_km": 7194,
+      "max_speed_ms": 0.413,
+      "avg_heartrate": 124,
+      "max_heartrate": 149,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 252.41,
+      "time_s": 652,
+      "avg_speed_ms": 0.387,
+      "avg_pace_s_per_km": 2584,
+      "max_speed_ms": 0.748,
+      "avg_heartrate": 148,
+      "max_heartrate": 157,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 17.83,
+      "time_s": 48,
+      "avg_speed_ms": 0.369,
+      "avg_pace_s_per_km": 2710,
+      "max_speed_ms": 0.53,
+      "avg_heartrate": 148,
+      "max_heartrate": 158,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 420.75,
+      "time_s": 862,
+      "avg_speed_ms": 0.488,
+      "avg_pace_s_per_km": 2049,
+      "max_speed_ms": 1.286,
+      "avg_heartrate": 144,
+      "max_heartrate": 163,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 123,
+      "secsInZone": 327
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 135,
+      "secsInZone": 1807
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 153,
+      "secsInZone": 296
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 168,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 182,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 90,
+  "feel": 50,
+  "title": "Natación aguas abiertas"
 }

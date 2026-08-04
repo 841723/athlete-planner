@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23737393438",
   "sport": "open_water_swimming",
   "name": "Moncofa Natación en aguas abiertas",
@@ -8,11 +8,74 @@
   "moving_time_s": 759,
   "elapsed_time_s": 769,
   "avg_speed_ms": 0.55,
+  "avg_pace_s_per_km": 1818,
   "max_speed_ms": 1.053,
   "avg_heartrate": 138,
   "max_heartrate": 154,
   "average_temp_c": 29.5,
   "training_effect": 2.4,
   "calories_kcal": 159,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 207.47,
+      "time_s": 367,
+      "avg_speed_ms": 0.566,
+      "avg_pace_s_per_km": 1767,
+      "max_speed_ms": 1.045,
+      "avg_heartrate": 135,
+      "max_heartrate": 154,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 35.33,
+      "time_s": 108,
+      "avg_speed_ms": 0.327,
+      "avg_pace_s_per_km": 3058,
+      "max_speed_ms": 0.62,
+      "avg_heartrate": 125,
+      "max_heartrate": 147,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 180.09,
+      "time_s": 294,
+      "avg_speed_ms": 0.612,
+      "avg_pace_s_per_km": 1634,
+      "max_speed_ms": 1.053,
+      "avg_heartrate": 148,
+      "max_heartrate": 154,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 92
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 314
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 171
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 50,
+  "feel": 50,
+  "title": "Natación aguas abiertas"
 }

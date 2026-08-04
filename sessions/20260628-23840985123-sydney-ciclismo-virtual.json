@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985123",
   "sport": "virtual_ride",
   "name": "Sydney Ciclismo virtual",
@@ -15,7 +15,75 @@
   "avg_watts": 122,
   "max_watts": 294,
   "total_elevation_gain_m": 247,
+  "total_elevation_loss_m": 157,
   "calories_kcal": 523,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 650.9,
+      "time_s": 120,
+      "avg_speed_ms": 5.379,
+      "avg_pace_s_per_km": 186,
+      "max_speed_ms": 9.553,
+      "avg_heartrate": 91,
+      "max_heartrate": 98,
+      "avg_watts": 70,
+      "max_watts": 155,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2670.41,
+      "time_s": 480,
+      "avg_speed_ms": 5.552,
+      "avg_pace_s_per_km": 180,
+      "max_speed_ms": 12.004,
+      "avg_heartrate": 98,
+      "max_heartrate": 104,
+      "avg_watts": 90,
+      "max_watts": 185,
+      "total_elevation_gain_m": 20,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 23720.27,
+      "time_s": 3300,
+      "avg_speed_ms": 7.186,
+      "avg_pace_s_per_km": 139,
+      "max_speed_ms": 12.649,
+      "avg_heartrate": 120,
+      "max_heartrate": 128,
+      "avg_watts": 133,
+      "max_watts": 294,
+      "total_elevation_gain_m": 135,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 1487
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

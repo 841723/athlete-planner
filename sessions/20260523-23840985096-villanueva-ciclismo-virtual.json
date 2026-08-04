@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985096",
   "sport": "virtual_ride",
   "name": "Villanueva Ciclismo virtual",
@@ -15,7 +15,139 @@
   "avg_watts": 122,
   "max_watts": 228,
   "total_elevation_gain_m": 97,
+  "total_elevation_loss_m": 84,
   "calories_kcal": 477,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 4405.45,
+      "time_s": 600,
+      "avg_speed_ms": 7.33,
+      "avg_pace_s_per_km": 136,
+      "max_speed_ms": 11.131,
+      "avg_heartrate": 105,
+      "max_heartrate": 116,
+      "avg_watts": 97,
+      "max_watts": 128,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4020.41,
+      "time_s": 480,
+      "avg_speed_ms": 8.358,
+      "avg_pace_s_per_km": 120,
+      "max_speed_ms": 9.232,
+      "avg_heartrate": 129,
+      "max_heartrate": 139,
+      "avg_watts": 160,
+      "max_watts": 202,
+      "total_elevation_gain_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1526.94,
+      "time_s": 240,
+      "avg_speed_ms": 6.336,
+      "avg_pace_s_per_km": 158,
+      "max_speed_ms": 8.528,
+      "avg_heartrate": 126,
+      "max_heartrate": 139,
+      "avg_watts": 120,
+      "max_watts": 160,
+      "total_elevation_gain_m": 10,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4219.67,
+      "time_s": 480,
+      "avg_speed_ms": 8.773,
+      "avg_pace_s_per_km": 114,
+      "max_speed_ms": 11.719,
+      "avg_heartrate": 137,
+      "max_heartrate": 146,
+      "avg_watts": 160,
+      "max_watts": 180,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1750.68,
+      "time_s": 240,
+      "avg_speed_ms": 7.264,
+      "avg_pace_s_per_km": 138,
+      "max_speed_ms": 10.747,
+      "avg_heartrate": 130,
+      "max_heartrate": 143,
+      "avg_watts": 120,
+      "max_watts": 165,
+      "total_elevation_gain_m": 5,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3661.98,
+      "time_s": 480,
+      "avg_speed_ms": 7.613,
+      "avg_pace_s_per_km": 131,
+      "max_speed_ms": 13.726,
+      "avg_heartrate": 140,
+      "max_heartrate": 146,
+      "avg_watts": 160,
+      "max_watts": 228,
+      "total_elevation_gain_m": 28,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1768.34,
+      "time_s": 240,
+      "avg_speed_ms": 7.337,
+      "avg_pace_s_per_km": 136,
+      "max_speed_ms": 11.047,
+      "avg_heartrate": 130,
+      "max_heartrate": 144,
+      "avg_watts": 118,
+      "max_watts": 184,
+      "total_elevation_gain_m": 7,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2017.73,
+      "time_s": 360,
+      "avg_speed_ms": 5.589,
+      "avg_pace_s_per_km": 179,
+      "max_speed_ms": 7.613,
+      "avg_heartrate": 118,
+      "max_heartrate": 130,
+      "avg_watts": 99,
+      "max_watts": 146,
+      "total_elevation_gain_m": 31,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 990
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 1152
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual en Z1"
 }

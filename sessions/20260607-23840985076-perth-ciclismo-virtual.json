@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985076",
   "sport": "virtual_ride",
   "name": "Perth Ciclismo virtual",
@@ -15,7 +15,63 @@
   "avg_watts": 120,
   "max_watts": 225,
   "total_elevation_gain_m": 324,
+  "total_elevation_loss_m": 274,
   "calories_kcal": 400,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 2420.65,
+      "time_s": 900,
+      "avg_speed_ms": 2.687,
+      "avg_pace_s_per_km": 372,
+      "max_speed_ms": 17.512,
+      "avg_heartrate": 99,
+      "max_heartrate": 107,
+      "avg_watts": 84,
+      "max_watts": 162,
+      "total_elevation_gain_m": 73,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 13153.1,
+      "time_s": 2400,
+      "avg_speed_ms": 5.478,
+      "avg_pace_s_per_km": 183,
+      "max_speed_ms": 18.84,
+      "avg_heartrate": 120,
+      "max_heartrate": 129,
+      "avg_watts": 135,
+      "max_watts": 225,
+      "total_elevation_gain_m": 212,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 815
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

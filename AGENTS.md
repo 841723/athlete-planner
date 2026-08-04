@@ -100,11 +100,13 @@ Cada archivo de sesión debe cumplir este esquema:
 }
 ```
 
-- `sport`: valor de `activityType` de Garmin (`running`, `cycling`, `swimming`,
-  `virtual_ride`, `walking`, `hiking`, `other`, `training`, ...).
-- `title`: tipo de entrenamiento interpretado (p.ej. "Carrera en Z2", "Bici llana",
-  "Natación aguas abiertas", "Natación piscina", "Series de 400m"). El usuario puede
-  editarlo a mano en el JSON; `/sync` lo preserva y no lo sobreescribe.
+- `sport`: valor de `activityType` de Garmin (`running`, `trail_running`, `cycling`,
+  `virtual_ride`, `indoor_cycling`, `lap_swimming`, `open_water_swimming`,
+  `strength_training`, `paddelball`, `walking`, `hiking`, `other`, `training`, ...).
+- `title`: tipo de entrenamiento interpretado (p.ej. "Carrera en Z2", "Carrera de
+  montaña", "Bici llana", "Natación aguas abiertas", "Natación piscina", "Padel",
+  "Series de 400m"). El usuario puede editarlo a mano en el JSON; `/sync` lo
+  preserva y no lo sobreescribe.
 - `avg_pace_s_per_km`: ritmo promedio en segundos por kilómetro, derivado de la
   velocidad media (`1000 / avg_speed_ms`). Para actividades sin velocidad (p.ej.
   fuerza) se omite.

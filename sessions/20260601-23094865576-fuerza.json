@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23094865576",
   "sport": "strength_training",
   "name": "Fuerza",
@@ -11,5 +11,34 @@
   "average_temp_c": 33,
   "training_effect": 0.3,
   "calories_kcal": 278,
-  "best_efforts": []
+  "segments": [],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 124,
+      "secsInZone": 8
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 136,
+      "secsInZone": 2
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 154,
+      "secsInZone": 13
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 169,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 183,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Fuerza"
 }

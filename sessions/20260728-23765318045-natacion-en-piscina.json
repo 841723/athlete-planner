@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23765318045",
   "sport": "lap_swimming",
   "name": "Natación en piscina",
@@ -8,11 +8,80 @@
   "moving_time_s": 2544,
   "elapsed_time_s": 2884,
   "avg_speed_ms": 0.655,
+  "avg_pace_s_per_km": 1527,
   "max_speed_ms": 1.204,
   "avg_heartrate": 130,
   "max_heartrate": 154,
   "average_temp_c": 30.5,
   "training_effect": 2.8,
   "calories_kcal": 494,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 98,
+      "time_s": 139,
+      "avg_speed_ms": 0.707,
+      "avg_pace_s_per_km": 1414,
+      "max_speed_ms": 0.907,
+      "avg_heartrate": 104,
+      "max_heartrate": 124
+    },
+    {
+      "distance_m": 518,
+      "time_s": 848,
+      "avg_speed_ms": 0.611,
+      "avg_pace_s_per_km": 1637,
+      "max_speed_ms": 0.926,
+      "avg_heartrate": 133,
+      "max_heartrate": 145
+    },
+    {
+      "distance_m": 504,
+      "time_s": 737,
+      "avg_speed_ms": 0.684,
+      "avg_pace_s_per_km": 1462,
+      "max_speed_ms": 0.852,
+      "avg_heartrate": 137,
+      "max_heartrate": 154
+    },
+    {
+      "distance_m": 546,
+      "time_s": 820,
+      "avg_speed_ms": 0.666,
+      "avg_pace_s_per_km": 1502,
+      "max_speed_ms": 1.204,
+      "avg_heartrate": 135,
+      "max_heartrate": 150
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 766
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 1526
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 40
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 60,
+  "feel": 75,
+  "title": "Natación piscina"
 }

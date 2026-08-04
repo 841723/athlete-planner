@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23108116516",
   "sport": "lap_swimming",
   "name": "Natación en piscina",
@@ -8,11 +8,259 @@
   "moving_time_s": 2685,
   "elapsed_time_s": 5060,
   "avg_speed_ms": 0.675,
+  "avg_pace_s_per_km": 1481,
   "max_speed_ms": 1.125,
   "avg_heartrate": 124,
   "max_heartrate": 159,
   "average_temp_c": 27,
   "training_effect": 2.5,
   "calories_kcal": 629,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 28,
+      "time_s": 36,
+      "avg_speed_ms": 0.785,
+      "avg_pace_s_per_km": 1274,
+      "max_speed_ms": 0.983,
+      "avg_heartrate": 84,
+      "max_heartrate": 107
+    },
+    {
+      "distance_m": 42,
+      "time_s": 77,
+      "avg_speed_ms": 0.544,
+      "avg_pace_s_per_km": 1838,
+      "max_speed_ms": 0.739,
+      "avg_heartrate": 114,
+      "max_heartrate": 124
+    },
+    {
+      "distance_m": 112,
+      "time_s": 151,
+      "avg_speed_ms": 0.741,
+      "avg_pace_s_per_km": 1350,
+      "max_speed_ms": 0.821,
+      "avg_heartrate": 119,
+      "max_heartrate": 142
+    },
+    {
+      "distance_m": 84,
+      "time_s": 122,
+      "avg_speed_ms": 0.686,
+      "avg_pace_s_per_km": 1458,
+      "max_speed_ms": 0.752,
+      "avg_heartrate": 132,
+      "max_heartrate": 143
+    },
+    {
+      "distance_m": 14,
+      "time_s": 27,
+      "avg_speed_ms": 0.528,
+      "avg_pace_s_per_km": 1894,
+      "max_speed_ms": 0.528,
+      "avg_heartrate": 138,
+      "max_heartrate": 140
+    },
+    {
+      "distance_m": 28,
+      "time_s": 44,
+      "avg_speed_ms": 0.63,
+      "avg_pace_s_per_km": 1587,
+      "avg_heartrate": 116,
+      "max_heartrate": 134
+    },
+    {
+      "distance_m": 28,
+      "time_s": 44,
+      "avg_speed_ms": 0.635,
+      "avg_pace_s_per_km": 1575,
+      "avg_heartrate": 122,
+      "max_heartrate": 140
+    },
+    {
+      "distance_m": 28,
+      "time_s": 41,
+      "avg_speed_ms": 0.677,
+      "avg_pace_s_per_km": 1477,
+      "avg_heartrate": 119,
+      "max_heartrate": 142
+    },
+    {
+      "distance_m": 28,
+      "time_s": 46,
+      "avg_speed_ms": 0.608,
+      "avg_pace_s_per_km": 1645,
+      "avg_heartrate": 135,
+      "max_heartrate": 152
+    },
+    {
+      "distance_m": 28,
+      "time_s": 43,
+      "avg_speed_ms": 0.653,
+      "avg_pace_s_per_km": 1531,
+      "avg_heartrate": 127,
+      "max_heartrate": 152
+    },
+    {
+      "distance_m": 28,
+      "time_s": 41,
+      "avg_speed_ms": 0.679,
+      "avg_pace_s_per_km": 1473,
+      "avg_heartrate": 114,
+      "max_heartrate": 128
+    },
+    {
+      "distance_m": 28,
+      "time_s": 48,
+      "avg_speed_ms": 0.583,
+      "avg_pace_s_per_km": 1715,
+      "avg_heartrate": 140,
+      "max_heartrate": 147
+    },
+    {
+      "distance_m": 56,
+      "time_s": 83,
+      "avg_speed_ms": 0.678,
+      "avg_pace_s_per_km": 1475,
+      "avg_heartrate": 134,
+      "max_heartrate": 149
+    },
+    {
+      "distance_m": 56,
+      "time_s": 83,
+      "avg_speed_ms": 0.674,
+      "avg_pace_s_per_km": 1484,
+      "avg_heartrate": 125,
+      "max_heartrate": 144
+    },
+    {
+      "distance_m": 42,
+      "time_s": 74,
+      "avg_speed_ms": 0.565,
+      "avg_pace_s_per_km": 1770,
+      "max_speed_ms": 1.05,
+      "avg_heartrate": 138,
+      "max_heartrate": 154
+    },
+    {
+      "distance_m": 56,
+      "time_s": 81,
+      "avg_speed_ms": 0.692,
+      "avg_pace_s_per_km": 1445,
+      "avg_heartrate": 129,
+      "max_heartrate": 145
+    },
+    {
+      "distance_m": 56,
+      "time_s": 82,
+      "avg_speed_ms": 0.683,
+      "avg_pace_s_per_km": 1464,
+      "avg_heartrate": 124,
+      "max_heartrate": 139
+    },
+    {
+      "distance_m": 112,
+      "time_s": 148,
+      "avg_speed_ms": 0.758,
+      "avg_pace_s_per_km": 1319,
+      "avg_heartrate": 135,
+      "max_heartrate": 157
+    },
+    {
+      "distance_m": 112,
+      "time_s": 155,
+      "avg_speed_ms": 0.722,
+      "avg_pace_s_per_km": 1385,
+      "avg_heartrate": 136,
+      "max_heartrate": 154
+    },
+    {
+      "distance_m": 112,
+      "time_s": 156,
+      "avg_speed_ms": 0.716,
+      "avg_pace_s_per_km": 1397,
+      "avg_heartrate": 136,
+      "max_heartrate": 148
+    },
+    {
+      "distance_m": 112,
+      "time_s": 158,
+      "avg_speed_ms": 0.708,
+      "avg_pace_s_per_km": 1412,
+      "max_speed_ms": 0.834,
+      "avg_heartrate": 121,
+      "max_heartrate": 145
+    },
+    {
+      "distance_m": 112,
+      "time_s": 160,
+      "avg_speed_ms": 0.702,
+      "avg_pace_s_per_km": 1425,
+      "avg_heartrate": 128,
+      "max_heartrate": 150
+    },
+    {
+      "distance_m": 112,
+      "time_s": 157,
+      "avg_speed_ms": 0.712,
+      "avg_pace_s_per_km": 1404,
+      "avg_heartrate": 120,
+      "max_heartrate": 126
+    },
+    {
+      "distance_m": 56,
+      "time_s": 72,
+      "avg_speed_ms": 0.774,
+      "avg_pace_s_per_km": 1292,
+      "avg_heartrate": 115,
+      "max_heartrate": 121
+    },
+    {
+      "distance_m": 56,
+      "time_s": 73,
+      "avg_speed_ms": 0.769,
+      "avg_pace_s_per_km": 1300,
+      "max_speed_ms": 0.93,
+      "avg_heartrate": 136,
+      "max_heartrate": 150
+    },
+    {
+      "distance_m": 56,
+      "time_s": 63,
+      "avg_speed_ms": 0.892,
+      "avg_pace_s_per_km": 1121,
+      "max_speed_ms": 1.125,
+      "avg_heartrate": 140,
+      "max_heartrate": 156
+    },
+    {
+      "distance_m": 56,
+      "time_s": 72,
+      "avg_speed_ms": 0.782,
+      "avg_pace_s_per_km": 1279,
+      "avg_heartrate": 117,
+      "max_heartrate": 125
+    },
+    {
+      "distance_m": 56,
+      "time_s": 70,
+      "avg_speed_ms": 0.798,
+      "avg_pace_s_per_km": 1253,
+      "avg_heartrate": 120,
+      "max_heartrate": 132
+    },
+    {
+      "distance_m": 168,
+      "time_s": 277,
+      "avg_speed_ms": 0.607,
+      "avg_pace_s_per_km": 1647,
+      "max_speed_ms": 0.781,
+      "avg_heartrate": 134,
+      "max_heartrate": 150
+    }
+  ],
+  "best_efforts": [],
+  "rpe": 60,
+  "feel": 75,
+  "title": "Natación piscina"
 }

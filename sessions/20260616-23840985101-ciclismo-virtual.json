@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985101",
   "sport": "virtual_ride",
   "name": "Ciclismo virtual",
@@ -15,7 +15,167 @@
   "avg_watts": 111,
   "max_watts": 211,
   "total_elevation_gain_m": 417,
+  "total_elevation_loss_m": 369,
   "calories_kcal": 505,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 2337.26,
+      "time_s": 600,
+      "avg_speed_ms": 3.889,
+      "avg_pace_s_per_km": 257,
+      "max_speed_ms": 13.181,
+      "avg_heartrate": 95,
+      "max_heartrate": 105,
+      "avg_watts": 87,
+      "max_watts": 148,
+      "total_elevation_gain_m": 45,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3785.53,
+      "time_s": 600,
+      "avg_speed_ms": 6.299,
+      "avg_pace_s_per_km": 159,
+      "max_speed_ms": 13.865,
+      "avg_heartrate": 111,
+      "max_heartrate": 121,
+      "avg_watts": 135,
+      "max_watts": 157,
+      "total_elevation_gain_m": 49,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1204.41,
+      "time_s": 300,
+      "avg_speed_ms": 4.001,
+      "avg_pace_s_per_km": 250,
+      "max_speed_ms": 13.979,
+      "avg_heartrate": 102,
+      "max_heartrate": 120,
+      "avg_watts": 89,
+      "max_watts": 158,
+      "total_elevation_gain_m": 21,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3418.59,
+      "time_s": 600,
+      "avg_speed_ms": 5.688,
+      "avg_pace_s_per_km": 176,
+      "max_speed_ms": 13.868,
+      "avg_heartrate": 112,
+      "max_heartrate": 120,
+      "avg_watts": 135,
+      "max_watts": 193,
+      "total_elevation_gain_m": 55,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1409.19,
+      "time_s": 300,
+      "avg_speed_ms": 4.682,
+      "avg_pace_s_per_km": 214,
+      "max_speed_ms": 13.361,
+      "avg_heartrate": 99,
+      "max_heartrate": 115,
+      "avg_watts": 79,
+      "max_watts": 163,
+      "total_elevation_gain_m": 22,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3363.61,
+      "time_s": 600,
+      "avg_speed_ms": 5.597,
+      "avg_pace_s_per_km": 179,
+      "max_speed_ms": 13.829,
+      "avg_heartrate": 113,
+      "max_heartrate": 118,
+      "avg_watts": 134,
+      "max_watts": 166,
+      "total_elevation_gain_m": 62,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1319.29,
+      "time_s": 300,
+      "avg_speed_ms": 4.383,
+      "avg_pace_s_per_km": 228,
+      "max_speed_ms": 13.36,
+      "avg_heartrate": 105,
+      "max_heartrate": 121,
+      "avg_watts": 89,
+      "max_watts": 157,
+      "total_elevation_gain_m": 24,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3628.37,
+      "time_s": 600,
+      "avg_speed_ms": 6.037,
+      "avg_pace_s_per_km": 166,
+      "max_speed_ms": 13.631,
+      "avg_heartrate": 115,
+      "max_heartrate": 127,
+      "avg_watts": 135,
+      "max_watts": 211,
+      "total_elevation_gain_m": 60,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1419.08,
+      "time_s": 300,
+      "avg_speed_ms": 4.715,
+      "avg_pace_s_per_km": 212,
+      "max_speed_ms": 12.815,
+      "avg_heartrate": 103,
+      "max_heartrate": 119,
+      "avg_watts": 79,
+      "max_watts": 147,
+      "total_elevation_gain_m": 18,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1451.07,
+      "time_s": 300,
+      "avg_speed_ms": 4.821,
+      "avg_pace_s_per_km": 207,
+      "max_speed_ms": 13.202,
+      "avg_heartrate": 100,
+      "max_heartrate": 107,
+      "avg_watts": 90,
+      "max_watts": 105,
+      "total_elevation_gain_m": 23,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 19
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

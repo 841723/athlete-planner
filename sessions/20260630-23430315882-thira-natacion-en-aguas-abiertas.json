@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23430315882",
   "sport": "open_water_swimming",
   "name": "Thira Natación en aguas abiertas",
@@ -8,11 +8,124 @@
   "moving_time_s": 534,
   "elapsed_time_s": 580,
   "avg_speed_ms": 0.587,
+  "avg_pace_s_per_km": 1704,
   "max_speed_ms": 1.426,
   "avg_heartrate": 129,
   "max_heartrate": 155,
   "average_temp_c": 27,
   "training_effect": 2,
   "calories_kcal": 111,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 109.14,
+      "time_s": 210,
+      "avg_speed_ms": 0.519,
+      "avg_pace_s_per_km": 1927,
+      "max_speed_ms": 0.819,
+      "avg_heartrate": 121,
+      "max_heartrate": 140,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 11.74,
+      "time_s": 25,
+      "avg_speed_ms": 0.465,
+      "avg_pace_s_per_km": 2151,
+      "max_speed_ms": 0.575,
+      "avg_heartrate": 128,
+      "max_heartrate": 133,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 62.06,
+      "time_s": 133,
+      "avg_speed_ms": 0.466,
+      "avg_pace_s_per_km": 2146,
+      "max_speed_ms": 0.726,
+      "avg_heartrate": 132,
+      "max_heartrate": 140,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4.92,
+      "time_s": 18,
+      "avg_speed_ms": 0.268,
+      "avg_pace_s_per_km": 3731,
+      "max_speed_ms": 0.317,
+      "avg_heartrate": 129,
+      "max_heartrate": 131,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 90.3,
+      "time_s": 127,
+      "avg_speed_ms": 0.712,
+      "avg_pace_s_per_km": 1404,
+      "max_speed_ms": 0.962,
+      "avg_heartrate": 134,
+      "max_heartrate": 146,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 7.67,
+      "time_s": 14,
+      "avg_speed_ms": 0.552,
+      "avg_pace_s_per_km": 1812,
+      "max_speed_ms": 0.69,
+      "avg_heartrate": 142,
+      "max_heartrate": 145,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 29.51,
+      "time_s": 32,
+      "avg_speed_ms": 0.91,
+      "avg_pace_s_per_km": 1099,
+      "max_speed_ms": 1.348,
+      "avg_heartrate": 142,
+      "max_heartrate": 153,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 24.51,
+      "time_s": 19,
+      "avg_speed_ms": 1.311,
+      "avg_pace_s_per_km": 763,
+      "max_speed_ms": 1.426,
+      "avg_heartrate": 152,
+      "max_heartrate": 155,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 123,
+      "secsInZone": 239
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 135,
+      "secsInZone": 208
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 153,
+      "secsInZone": 12
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 168,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 182,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 50,
+  "feel": 75,
+  "title": "Natación aguas abiertas"
 }

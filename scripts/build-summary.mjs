@@ -8,10 +8,12 @@ const sessionsDir = process.argv[2] ?? "sessions";
 const all = [];
 for (const file of fs.readdirSync(sessionsDir)) {
   if (!file.endsWith(".json")) continue;
+  if (file === "all.json" || file === "missing.json") continue;
   const full = path.join(sessionsDir, file);
   if (fs.statSync(full).isDirectory()) continue;
   try {
     const s = JSON.parse(fs.readFileSync(full, "utf8"));
+    if (!s?.id) continue;
     all.push({
       id: s.id,
       date: (s.start_date_local ?? "").slice(0, 10),

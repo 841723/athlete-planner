@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985112",
   "sport": "virtual_ride",
   "name": "Montlay-en-Auxois Ciclismo virtual",
@@ -15,7 +15,102 @@
   "avg_watts": 121,
   "max_watts": 180,
   "total_elevation_gain_m": 227,
+  "total_elevation_loss_m": 152,
   "calories_kcal": 442,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 3362.7,
+      "time_s": 600,
+      "avg_speed_ms": 5.595,
+      "avg_pace_s_per_km": 179,
+      "max_speed_ms": 14.425,
+      "avg_heartrate": 102,
+      "max_heartrate": 110,
+      "avg_watts": 99,
+      "max_watts": 132,
+      "total_elevation_gain_m": 24,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 7861.37,
+      "time_s": 1200,
+      "avg_speed_ms": 6.546,
+      "avg_pace_s_per_km": 153,
+      "max_speed_ms": 14.632,
+      "avg_heartrate": 120,
+      "max_heartrate": 129,
+      "avg_watts": 135,
+      "max_watts": 180,
+      "total_elevation_gain_m": 75,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1438.11,
+      "time_s": 300,
+      "avg_speed_ms": 4.778,
+      "avg_pace_s_per_km": 209,
+      "max_speed_ms": 12.18,
+      "avg_heartrate": 110,
+      "max_heartrate": 129,
+      "avg_watts": 90,
+      "max_watts": 136,
+      "total_elevation_gain_m": 26,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 9196.5,
+      "time_s": 1200,
+      "avg_speed_ms": 7.657,
+      "avg_pace_s_per_km": 131,
+      "max_speed_ms": 15.099,
+      "avg_heartrate": 122,
+      "max_heartrate": 132,
+      "avg_watts": 135,
+      "max_watts": 164,
+      "total_elevation_gain_m": 37,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 669.58,
+      "time_s": 300,
+      "avg_speed_ms": 2.225,
+      "avg_pace_s_per_km": 449,
+      "max_speed_ms": 6.523,
+      "avg_heartrate": 111,
+      "max_heartrate": 127,
+      "avg_watts": 90,
+      "max_watts": 152,
+      "total_elevation_gain_m": 36,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 1368
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

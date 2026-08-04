@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985077",
   "sport": "virtual_ride",
   "name": "Mendocino County Ciclismo virtual",
@@ -15,7 +15,76 @@
   "avg_watts": 119,
   "max_watts": 220,
   "total_elevation_gain_m": 245,
+  "total_elevation_loss_m": 196,
   "calories_kcal": 438,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 3356.44,
+      "time_s": 600,
+      "avg_speed_ms": 5.585,
+      "avg_pace_s_per_km": 179,
+      "max_speed_ms": 11.012,
+      "avg_heartrate": 100,
+      "max_heartrate": 108,
+      "avg_watts": 94,
+      "max_watts": 153,
+      "total_elevation_gain_m": 24,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 15025.1,
+      "time_s": 2400,
+      "avg_speed_ms": 6.258,
+      "avg_pace_s_per_km": 160,
+      "max_speed_ms": 17.411,
+      "avg_heartrate": 120,
+      "max_heartrate": 127,
+      "avg_watts": 134,
+      "max_watts": 220,
+      "total_elevation_gain_m": 154,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3923.76,
+      "time_s": 600,
+      "avg_speed_ms": 6.529,
+      "avg_pace_s_per_km": 153,
+      "max_speed_ms": 14.188,
+      "avg_heartrate": 110,
+      "max_heartrate": 127,
+      "avg_watts": 95,
+      "max_watts": 135,
+      "total_elevation_gain_m": 25,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 1086
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

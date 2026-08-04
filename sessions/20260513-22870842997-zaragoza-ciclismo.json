@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "22870842997",
   "sport": "cycling",
   "name": "Zaragoza Ciclismo",
@@ -8,12 +8,113 @@
   "moving_time_s": 2877,
   "elapsed_time_s": 2924,
   "avg_speed_ms": 3.688,
+  "avg_pace_s_per_km": 271,
   "max_speed_ms": 11.113,
   "avg_heartrate": 127,
   "max_heartrate": 162,
   "total_elevation_gain_m": 98,
+  "total_elevation_loss_m": 98,
   "average_temp_c": 22.5,
   "training_effect": 2.2,
   "calories_kcal": 445,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 5000,
+      "time_s": 1068,
+      "avg_speed_ms": 4.68,
+      "avg_pace_s_per_km": 214,
+      "max_speed_ms": 7.922,
+      "avg_heartrate": 119,
+      "max_heartrate": 134,
+      "total_elevation_gain_m": 23,
+      "total_elevation_loss_m": 20,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 2447.37,
+      "time_s": 559,
+      "avg_speed_ms": 4.377,
+      "avg_pace_s_per_km": 228,
+      "max_speed_ms": 7.735,
+      "avg_heartrate": 132,
+      "max_heartrate": 149,
+      "total_elevation_gain_m": 14,
+      "total_elevation_loss_m": 8,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 83.04,
+      "time_s": 109,
+      "avg_speed_ms": 0.76,
+      "avg_pace_s_per_km": 1316,
+      "max_speed_ms": 2.305,
+      "avg_heartrate": 121,
+      "max_heartrate": 136,
+      "total_elevation_gain_m": 4,
+      "total_elevation_loss_m": 3,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5000,
+      "time_s": 1095,
+      "avg_speed_ms": 4.566,
+      "avg_pace_s_per_km": 219,
+      "max_speed_ms": 11.113,
+      "avg_heartrate": 133,
+      "max_heartrate": 162,
+      "total_elevation_gain_m": 57,
+      "total_elevation_loss_m": 51,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 374.72,
+      "time_s": 69,
+      "avg_speed_ms": 5.404,
+      "avg_pace_s_per_km": 185,
+      "max_speed_ms": 6.373,
+      "avg_heartrate": 118,
+      "max_heartrate": 123,
+      "total_elevation_loss_m": 3,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 18.57,
+      "time_s": 23,
+      "avg_speed_ms": 0.806,
+      "avg_pace_s_per_km": 1241,
+      "max_speed_ms": 1.418,
+      "avg_heartrate": 106,
+      "max_heartrate": 115,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 124,
+      "secsInZone": 1413
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 137,
+      "secsInZone": 477
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 153,
+      "secsInZone": 81
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 168,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 183,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici llana en Z1"
 }

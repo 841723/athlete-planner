@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23120201788",
   "sport": "indoor_cycling",
   "name": "Ciclismo en sala",
@@ -10,5 +10,36 @@
   "average_temp_c": 32.5,
   "training_effect": 1.8,
   "calories_kcal": 461,
-  "best_efforts": []
+  "segments": [],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 124,
+      "secsInZone": 500
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 136,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 154,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 169,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 183,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 70,
+  "feel": 50,
+  "title": "Bici indoor"
 }

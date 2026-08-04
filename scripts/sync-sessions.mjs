@@ -228,10 +228,12 @@ function interpretTitle(a, d, segs) {
   if (sport === "strength_training" || sport === "strength") return "Fuerza";
   if (sport === "hiking") return "Senderismo";
   if (sport === "walking") return "Caminata";
+  if (sport === "paddelball") return "Padel";
 
-  if (sport === "running") {
+  if (sport === "running" || sport === "trail_running") {
     if (intervalDist) return `Series de ${intervalDist}m`;
-    return zlabel ? `Carrera en ${zlabel}` : "Carrera";
+    const base = sport === "trail_running" ? "Carrera de montaña" : "Carrera";
+    return zlabel ? `${base} en ${zlabel}` : base;
   }
 
   if (sport === "cycling" || sport === "virtual_ride" || sport === "indoor_cycling") {

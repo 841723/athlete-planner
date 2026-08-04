@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985092",
   "sport": "virtual_ride",
   "name": "Zurich Ciclismo virtual",
@@ -15,7 +15,76 @@
   "avg_watts": 116,
   "max_watts": 405,
   "total_elevation_gain_m": 81,
+  "total_elevation_loss_m": 59,
   "calories_kcal": 464,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 3397.69,
+      "time_s": 600,
+      "avg_speed_ms": 5.653,
+      "avg_pace_s_per_km": 177,
+      "max_speed_ms": 7.564,
+      "avg_heartrate": 98,
+      "max_heartrate": 109,
+      "avg_watts": 89,
+      "max_watts": 155,
+      "total_elevation_gain_m": 13,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 20922.91,
+      "time_s": 2700,
+      "avg_speed_ms": 7.746,
+      "avg_pace_s_per_km": 129,
+      "max_speed_ms": 11.52,
+      "avg_heartrate": 113,
+      "max_heartrate": 124,
+      "avg_watts": 129,
+      "max_watts": 229,
+      "total_elevation_gain_m": 39,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 3351.7,
+      "time_s": 600,
+      "avg_speed_ms": 5.577,
+      "avg_pace_s_per_km": 179,
+      "max_speed_ms": 8.757,
+      "avg_heartrate": 100,
+      "max_heartrate": 122,
+      "avg_watts": 90,
+      "max_watts": 372,
+      "total_elevation_gain_m": 17,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 26
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

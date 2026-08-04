@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "id": "23840985124",
   "sport": "virtual_ride",
   "name": "Bruges Ciclismo virtual",
@@ -15,7 +15,160 @@
   "avg_watts": 111,
   "max_watts": 211,
   "total_elevation_gain_m": 4,
+  "total_elevation_loss_m": 1,
   "calories_kcal": 567,
-  "segments": [],
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 3896.58,
+      "time_s": 600,
+      "avg_speed_ms": 6.484,
+      "avg_pace_s_per_km": 154,
+      "max_speed_ms": 6.879,
+      "avg_heartrate": 95,
+      "max_heartrate": 101,
+      "avg_watts": 87,
+      "max_watts": 127,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5655.06,
+      "time_s": 720,
+      "avg_speed_ms": 7.843,
+      "avg_pace_s_per_km": 128,
+      "max_speed_ms": 8.049,
+      "avg_heartrate": 112,
+      "max_heartrate": 126,
+      "avg_watts": 130,
+      "max_watts": 162,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1641.7,
+      "time_s": 240,
+      "avg_speed_ms": 6.812,
+      "avg_pace_s_per_km": 147,
+      "max_speed_ms": 7.903,
+      "avg_heartrate": 103,
+      "max_heartrate": 116,
+      "avg_watts": 90,
+      "max_watts": 211,
+      "total_elevation_gain_m": 0,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5658.78,
+      "time_s": 720,
+      "avg_speed_ms": 7.849,
+      "avg_pace_s_per_km": 127,
+      "max_speed_ms": 8.037,
+      "avg_heartrate": 112,
+      "max_heartrate": 118,
+      "avg_watts": 129,
+      "max_watts": 142,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1645.34,
+      "time_s": 240,
+      "avg_speed_ms": 6.827,
+      "avg_pace_s_per_km": 146,
+      "max_speed_ms": 7.88,
+      "avg_heartrate": 103,
+      "max_heartrate": 116,
+      "avg_watts": 90,
+      "max_watts": 194,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5657.03,
+      "time_s": 720,
+      "avg_speed_ms": 7.846,
+      "avg_pace_s_per_km": 127,
+      "max_speed_ms": 8.043,
+      "avg_heartrate": 113,
+      "max_heartrate": 122,
+      "avg_watts": 130,
+      "max_watts": 153,
+      "total_elevation_gain_m": 0,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1648.51,
+      "time_s": 240,
+      "avg_speed_ms": 6.84,
+      "avg_pace_s_per_km": 146,
+      "max_speed_ms": 7.879,
+      "avg_heartrate": 104,
+      "max_heartrate": 119,
+      "avg_watts": 90,
+      "max_watts": 176,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 5653.67,
+      "time_s": 720,
+      "avg_speed_ms": 7.841,
+      "avg_pace_s_per_km": 128,
+      "max_speed_ms": 8.044,
+      "avg_heartrate": 115,
+      "max_heartrate": 122,
+      "avg_watts": 130,
+      "max_watts": 187,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1650.03,
+      "time_s": 240,
+      "avg_speed_ms": 6.847,
+      "avg_pace_s_per_km": 146,
+      "max_speed_ms": 7.87,
+      "avg_heartrate": 104,
+      "max_heartrate": 121,
+      "avg_watts": 90,
+      "max_watts": 130,
+      "total_elevation_gain_m": 0,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 4003.46,
+      "time_s": 600,
+      "avg_speed_ms": 6.661,
+      "avg_pace_s_per_km": 150,
+      "max_speed_ms": 6.864,
+      "avg_heartrate": 99,
+      "max_heartrate": 106,
+      "avg_watts": 87,
+      "max_watts": 138,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 14
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 152,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 167,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 180,
+      "secsInZone": 0
+    }
+  ],
+  "title": "Bici virtual"
 }

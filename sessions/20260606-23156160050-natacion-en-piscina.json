@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23156160050",
   "sport": "lap_swimming",
   "name": "Natación en piscina",
@@ -8,11 +8,296 @@
   "moving_time_s": 2458,
   "elapsed_time_s": 4761,
   "avg_speed_ms": 0.656,
+  "avg_pace_s_per_km": 1524,
   "max_speed_ms": 1.427,
   "avg_heartrate": 122,
   "max_heartrate": 159,
   "average_temp_c": 27,
   "training_effect": 2.5,
   "calories_kcal": 649,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 28,
+      "time_s": 46,
+      "avg_speed_ms": 0.613,
+      "avg_pace_s_per_km": 1631,
+      "max_speed_ms": 0.833,
+      "avg_heartrate": 86,
+      "max_heartrate": 101
+    },
+    {
+      "distance_m": 28,
+      "time_s": 29,
+      "avg_speed_ms": 0.978,
+      "avg_pace_s_per_km": 1022,
+      "max_speed_ms": 1.238,
+      "avg_heartrate": 108,
+      "max_heartrate": 112
+    },
+    {
+      "distance_m": 28,
+      "time_s": 33,
+      "avg_speed_ms": 0.837,
+      "avg_pace_s_per_km": 1195,
+      "max_speed_ms": 0.978,
+      "avg_heartrate": 116,
+      "max_heartrate": 122
+    },
+    {
+      "distance_m": 56,
+      "time_s": 71,
+      "avg_speed_ms": 0.786,
+      "avg_pace_s_per_km": 1272,
+      "max_speed_ms": 0.911,
+      "avg_heartrate": 109,
+      "max_heartrate": 122
+    },
+    {
+      "distance_m": 140,
+      "time_s": 206,
+      "avg_speed_ms": 0.679,
+      "avg_pace_s_per_km": 1473,
+      "max_speed_ms": 0.862,
+      "avg_heartrate": 128,
+      "max_heartrate": 133
+    },
+    {
+      "distance_m": 28,
+      "time_s": 45,
+      "avg_speed_ms": 0.618,
+      "avg_pace_s_per_km": 1618,
+      "max_speed_ms": 0.767,
+      "avg_heartrate": 120,
+      "max_heartrate": 126
+    },
+    {
+      "distance_m": 28,
+      "time_s": 45,
+      "avg_speed_ms": 0.628,
+      "avg_pace_s_per_km": 1592,
+      "max_speed_ms": 0.669,
+      "avg_heartrate": 112,
+      "max_heartrate": 123
+    },
+    {
+      "distance_m": 14,
+      "time_s": 10,
+      "avg_speed_ms": 1.358,
+      "avg_pace_s_per_km": 736,
+      "max_speed_ms": 1.358,
+      "avg_heartrate": 147,
+      "max_heartrate": 151
+    },
+    {
+      "distance_m": 28,
+      "time_s": 30,
+      "avg_speed_ms": 0.928,
+      "avg_pace_s_per_km": 1078,
+      "max_speed_ms": 0.464,
+      "avg_heartrate": 134,
+      "max_heartrate": 138
+    },
+    {
+      "distance_m": 14,
+      "time_s": 24,
+      "avg_speed_ms": 0.58,
+      "avg_pace_s_per_km": 1724,
+      "max_speed_ms": 0.58,
+      "avg_heartrate": 113,
+      "max_heartrate": 118
+    },
+    {
+      "distance_m": 14,
+      "time_s": 13,
+      "avg_speed_ms": 1.057,
+      "avg_pace_s_per_km": 946,
+      "max_speed_ms": 1.057,
+      "avg_heartrate": 127,
+      "max_heartrate": 127
+    },
+    {
+      "distance_m": 14,
+      "time_s": 31,
+      "avg_speed_ms": 0.455,
+      "avg_pace_s_per_km": 2198,
+      "max_speed_ms": 0.455,
+      "avg_heartrate": 139,
+      "max_heartrate": 149
+    },
+    {
+      "distance_m": 28,
+      "time_s": 71,
+      "avg_speed_ms": 0.394,
+      "avg_pace_s_per_km": 2538,
+      "max_speed_ms": 0.458,
+      "avg_heartrate": 139,
+      "max_heartrate": 148
+    },
+    {
+      "distance_m": 28,
+      "time_s": 73,
+      "avg_speed_ms": 0.383,
+      "avg_pace_s_per_km": 2611,
+      "max_speed_ms": 0.742,
+      "avg_heartrate": 137,
+      "max_heartrate": 149
+    },
+    {
+      "distance_m": 14,
+      "time_s": 16,
+      "avg_speed_ms": 0.861,
+      "avg_pace_s_per_km": 1161,
+      "max_speed_ms": 0.861,
+      "avg_heartrate": 111,
+      "max_heartrate": 112
+    },
+    {
+      "distance_m": 28,
+      "time_s": 96,
+      "avg_speed_ms": 0.292,
+      "avg_pace_s_per_km": 3425,
+      "max_speed_ms": 0.58,
+      "avg_heartrate": 133,
+      "max_heartrate": 146
+    },
+    {
+      "distance_m": 42,
+      "time_s": 74,
+      "avg_speed_ms": 0.569,
+      "avg_pace_s_per_km": 1757,
+      "max_speed_ms": 0.809,
+      "avg_heartrate": 123,
+      "max_heartrate": 131
+    },
+    {
+      "distance_m": 14,
+      "time_s": 30,
+      "avg_speed_ms": 0.459,
+      "avg_pace_s_per_km": 2179,
+      "max_speed_ms": 0.459,
+      "avg_heartrate": 123,
+      "max_heartrate": 133
+    },
+    {
+      "distance_m": 14,
+      "time_s": 41,
+      "avg_speed_ms": 0.344,
+      "avg_pace_s_per_km": 2907,
+      "max_speed_ms": 0.344,
+      "avg_heartrate": 139,
+      "max_heartrate": 144
+    },
+    {
+      "distance_m": 84,
+      "time_s": 155,
+      "avg_speed_ms": 0.542,
+      "avg_pace_s_per_km": 1845,
+      "max_speed_ms": 0.965,
+      "avg_heartrate": 137,
+      "max_heartrate": 146
+    },
+    {
+      "distance_m": 112,
+      "time_s": 152,
+      "avg_speed_ms": 0.737,
+      "avg_pace_s_per_km": 1357,
+      "max_speed_ms": 0.907,
+      "avg_heartrate": 134,
+      "max_heartrate": 145
+    },
+    {
+      "distance_m": 112,
+      "time_s": 156,
+      "avg_speed_ms": 0.717,
+      "avg_pace_s_per_km": 1395,
+      "max_speed_ms": 0.855,
+      "avg_heartrate": 136,
+      "max_heartrate": 149
+    },
+    {
+      "distance_m": 56,
+      "time_s": 72,
+      "avg_speed_ms": 0.783,
+      "avg_pace_s_per_km": 1277,
+      "max_speed_ms": 0.914,
+      "avg_heartrate": 121,
+      "max_heartrate": 132
+    },
+    {
+      "distance_m": 56,
+      "time_s": 77,
+      "avg_speed_ms": 0.73,
+      "avg_pace_s_per_km": 1370,
+      "max_speed_ms": 0.848,
+      "avg_heartrate": 140,
+      "max_heartrate": 143
+    },
+    {
+      "distance_m": 112,
+      "time_s": 148,
+      "avg_speed_ms": 0.759,
+      "avg_pace_s_per_km": 1318,
+      "max_speed_ms": 1.027,
+      "avg_heartrate": 135,
+      "max_heartrate": 149
+    },
+    {
+      "distance_m": 112,
+      "time_s": 143,
+      "avg_speed_ms": 0.786,
+      "avg_pace_s_per_km": 1272,
+      "max_speed_ms": 1.427,
+      "avg_heartrate": 131,
+      "max_heartrate": 159
+    },
+    {
+      "distance_m": 56,
+      "time_s": 72,
+      "avg_speed_ms": 0.778,
+      "avg_pace_s_per_km": 1285,
+      "max_speed_ms": 0.827,
+      "avg_heartrate": 131,
+      "max_heartrate": 148
+    },
+    {
+      "distance_m": 42,
+      "time_s": 79,
+      "avg_speed_ms": 0.532,
+      "avg_pace_s_per_km": 1880,
+      "max_speed_ms": 0.83,
+      "avg_heartrate": 120,
+      "max_heartrate": 147
+    },
+    {
+      "distance_m": 56,
+      "time_s": 68,
+      "avg_speed_ms": 0.826,
+      "avg_pace_s_per_km": 1211,
+      "max_speed_ms": 0.862,
+      "avg_heartrate": 138,
+      "max_heartrate": 155
+    },
+    {
+      "distance_m": 168,
+      "time_s": 246,
+      "avg_speed_ms": 0.682,
+      "avg_pace_s_per_km": 1466,
+      "max_speed_ms": 0.734,
+      "avg_heartrate": 139,
+      "max_heartrate": 151
+    },
+    {
+      "distance_m": 14,
+      "time_s": 19,
+      "avg_speed_ms": 0.731,
+      "avg_pace_s_per_km": 1368,
+      "max_speed_ms": 0.731,
+      "avg_heartrate": 122,
+      "max_heartrate": 124
+    }
+  ],
+  "best_efforts": [],
+  "rpe": 50,
+  "feel": 50,
+  "title": "Natación piscina"
 }

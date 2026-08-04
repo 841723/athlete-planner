@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23472745513",
   "sport": "open_water_swimming",
   "name": "Milos Natación en aguas abiertas",
@@ -8,11 +8,74 @@
   "moving_time_s": 658,
   "elapsed_time_s": 890,
   "avg_speed_ms": 0.534,
+  "avg_pace_s_per_km": 1873,
   "max_speed_ms": 1.5,
   "avg_heartrate": 132,
   "max_heartrate": 160,
   "average_temp_c": 25.5,
   "training_effect": 2.2,
   "calories_kcal": 153,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 164.19,
+      "time_s": 362,
+      "avg_speed_ms": 0.453,
+      "avg_pace_s_per_km": 2208,
+      "max_speed_ms": 1.5,
+      "avg_heartrate": 120,
+      "max_heartrate": 136,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 115.24,
+      "time_s": 199,
+      "avg_speed_ms": 0.579,
+      "avg_pace_s_per_km": 1727,
+      "max_speed_ms": 0.994,
+      "avg_heartrate": 145,
+      "max_heartrate": 160,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 134.61,
+      "time_s": 214,
+      "avg_speed_ms": 0.63,
+      "avg_pace_s_per_km": 1587,
+      "max_speed_ms": 1.5,
+      "avg_heartrate": 141,
+      "max_heartrate": 152,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 122,
+      "secsInZone": 142
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 134,
+      "secsInZone": 346
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 153,
+      "secsInZone": 49
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 168,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 182,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 20,
+  "feel": 100,
+  "title": "Natación aguas abiertas"
 }

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "id": "23598368898",
   "sport": "lap_swimming",
   "name": "Natación en piscina",
@@ -8,11 +8,176 @@
   "moving_time_s": 2364,
   "elapsed_time_s": 3662,
   "avg_speed_ms": 0.641,
+  "avg_pace_s_per_km": 1560,
   "max_speed_ms": 0.97,
   "avg_heartrate": 122,
   "max_heartrate": 159,
   "average_temp_c": 31.5,
   "training_effect": 2.4,
   "calories_kcal": 520,
-  "best_efforts": []
+  "segments": [
+    {
+      "distance_m": 84,
+      "time_s": 125,
+      "avg_speed_ms": 0.671,
+      "avg_pace_s_per_km": 1490,
+      "max_speed_ms": 0.709,
+      "avg_heartrate": 111,
+      "max_heartrate": 122
+    },
+    {
+      "distance_m": 84,
+      "time_s": 122,
+      "avg_speed_ms": 0.688,
+      "avg_pace_s_per_km": 1453,
+      "max_speed_ms": 0.752,
+      "avg_heartrate": 113,
+      "max_heartrate": 126
+    },
+    {
+      "distance_m": 84,
+      "time_s": 134,
+      "avg_speed_ms": 0.626,
+      "avg_pace_s_per_km": 1597,
+      "max_speed_ms": 0.704,
+      "avg_heartrate": 125,
+      "max_heartrate": 144
+    },
+    {
+      "distance_m": 56,
+      "time_s": 76,
+      "avg_speed_ms": 0.734,
+      "avg_pace_s_per_km": 1362,
+      "max_speed_ms": 0.97,
+      "avg_heartrate": 125,
+      "max_heartrate": 151
+    },
+    {
+      "distance_m": 56,
+      "time_s": 173,
+      "avg_speed_ms": 0.324,
+      "avg_pace_s_per_km": 3086,
+      "avg_heartrate": 119,
+      "max_heartrate": 142
+    },
+    {
+      "distance_m": 28,
+      "time_s": 51,
+      "avg_speed_ms": 0.552,
+      "avg_pace_s_per_km": 1812,
+      "avg_heartrate": 121,
+      "max_heartrate": 144
+    },
+    {
+      "distance_m": 56,
+      "time_s": 85,
+      "avg_speed_ms": 0.661,
+      "avg_pace_s_per_km": 1513,
+      "avg_heartrate": 126,
+      "max_heartrate": 150
+    },
+    {
+      "distance_m": 56,
+      "time_s": 83,
+      "avg_speed_ms": 0.679,
+      "avg_pace_s_per_km": 1473,
+      "avg_heartrate": 130,
+      "max_heartrate": 152
+    },
+    {
+      "distance_m": 56,
+      "time_s": 88,
+      "avg_speed_ms": 0.64,
+      "avg_pace_s_per_km": 1563,
+      "avg_heartrate": 131,
+      "max_heartrate": 150
+    },
+    {
+      "distance_m": 168,
+      "time_s": 246,
+      "avg_speed_ms": 0.683,
+      "avg_pace_s_per_km": 1464,
+      "avg_heartrate": 134,
+      "max_heartrate": 152
+    },
+    {
+      "distance_m": 168,
+      "time_s": 260,
+      "avg_speed_ms": 0.647,
+      "avg_pace_s_per_km": 1546,
+      "avg_heartrate": 132,
+      "max_heartrate": 148
+    },
+    {
+      "distance_m": 168,
+      "time_s": 248,
+      "avg_speed_ms": 0.678,
+      "avg_pace_s_per_km": 1475,
+      "avg_heartrate": 135,
+      "max_heartrate": 157
+    },
+    {
+      "distance_m": 168,
+      "time_s": 242,
+      "avg_speed_ms": 0.694,
+      "avg_pace_s_per_km": 1441,
+      "avg_heartrate": 141,
+      "max_heartrate": 159
+    },
+    {
+      "distance_m": 28,
+      "time_s": 45,
+      "avg_speed_ms": 0.619,
+      "avg_pace_s_per_km": 1616,
+      "avg_heartrate": 108,
+      "max_heartrate": 123
+    },
+    {
+      "distance_m": 56,
+      "time_s": 79,
+      "avg_speed_ms": 0.712,
+      "avg_pace_s_per_km": 1404,
+      "avg_heartrate": 109,
+      "max_heartrate": 116
+    },
+    {
+      "distance_m": 28,
+      "time_s": 42,
+      "avg_speed_ms": 0.672,
+      "avg_pace_s_per_km": 1488,
+      "avg_heartrate": 127,
+      "max_heartrate": 143
+    },
+    {
+      "distance_m": 14,
+      "time_s": 27,
+      "avg_speed_ms": 0.325,
+      "avg_pace_s_per_km": 3077,
+      "max_speed_ms": 0.325,
+      "avg_heartrate": 118,
+      "max_heartrate": 124
+    },
+    {
+      "distance_m": 84,
+      "time_s": 135,
+      "avg_speed_ms": 0.623,
+      "avg_pace_s_per_km": 1605,
+      "max_speed_ms": 0.711,
+      "avg_heartrate": 132,
+      "max_heartrate": 142
+    },
+    {
+      "distance_m": 56,
+      "time_s": 85,
+      "avg_speed_ms": 0.66,
+      "avg_pace_s_per_km": 1515,
+      "max_speed_ms": 0.809,
+      "avg_heartrate": 122,
+      "max_heartrate": 138
+    }
+  ],
+  "best_efforts": [],
+  "rpe": 50,
+  "feel": 100,
+  "title": "Natación piscina"
 }
