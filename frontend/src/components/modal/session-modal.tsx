@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import type { Session } from "@/types/session";
-import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed, getSessionTime } from "@/lib/utils";
+import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
 
 interface SessionModalProps {
   session: Session;
@@ -23,8 +23,8 @@ function intensityBadge(intensity: string): { label: string; className: string }
 }
 
 export function SessionModal({ session, onClose }: SessionModalProps) {
-  const color = getSportColor(session.sport);
-  const label = getSportLabel(session.sport);
+  const color = getSportColor(session.category);
+  const label = getSportLabel(session.category);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in" onClick={onClose}>
@@ -44,7 +44,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           <InfoItem label="Fecha" value={format(parseISO(session.start_date_local), "d MMM yyyy")} />
           <InfoItem label="Hora" value={format(parseISO(session.start_date_local), "HH:mm")} />
           <InfoItem label="Deporte" value={label} />
-          <InfoItem label="Duración" value={(() => { const t = getSessionTime(session); return t > 0 ? `${(t / 60).toFixed(0)} min` : "—"; })()} />
+          <InfoItem label="Duración" value={(() => { const t = session.time_s ?? 0; return t > 0 ? `${(t / 60).toFixed(0)} min` : "—"; })()} />
           {session.distance_m && <InfoItem label="Distancia" value={formatDistance(session.distance_m)} />}
           {session.total_elevation_gain_m && <InfoItem label="Desnivel" value={`${session.total_elevation_gain_m} m`} />}
           {session.calories_kcal && <InfoItem label="Calorías" value={`${session.calories_kcal} kcal`} />}

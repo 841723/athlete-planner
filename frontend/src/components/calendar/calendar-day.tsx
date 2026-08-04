@@ -1,9 +1,8 @@
 import { format } from "date-fns";
 import type { CSSProperties } from "react";
 import { Trophy } from "lucide-react";
-import type { Session, SessionWithStatus } from "@/types/session";
+import type { SessionWithStatus, RaceGoal } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, hexToRgba } from "@/lib/utils";
-import type { RaceGoal } from "@/lib/goals";
 
 interface CalendarDayProps {
   date: Date;
@@ -15,7 +14,7 @@ interface CalendarDayProps {
 
 function getCellBackground(sessions: SessionWithStatus[]): CSSProperties | undefined {
   if (sessions.length === 0) return undefined;
-  const colors = sessions.map((s) => getSportColor(s.sport));
+  const colors = sessions.map((s) => getSportColor(s.category));
   if (colors.length === 1) {
     return { backgroundColor: hexToRgba(colors[0], 0.4) };
   }
@@ -68,8 +67,8 @@ export function CalendarDay({ date, sessions, goal, onClick, dimmed }: CalendarD
       )}
       <div className="space-y-1">
         {sessions.slice(0, 3).map((s) => {
-          const color = getSportColor(s.sport);
-          const label = getSportLabel(s.sport);
+          const color = getSportColor(s.category);
+          const label = getSportLabel(s.category);
           const isPlanned = s.status === "planned";
           return (
             <div

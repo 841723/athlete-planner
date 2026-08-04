@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { useSessions } from "@/hooks/use-sessions";
 import { useFilters } from "@/hooks/use-filters";
 import { CalendarView } from "@/components/calendar/calendar-view";
-import { SessionModal } from "@/components/modal/session-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Session, SessionWithStatus } from "@/types/session";
 
@@ -15,7 +13,6 @@ function mergeSessions(completed: Session[], planned: Session[]): SessionWithSta
 
 export function CalendarPage() {
   const { data, isLoading } = useSessions();
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   const completed = data?.completed ?? [];
   const planned = data?.planned ?? [];
@@ -49,12 +46,6 @@ export function CalendarPage() {
         setShowPlanned={setShowPlanned}
         resetFilters={resetFilters}
       />
-      {selectedSession && (
-        <SessionModal
-          session={selectedSession}
-          onClose={() => setSelectedSession(null)}
-        />
-      )}
     </div>
   );
 }

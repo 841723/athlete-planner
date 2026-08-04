@@ -4,6 +4,7 @@ import { HomePage } from "@/pages/home";
 import { CalendarPage } from "@/pages/calendar";
 import { WeeklyPage } from "@/pages/weekly";
 import { StatsPage } from "@/pages/stats";
+import { PlannedPage } from "@/pages/planned";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/weekly" element={<WeeklyPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/planned" element={<PlannedPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>

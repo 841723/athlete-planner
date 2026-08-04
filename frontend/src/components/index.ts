@@ -19,7 +19,6 @@ export { SpeedChart } from "./charts/speed-chart";
 export { SwimTimeChart } from "./charts/swim-time-chart";
 export { TrainingLoadChart } from "./charts/training-load-chart";
 export { VolumeEvolutionChart } from "./charts/volume-evolution-chart";
-export { GoalsTimeline } from "./goals/goals-timeline";
 export { StatsGrid } from "./stats/stats-grid";
 export { Skeleton } from "./ui/skeleton";
 export { Badge } from "./ui/badge";

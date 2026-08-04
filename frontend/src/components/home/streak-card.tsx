@@ -1,12 +1,12 @@
-import { parseISO, differenceInDays, eachDayOfInterval, format } from "date-fns";
-import type { Session } from "@/types/session";
-import { getSessionTime } from "@/lib/utils";
+import { format } from "date-fns";
+import { useSessions } from "@/hooks/use-sessions";
 
-interface StreakCardProps {
-  completed: Session[];
-}
+export function StreakCard() {
+  const { data } = useSessions();
 
-export function StreakCard({ completed }: StreakCardProps) {
+  const completed = data?.completed ?? [];
+  const totalsCompleted = data?.totalsCompleted ?? { totalDistance: 0, totalHours: 0 };
+
   const today = new Date();
   const datesWithSessions = new Set(
     completed.map((s) => s.start_date_local.slice(0, 10))
@@ -19,12 +19,6 @@ export function StreakCard({ completed }: StreakCardProps) {
     current = new Date(current.getTime() - 86400000);
   }
 
-  const totalDistance = completed.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
-  const totalHours = completed.reduce(
-    (sum, s) => sum + getSessionTime(s) / 3600,
-    0
-  );
-
   return (
     <div className="card p-5 animate-slide-up">
       <h2 className="text-lg font-semibold mb-4">Racha</h2>
@@ -34,11 +28,11 @@ export function StreakCard({ completed }: StreakCardProps) {
       </div>
       <div className="grid grid-cols-2 gap-3 text-center">
         <div>
-          <div className="text-lg font-semibold">{(totalDistance / 1000).toFixed(0)}</div>
+          <div className="text-lg font-semibold">{(totalsCompleted.totalDistance / 1000).toFixed(0)}</div>
           <div className="text-xs text-gray-500">km totales</div>
         </div>
         <div>
-          <div className="text-lg font-semibold">{totalHours.toFixed(0)}</div>
+          <div className="text-lg font-semibold">{totalsCompleted.totalHours.toFixed(0)}</div>
           <div className="text-xs text-gray-500">horas totales</div>
         </div>
       </div>

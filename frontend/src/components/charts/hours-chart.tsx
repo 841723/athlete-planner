@@ -7,38 +7,17 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import type { Session } from "@/types/session";
-import { getWeekNumber, getSessionTime } from "@/lib/utils";
+import { useCharts } from "@/hooks/use-charts";
 
-interface HoursChartProps {
-  sessions: Session[];
-}
-
-export function HoursChart({ sessions }: HoursChartProps) {
-  const byWeek: Record<string, number> = {};
-
-  for (const s of sessions) {
-    const date = new Date(s.start_date_local);
-    const weekStart = new Date(date);
-    weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-    const key = weekStart.toISOString().slice(0, 10);
-    const hours = getSessionTime(s) / 3600;
-    byWeek[key] = (byWeek[key] ?? 0) + hours;
-  }
-
-  const data = Object.entries(byWeek)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-12)
-    .map(([week, hours]) => ({
-      week: `W${getWeekNumber(new Date(week))}`,
-      hours: Math.round(hours * 10) / 10,
-    }));
+export function HoursChart() {
+  const { data } = useCharts();
+  const chartData = data?.weeklyHours ?? [];
 
   return (
     <div className="card p-5">
       <h2 className="text-lg font-semibold mb-4">Horas Entrenadas por Semana</h2>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f1f3a" />
           <XAxis dataKey="week" stroke="#6b7280" fontSize={12} />
           <YAxis stroke="#6b7280" fontSize={12} />

@@ -1,14 +1,9 @@
-import { useState } from "react";
-import { useSessions } from "@/hooks/use-sessions";
-import { useWeeklySummary } from "@/hooks/use-weekly-summary";
+import { useWeekly } from "@/hooks/use-weekly";
 import { WeeklySummary } from "@/components/weekly/weekly-summary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function WeeklyPage() {
-  const { data, isLoading } = useSessions();
-  const completed = data?.completed ?? [];
-  const planned = data?.planned ?? [];
-  const weekly = useWeeklySummary(completed, planned);
+  const { data: weekly, isLoading } = useWeekly();
 
   if (isLoading) {
     return (
@@ -25,7 +20,7 @@ export function WeeklyPage() {
 
   return (
     <div className="animate-fade-in">
-      <WeeklySummary weekly={weekly} completed={completed} planned={planned} />
+      <WeeklySummary weekly={weekly ?? []} />
     </div>
   );
 }

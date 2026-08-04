@@ -7,31 +7,17 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import type { Session } from "@/types/session";
+import { useCharts } from "@/hooks/use-charts";
 
-interface CumulativeChartProps {
-  sessions: Session[];
-}
-
-export function CumulativeChart({ sessions }: CumulativeChartProps) {
-  let cumulative = 0;
-  const sorted = [...sessions].sort(
-    (a, b) => a.start_date_local.localeCompare(b.start_date_local)
-  );
-
-  const data = sorted.map((s) => {
-    cumulative += (s.distance_m ?? 0) / 1000;
-    return {
-      date: s.start_date_local.slice(0, 10),
-      cumulative: Math.round(cumulative * 10) / 10,
-    };
-  });
+export function CumulativeChart() {
+  const { data } = useCharts();
+  const chartData = data?.cumulativeDistance ?? [];
 
   return (
     <div className="card p-5">
       <h2 className="text-lg font-semibold mb-4">Distancia Acumulada</h2>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f1f3a" />
           <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
           <YAxis stroke="#6b7280" fontSize={12} />

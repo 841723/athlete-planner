@@ -1,27 +1,21 @@
-import type { Session, PlannedWorkout, WorkoutBlock } from "@/types/session";
-import { formatDuration, formatPace, getSessionTime } from "./utils";
+import { getSessionTime } from "./sessions.js";
 
-export interface ObjectiveLine {
-  label?: string;
-  text: string;
-}
-
-const DISTANCE_TITLES: Record<string, number> = {
+const DISTANCE_TITLES = {
   "5K": 5000,
   "10K": 10000,
   "21K": 21097,
-  "medio maratón": 21097,
-  "medio maraton": 21097,
-  "maratón": 42195,
-  "maraton": 42195,
+  "MEDIO MARATÓN": 21097,
+  "MEDIO MARATON": 21097,
+  "MARATÓN": 42195,
+  "MARATON": 42195,
 };
 
-function isZ2Title(title: string): string | null {
+function isZ2Title(title) {
   const m = title.match(/Z([1-5])/i);
   return m ? `Z${m[1]}` : null;
 }
 
-function parseDistanceFromTitle(title: string): number | null {
+function parseDistanceFromTitle(title) {
   const upper = title.toUpperCase();
   for (const [key, dist] of Object.entries(DISTANCE_TITLES)) {
     if (upper.includes(key)) return dist;
@@ -29,13 +23,23 @@ function parseDistanceFromTitle(title: string): number | null {
   return null;
 }
 
-function formatPaceShort(secPerKm: number): string {
+function formatDuration(seconds) {
+  if (seconds == null) return "—";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function formatPaceShort(secPerKm) {
   const min = Math.floor(secPerKm / 60);
   const sec = Math.floor(secPerKm % 60);
   return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
-function formatWorkoutBlock(block: WorkoutBlock, sport: string): string | null {
+function formatWorkoutBlock(block, sport) {
   const isSwim = sport.includes("swimming");
   if (block.type === "intervals" || block.repeat) {
     const repeat = block.repeat ?? 1;
@@ -45,7 +49,11 @@ function formatWorkoutBlock(block: WorkoutBlock, sport: string): string | null {
 
     let part = `${repeat}×`;
     if (dist) {
-      part += isSwim ? `${(dist / 100).toFixed(0)}×100m` : dist >= 1000 ? `${(dist / 1000).toFixed(1)}km` : `${dist}m`;
+      part += isSwim
+        ? `${(dist / 100).toFixed(0)}×100m`
+        : dist >= 1000
+          ? `${(dist / 1000).toFixed(1)}km`
+          : `${dist}m`;
     } else if (time) {
       part += formatDuration(time);
     }
@@ -66,8 +74,8 @@ function formatWorkoutBlock(block: WorkoutBlock, sport: string): string | null {
   return null;
 }
 
-export function buildObjectives(session: Session): ObjectiveLine[] {
-  const objectives: ObjectiveLine[] = [];
+export function buildObjectives(session) {
+  const objectives = [];
   const workout = session.workout;
   const title = session.title ?? session.name;
   const sport = session.sport;
@@ -92,9 +100,15 @@ export function buildObjectives(session: Session): ObjectiveLine[] {
   const zone = isZ2Title(title);
 
   if (distFromTitle) {
-    objectives.push({ label: "Distancia objetivo", text: `${(distFromTitle / 1000).toFixed(distFromTitle % 1000 === 0 ? 0 : 1)} km` });
+    objectives.push({
+      label: "Distancia objetivo",
+      text: `${(distFromTitle / 1000).toFixed(distFromTitle % 1000 === 0 ? 0 : 1)} km`,
+    });
     if (session.avg_pace_s_per_km) {
-      objectives.push({ label: "Ritmo objetivo", text: `${formatPaceShort(session.avg_pace_s_per_km)}/km` });
+      objectives.push({
+        label: "Ritmo objetivo",
+        text: `${formatPaceShort(session.avg_pace_s_per_km)}/km`,
+      });
     }
     return objectives;
   }
@@ -112,10 +126,19 @@ export function buildObjectives(session: Session): ObjectiveLine[] {
   }
 
   if (session.distance_m && session.distance_m > 100) {
-    objectives.push({ label: "Distancia", text: session.distance_m >= 1000 ? `${(session.distance_m / 1000).toFixed(1)} km` : `${Math.round(session.distance_m)} m` });
+    objectives.push({
+      label: "Distancia",
+      text:
+        session.distance_m >= 1000
+          ? `${(session.distance_m / 1000).toFixed(1)} km`
+          : `${Math.round(session.distance_m)} m`,
+    });
   }
   if (session.avg_pace_s_per_km) {
-    objectives.push({ label: "Ritmo", text: `${formatPaceShort(session.avg_pace_s_per_km)}/km` });
+    objectives.push({
+      label: "Ritmo",
+      text: `${formatPaceShort(session.avg_pace_s_per_km)}/km`,
+    });
   }
   if (timeSec > 0) {
     objectives.push({ label: "Tiempo", text: formatDuration(timeSec) });

@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { loadAllSessions } from "@/services/session-loader";
-import type { Session } from "@/types/session";
+import { fetchSessions } from "@/services/api";
+import type { SessionsResponse } from "@/types/session";
 
 export function useSessions() {
-  return useQuery<{ completed: Session[]; planned: Session[] }>({
+  return useQuery<SessionsResponse>({
     queryKey: ["sessions"],
-    queryFn: loadAllSessions,
+    queryFn: fetchSessions,
     staleTime: 1000 * 60 * 5,
   });
 }

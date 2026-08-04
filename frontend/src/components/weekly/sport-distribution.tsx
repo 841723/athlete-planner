@@ -1,26 +1,15 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import type { WeeklySummary } from "@/types/session";
+import { useCharts } from "@/hooks/use-charts";
 import { SPORT_COLORS, SPORT_LABELS } from "@/types/session";
+import type { SportCategory } from "@/types/session";
 
-interface SportDistributionProps {
-  weekly: WeeklySummary[];
-}
-
-export function SportDistribution({ weekly }: SportDistributionProps) {
-  const totals: Record<string, number> = {};
-  for (const w of weekly) {
-    for (const [sport, hours] of Object.entries(w.bySport)) {
-      totals[sport] = (totals[sport] ?? 0) + hours;
-    }
-  }
-
-  const data = Object.entries(totals)
-    .filter(([, v]) => v > 0)
-    .map(([sport, hours]) => ({
-      name: SPORT_LABELS[sport as keyof typeof SPORT_LABELS] ?? sport,
-      value: Math.round(hours * 10) / 10,
-      color: SPORT_COLORS[sport as keyof typeof SPORT_COLORS] ?? "#6b7280",
-    }));
+export function SportDistribution() {
+  const { data } = useCharts();
+  const chartData = (data?.sportDistribution ?? []).map((entry) => ({
+    name: SPORT_LABELS[entry.sport as SportCategory] ?? entry.sport,
+    value: entry.value,
+    color: SPORT_COLORS[entry.sport as SportCategory] ?? "#6b7280",
+  }));
 
   return (
     <div className="card p-5">
@@ -28,7 +17,7 @@ export function SportDistribution({ weekly }: SportDistributionProps) {
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={data}
+            data={chartData}
             cx="50%"
             cy="50%"
             innerRadius={60}
@@ -36,7 +25,7 @@ export function SportDistribution({ weekly }: SportDistributionProps) {
             paddingAngle={3}
             dataKey="value"
           >
-            {data.map((entry, i) => (
+            {chartData.map((entry, i) => (
               <Cell key={i} fill={entry.color} />
             ))}
           </Pie>

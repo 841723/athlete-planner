@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, ChartBar, Home, Menu, X, Trophy } from "lucide-react";
+import { Calendar, ChartBar, ClipboardList, Home, Menu, X, Trophy } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { path: "/calendar", label: "Calendario", icon: Calendar },
   { path: "/weekly", label: "Semanal", icon: ChartBar },
   { path: "/stats", label: "Estadísticas", icon: Trophy },
+  { path: "/planned", label: "Planificadas", icon: ClipboardList },
 ];
 
 function IronmanLogo() {

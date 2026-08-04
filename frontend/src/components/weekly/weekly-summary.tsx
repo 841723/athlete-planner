@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import type { WeeklySummary, Session } from "@/types/session";
+import type { WeeklySummary } from "@/types/session";
 import { SportDistribution } from "./sport-distribution";
 import { WeekChart } from "./week-chart";
-import { Button } from "@/components/ui/button";
 
 interface WeeklySummaryProps {
   weekly: WeeklySummary[];
-  completed: Session[];
-  planned: Session[];
 }
 
-export function WeeklySummary({ weekly, completed, planned }: WeeklySummaryProps) {
+export function WeeklySummary({ weekly }: WeeklySummaryProps) {
   const [selectedWeek, setSelectedWeek] = useState<WeeklySummary | null>(null);
 
   return (
@@ -20,10 +17,10 @@ export function WeeklySummary({ weekly, completed, planned }: WeeklySummaryProps
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <WeekChart weekly={weekly} />
+          <WeekChart />
         </div>
         <div>
-          <SportDistribution weekly={weekly} />
+          <SportDistribution />
         </div>
       </div>
 

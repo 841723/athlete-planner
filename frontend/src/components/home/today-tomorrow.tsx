@@ -1,7 +1,6 @@
 import { format, parseISO, addDays } from "date-fns";
 import type { Session } from "@/types/session";
-import { getSportColor, getSportLabel, formatDistance, formatDuration, getSessionTime } from "@/lib/utils";
-import { buildObjectives } from "@/lib/objectives";
+import { getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
 
 interface TodayTomorrowProps {
   completed: Session[];
@@ -59,10 +58,10 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
 }
 
 function SessionCard({ session, isPlanned }: { session: Session; isPlanned: boolean }) {
-  const color = getSportColor(session.sport);
-  const label = getSportLabel(session.sport);
-  const time = getSessionTime(session);
-  const objectives = isPlanned ? buildObjectives(session) : [];
+  const color = getSportColor(session.category);
+  const label = getSportLabel(session.category);
+  const time = session.time_s ?? 0;
+  const objectives = isPlanned ? session.objectives ?? [] : [];
 
   if (isPlanned) {
     return (

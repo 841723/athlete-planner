@@ -7,25 +7,17 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import type { WeeklySummary } from "@/types/session";
+import { useCharts } from "@/hooks/use-charts";
 
-interface WeekChartProps {
-  weekly: WeeklySummary[];
-}
-
-export function WeekChart({ weekly }: WeekChartProps) {
-  const data = weekly.map((w) => ({
-    week: `W${w.weekNumber}`,
-    hours: w.hours,
-    planned: w.plannedHours,
-    distance: w.distance_km,
-  }));
+export function WeekChart() {
+  const { data } = useCharts();
+  const chartData = data?.weekChart ?? [];
 
   return (
     <div className="card p-5">
       <h2 className="text-lg font-semibold mb-4">Horas Entrenadas por Semana</h2>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f1f3a" />
           <XAxis dataKey="week" stroke="#6b7280" fontSize={12} />
           <YAxis stroke="#6b7280" fontSize={12} />

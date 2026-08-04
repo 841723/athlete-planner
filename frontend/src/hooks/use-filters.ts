@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import type { FilterState, SessionWithStatus } from "@/types/session";
-import { isDateInRange, getSportCategory } from "@/lib/utils";
+import { isDateInRange } from "@/lib/utils";
 
 const DEFAULT_FILTERS: FilterState = {
   sport: "all",
@@ -39,8 +39,7 @@ export function useFilters(sessions: SessionWithStatus[]) {
 
   const filtered = useMemo(() => {
     return sessions.filter((session) => {
-      const category = getSportCategory(session.sport);
-      if (filters.sport !== "all" && category !== filters.sport) return false;
+      if (filters.sport !== "all" && session.category !== filters.sport) return false;
       if (!isDateInRange(session.start_date_local, filters.dateFrom, filters.dateTo)) return false;
       if (session.status === "completed" && !filters.showCompleted) return false;
       if (session.status === "planned" && !filters.showPlanned) return false;

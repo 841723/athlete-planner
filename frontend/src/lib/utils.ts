@@ -1,14 +1,12 @@
-import { format, parseISO, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
-import { SportCategory, SPORT_CATEGORIES, SPORT_COLORS, SPORT_LABELS, Session } from "@/types/session";
-
-export const RACKET_SPORTS = new Set(["paddelball", "tennis_v2"]);
-
-export function getSessionTime(s: Session): number {
-  const racket = RACKET_SPORTS.has(s.sport);
-  const primary = racket ? s.elapsed_time_s : s.moving_time_s;
-  const fallback = racket ? s.moving_time_s : s.elapsed_time_s;
-  return primary ?? fallback ?? 0;
-}
+import {
+  format,
+  parseISO,
+  differenceInDays,
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+} from "date-fns";
+import { SportCategory, SPORT_COLORS, SPORT_LABELS } from "@/types/session";
 
 export function formatDistance(meters: number | undefined): string {
   if (meters == null) return "—";
@@ -53,16 +51,12 @@ export function formatWeekLabel(dateStr: string): string {
   return `${format(start, "d MMM")} – ${format(end, "d MMM")}`;
 }
 
-export function getSportCategory(sport: string): SportCategory {
-  return SPORT_CATEGORIES[sport] ?? "other";
+export function getSportColor(category: SportCategory | undefined): string {
+  return category ? SPORT_COLORS[category] ?? "#6b7280" : "#6b7280";
 }
 
-export function getSportColor(sport: string): string {
-  return SPORT_COLORS[getSportCategory(sport)];
-}
-
-export function getSportLabel(sport: string): string {
-  return SPORT_LABELS[getSportCategory(sport)];
+export function getSportLabel(category: SportCategory | undefined): string {
+  return category ? SPORT_LABELS[category] ?? "Otros" : "Otros";
 }
 
 export function hexToRgba(hex: string, alpha: number): string {
@@ -73,8 +67,6 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export const TRAINING_WEEK_ONE_START = "2026-05-11";
-
 export function formatNumber(value: number | undefined | null, maxDecimals = 0): string {
   if (value == null || !isFinite(value)) return "—";
   const fixed = maxDecimals > 0 ? Number(value.toFixed(maxDecimals)) : Math.round(value);
@@ -83,23 +75,11 @@ export function formatNumber(value: number | undefined | null, maxDecimals = 0):
   return parts.length > 1 ? `${int},${parts[1]}` : int;
 }
 
-export function getWeekNumber(date: Date): number {
+export function getWeekNumber(date: Date, trainingWeekOneStart: string): number {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-  const anchor = parseISO(TRAINING_WEEK_ONE_START);
+  const anchor = parseISO(trainingWeekOneStart);
   const diffDays = differenceInDays(weekStart, anchor);
   return Math.floor(diffDays / 7) + 1;
-}
-
-export function getWeekStart(date: Date): Date {
-  return startOfWeek(date, { weekStartsOn: 1 });
-}
-
-export function getWeekEnd(date: Date): Date {
-  return endOfWeek(date, { weekStartsOn: 1 });
-}
-
-export function daysBetween(a: string, b: string): number {
-  return differenceInDays(parseISO(b), parseISO(a));
 }
 
 export function isDateInRange(date: string, from: string | null, to: string | null): boolean {

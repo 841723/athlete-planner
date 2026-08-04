@@ -1,2 +1,2 @@
-export type { Session, PlannedSession, SessionWithStatus, FilterState, WeeklySummary, Goal, StatItem, SportCategory, WorkoutBlock, PlannedWorkout } from "./session";
-export { SPORT_CATEGORIES, SPORT_COLORS, SPORT_LABELS } from "./session";
+export type { Session, SessionWithStatus, FilterState, WeeklySummary, SportCategory, WorkoutBlock, PlannedWorkout, RaceGoal, MetaData, SessionsResponse, PlannedSessionView, StatsData, ChartsData, ObjectiveLine } from "./session";
+export { SPORT_COLORS, SPORT_LABELS } from "./session";

@@ -1,27 +1,25 @@
 import { parseISO, differenceInDays } from "date-fns";
-import type { Session } from "@/types/session";
-import { RACE_GOALS } from "@/lib/goals";
+import { useGoals } from "@/hooks/use-goals";
+import { useMeta } from "@/hooks/use-meta";
 
-interface UpcomingGoalsProps {
-  completed: Session[];
-}
+export function UpcomingGoals() {
+  const { data: goals } = useGoals();
+  const { data: meta } = useMeta();
 
-const PLAN_START = "2026-05-12";
-const GOALS = RACE_GOALS;
-
-export function UpcomingGoals({ completed }: UpcomingGoalsProps) {
   const today = new Date();
-  const planStart = parseISO(PLAN_START);
+  if (!goals || !meta) return null;
+
+  const planStart = parseISO(meta.planStart);
 
   return (
     <div className="card p-5 animate-slide-up">
       <h2 className="text-lg font-semibold mb-4">Próximos Objetivos</h2>
       <div className="space-y-3">
-        {GOALS.map((goal, i) => {
+        {goals.map((goal, i) => {
           const goalDate = parseISO(goal.date);
           const daysRemaining = differenceInDays(goalDate, today);
           const isPast = daysRemaining < 0;
-          const isCurrent = !isPast && i === GOALS.findIndex((g) => differenceInDays(parseISO(g.date), today) >= 0);
+          const isCurrent = !isPast && i === goals.findIndex((g) => differenceInDays(parseISO(g.date), today) >= 0);
           const totalDays = Math.max(1, differenceInDays(goalDate, planStart));
           const elapsedDays = Math.max(0, differenceInDays(today, planStart));
           const goalProgress = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
@@ -45,7 +43,7 @@ export function UpcomingGoals({ completed }: UpcomingGoalsProps) {
                 <span className="text-xs text-gray-400">
                   {isPast ? "Completado" : `${daysRemaining} días restantes`}
                 </span>
-                {goal.targetPace !== "—" && (
+                {goal.targetPace && goal.targetPace !== "—" && (
                   <span className="text-xs font-medium text-accent-light">{goal.targetPace}</span>
                 )}
               </div>

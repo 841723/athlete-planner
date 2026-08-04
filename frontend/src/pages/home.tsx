@@ -30,14 +30,14 @@ export function HomePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <HeroStats completed={completed} planned={planned} />
+      <HeroStats />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <TodayTomorrow completed={completed} planned={planned} />
         </div>
         <div className="space-y-4">
-          <UpcomingGoals completed={completed} />
-          <StreakCard completed={completed} />
+          <UpcomingGoals />
+          <StreakCard />
         </div>
       </div>
     </div>

@@ -8,40 +8,18 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import type { Session } from "@/types/session";
-import { getSportCategory, getSportColor, getSportLabel, getWeekNumber } from "@/lib/utils";
+import { useCharts } from "@/hooks/use-charts";
+import { getSportColor } from "@/lib/utils";
+import type { SportCategory } from "@/types/session";
 
-interface DistanceChartProps {
-  sessions: Session[];
-}
-
-export function DistanceChart({ sessions }: DistanceChartProps) {
-  const byWeek: Record<string, Record<string, number>> = {};
-
-  for (const s of sessions) {
-    const date = new Date(s.start_date_local);
-    const weekStart = new Date(date);
-    weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-    const key = weekStart.toISOString().slice(0, 10);
-
-    if (!byWeek[key]) byWeek[key] = {};
-    const sport = getSportCategory(s.sport);
-    const dist = (s.distance_m ?? 0) / 1000;
-    byWeek[key][sport] = (byWeek[key][sport] ?? 0) + dist;
-  }
-
-  const data = Object.entries(byWeek)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-12)
-    .map(([week, sports]) => ({
-      week: `W${getWeekNumber(new Date(week))}`,
-      ...sports,
-    }));
+export function DistanceChart() {
+  const { data } = useCharts();
+  const chartData = data?.distanceBySport ?? [];
 
   const allSports = new Set<string>();
-  for (const sports of Object.values(byWeek)) {
-    for (const sport of Object.keys(sports)) {
-      allSports.add(sport);
+  for (const row of chartData) {
+    for (const key of Object.keys(row)) {
+      if (key !== "week") allSports.add(key);
     }
   }
 
@@ -49,7 +27,7 @@ export function DistanceChart({ sessions }: DistanceChartProps) {
     <div className="card p-5">
       <h2 className="text-lg font-semibold mb-4">Distancia Semanal por Deporte</h2>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f1f3a" />
           <XAxis dataKey="week" stroke="#6b7280" fontSize={12} />
           <YAxis stroke="#6b7280" fontSize={12} />
@@ -63,7 +41,12 @@ export function DistanceChart({ sessions }: DistanceChartProps) {
           />
           <Legend />
           {Array.from(allSports).map((sport) => (
-            <Bar key={sport} dataKey={sport} fill={getSportColor(sport)} radius={[4, 4, 0, 0]} />
+            <Bar
+              key={sport}
+              dataKey={sport}
+              fill={getSportColor(sport as SportCategory)}
+              radius={[4, 4, 0, 0]}
+            />
           ))}
         </BarChart>
       </ResponsiveContainer>

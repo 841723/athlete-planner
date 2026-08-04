@@ -8,27 +8,6 @@ export type SportCategory =
   | "padel"
   | "other";
 
-export const SPORT_CATEGORIES: Record<string, SportCategory> = {
-  running: "running",
-  trail_running: "running",
-  cycling: "cycling",
-  virtual_ride: "cycling",
-  indoor_cycling: "cycling",
-  swimming: "swimming",
-  lap_swimming: "swimming",
-  open_water_swimming: "swimming",
-  strength_training: "strength",
-  hiking: "hiking",
-  walking: "walking",
-  paddelball: "padel",
-  other: "other",
-  breathwork: "other",
-  assistance: "other",
-  resort_skiing: "other",
-  tennis_v2: "other",
-  elliptical: "other",
-};
-
 export const SPORT_COLORS: Record<SportCategory, string> = {
   running: "#f472b6",
   cycling: "#facc15",
@@ -80,6 +59,10 @@ export interface Session {
   workout?: PlannedWorkout;
   hr_from?: number;
   hr_to?: number;
+  category?: SportCategory;
+  time_s?: number;
+  weekNumber?: number | null;
+  objectives?: ObjectiveLine[];
 }
 
 export interface SessionSegment {
@@ -178,4 +161,123 @@ export interface StatItem {
   value: string | number;
   icon: string;
   trend?: "up" | "down" | "neutral";
+}
+
+export interface ObjectiveLine {
+  label?: string;
+  text: string;
+}
+
+export interface RaceGoal {
+  week: number;
+  label: string;
+  date: string;
+  targetPace?: string;
+}
+
+export interface MetaData {
+  trainingWeekOneStart: string;
+  planStart: string;
+  goalDate: string;
+}
+
+export interface SessionTotals {
+  totalDistance: number;
+  totalHours: number;
+  totalSessions: number;
+}
+
+export interface SessionTotalsCompleted {
+  totalDistance: number;
+  totalHours: number;
+}
+
+export interface SessionsResponse {
+  completed: Session[];
+  planned: Session[];
+  totals: SessionTotals;
+  totalsCompleted: SessionTotalsCompleted;
+}
+
+export interface PlannedSessionView extends Session {
+  category: SportCategory;
+  time_s: number;
+  weekNumber: number | null;
+  objectives: ObjectiveLine[];
+}
+
+export interface StatsTotals {
+  totalDistance: number;
+  totalHours: number;
+  totalElevation: number;
+  totalCalories: number;
+  totalMovingSec: number;
+  totalSessions: number;
+  distPerSession: number | null;
+  kcalPerSession: number | null;
+}
+
+export interface SportStats {
+  cat: SportCategory;
+  sessions: number;
+  sessionsPct: number;
+  hours: number;
+  hoursPct: number;
+  distanceKm: number;
+  avgDistanceKm: number | null;
+  maxDistanceKm: number | null;
+  avgDurationSec: number | null;
+  maxDurationSec: number | null;
+  avgHr: number | null;
+  maxHr: number | null;
+  avgPaceSecPerKm: number | null;
+  bestPaceSecPerKm: number | null;
+  avgSpeedKmh: number | null;
+  maxSpeedKmh: number | null;
+  avgWatts: number | null;
+  maxWatts: number | null;
+  avgPace100: number | null;
+  bestPace100: number | null;
+  avgElevationGain: number | null;
+  maxElevationGain: number | null;
+}
+
+export interface StatsGlobal {
+  dominantZone?: [string, number];
+  bestEfforts: Record<string, { name: string; time_s: number }>;
+  avgTemp: number | null;
+  avgTe: number | null;
+  totalTe: number;
+  avgRpe: number | null;
+  avgFeel: number | null;
+  rpeCount: number;
+  streak: number;
+  longestStreak: number;
+  activeWeeks: number;
+  avgHr: number | null;
+  maxHr: number;
+  maxWatts: number;
+  avgSessionsPerWeek: number | null;
+  avgHoursPerWeek: number | null;
+  avgDistancePerWeek: number | null;
+}
+
+export interface StatsData {
+  totals: StatsTotals;
+  bySport: Record<SportCategory, SportStats>;
+  global: StatsGlobal;
+  dates: { firstDate?: string; lastDate?: string };
+}
+
+export interface ChartsData {
+  weeklyHours: { week: string; hours: number }[];
+  trainingLoad: { week: string; load: number }[];
+  volumeEvolution: { date: string; hours: number; distance: number }[];
+  cumulativeDistance: { date: string; cumulative: number }[];
+  distanceBySport: Record<string, number | string>[];
+  runningPaces: { date: string; pace: number }[];
+  cyclingSpeeds: { date: string; speed: number }[];
+  swimMinutes: { date: string; minutes: number }[];
+  weekChart: { week: string; hours: number; planned: number; distance: number }[];
+  sportDistribution: { sport: string; value: number }[];
 }

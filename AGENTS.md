@@ -129,7 +129,7 @@ Las sesiones planificadas están en `sessions/planned/`. Usan el mismo esquema q
 sesiones completadas, con los siguientes campos opcionales adicionales:
 
 - `title`: tipo de entrenamiento (ej. "Carrera en Z2", "5K", "Series de 400m").
-  El frontend lo interpreta para generar objetivos.
+  El backend lo interpreta para generar los objetivos (`objectives` en la API).
 - `workout`: pasos estructurados del entrenamiento:
   ```json
   {
@@ -142,8 +142,35 @@ sesiones completadas, con los siguientes campos opcionales adicionales:
   }
   ```
 - `hr_from` / `hr_to`: rango de FC objetivo (para Z2, Z3, etc. sin workout).
-- Sin `workout` ni `title`: el frontend genera objetivos genéricos de distancia,
+- Sin `workout` ni `title`: el backend genera objetivos genéricos de distancia,
   ritmo, tiempo, FC según los campos numéricos disponibles.
+- Las planificadas también se pueden crear/editar/borrar desde la web (páginas
+  `/planned` y calendario); el backend las escribe en `sessions/planned/` con
+  `schema_version: 2` e id `randomUUID()`.
+
+## Backend (`/backend`)
+
+- Backend en Node puro (ESM, sin build) que sirve la API REST y los estáticos
+  (`frontend/dist` en producción). Toda la lógica de datos vive aquí; el frontend
+  solo renderiza. Arranque:
+  - Dev: `node backend/server.js --port 4000` y Vite en `frontend/` (puerto 3000)
+    con proxy `/api → http://localhost:4000` (ya configurado en `vite.config.ts`).
+  - Producción: `node backend/server.js --port 4000 --static` (sirve `frontend/dist`).
+- Endpoints:
+  - `GET /api/health`: comprobación de vida.
+  - `GET /api/sessions`: `{ completed, planned, totals, totalsCompleted }` con
+    sesiones enriquecidas (`category`, `time_s`, `weekNumber`).
+  - `GET /api/weekly`: resumen semanal (realizado + planeado).
+  - `GET /api/stats`: totales, por deporte y globales.
+  - `GET /api/charts`: series listas para recharts (weeklyHours, trainingLoad,
+    volumeEvolution, cumulativeDistance, distanceBySport, runningPaces,
+    cyclingSpeeds, swimMinutes, weekChart, sportDistribution).
+  - `GET /api/goals` y `GET /api/meta` (fechas del plan).
+  - `GET/POST /api/planned` y `PUT/DELETE /api/planned/:id`: CRUD de planificadas
+    (persisten en ficheros de `sessions/planned/`; el id es el del JSON, no el del
+    nombre del fichero).
+- El frontend consume todo vía `frontend/src/services/api.ts` (fetch a `/api`).
+  No uses el backend como origen de datos si no está corriendo.
 
 ## Trabajar con los datos
 

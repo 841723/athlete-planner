@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import {
   startOfMonth,
   endOfMonth,
@@ -10,13 +10,15 @@ import {
   parseISO,
   isSameMonth,
 } from "date-fns";
-import type { Session, SessionWithStatus, FilterState } from "@/types/session";
+import type { SessionWithStatus, FilterState, RaceGoal } from "@/types/session";
 import { CalendarDay } from "./calendar-day";
 import { CalendarFilters } from "./calendar-filters";
 import type { SportCategory } from "@/types/session";
-import { RACE_GOALS } from "@/lib/goals";
-import { getWeekNumber, getSportCategory, getSessionTime, getSportLabel } from "@/lib/utils";
-import { buildObjectives } from "@/lib/objectives";
+import { useGoals } from "@/hooks/use-goals";
+import { useMeta } from "@/hooks/use-meta";
+import { useDeletePlanned } from "@/hooks/use-planned";
+import { PlannedFormModal } from "@/components/planned/planned-form";
+import { getWeekNumber, getSportLabel, getSportColor } from "@/lib/utils";
 
 interface CalendarViewProps {
   completed: SessionWithStatus[];
@@ -34,6 +36,11 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSession, setSelectedSession] = useState<SessionWithStatus | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const deleteMutation = useDeletePlanned();
+
+  const { data: goals } = useGoals();
+  const { data: meta } = useMeta();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -49,7 +56,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
     ];
     return sessions.filter((s) => {
       if (filters.sport !== "all") {
-        if (getSportCategory(s.sport) !== filters.sport) return false;
+        if (s.category !== filters.sport) return false;
       }
       return true;
     });
@@ -66,10 +73,10 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
   }, [allSessions]);
 
   const goalsByDate = useMemo(() => {
-    const map = new Map<string, (typeof RACE_GOALS)[number]>();
-    for (const g of RACE_GOALS) map.set(g.date, g);
+    const map = new Map<string, RaceGoal>();
+    for (const g of goals ?? []) map.set(g.date, g);
     return map;
-  }, []);
+  }, [goals]);
 
   const prevMonth = () => setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
   const nextMonth = () => setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
@@ -127,7 +134,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
             <div key={dateStr} className="contents">
               {isWeekStart && (
                 <div className={`flex items-center justify-center text-xs font-semibold select-none ${isOtherMonth ? "text-gray-600" : "text-gray-500"}`}>
-                  W{getWeekNumber(day)}
+                  W{getWeekNumber(day, meta?.trainingWeekOneStart ?? "2026-05-11")}
                 </div>
               )}
               <CalendarDay
@@ -147,6 +154,10 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
           <div className="card p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: getSportColor(selectedSession.category) }}
+                />
                 <h3 className="text-lg font-bold">{selectedSession.title ?? selectedSession.name}</h3>
                 {selectedSession.status === "planned" && <span className="badge badge-planned">Plan</span>}
               </div>
@@ -158,10 +169,10 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
               ) : (
                 <div className="flex justify-between"><span className="text-gray-400">Fecha</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>
               )}
-              <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{getSportLabel(selectedSession.sport)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{getSportLabel(selectedSession.category)}</span></div>
               {selectedSession.status !== "planned" && selectedSession.distance_m && <div className="flex justify-between"><span className="text-gray-400">Distancia</span><span>{(selectedSession.distance_m / 1000).toFixed(2)} km</span></div>}
               {selectedSession.status !== "planned" && (() => {
-                const t = getSessionTime(selectedSession);
+                const t = selectedSession.time_s ?? 0;
                 return t > 0 ? <div className="flex justify-between"><span className="text-gray-400">Tiempo</span><span>{(t / 60).toFixed(0)} min</span></div> : null;
               })()}
               {selectedSession.status !== "planned" && selectedSession.avg_heartrate && <div className="flex justify-between"><span className="text-gray-400">FC media</span><span>{selectedSession.avg_heartrate} bpm</span></div>}
@@ -169,7 +180,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
               {selectedSession.status !== "planned" && selectedSession.calories_kcal && <div className="flex justify-between"><span className="text-gray-400">Calorías</span><span>{selectedSession.calories_kcal} kcal</span></div>}
               {selectedSession.status !== "planned" && selectedSession.total_elevation_gain_m && <div className="flex justify-between"><span className="text-gray-400">Desnivel</span><span>{selectedSession.total_elevation_gain_m} m</span></div>}
               {selectedSession.status === "planned" && (() => {
-                const objectives = buildObjectives(selectedSession);
+                const objectives = selectedSession.objectives ?? [];
                 return objectives.length > 0 ? (
                   <div className="pt-2 border-t border-dark-400">
                     <span className="text-gray-400 text-xs uppercase tracking-wider">Objetivos</span>
@@ -184,10 +195,37 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                   </div>
                 ) : null;
               })()}
+              {selectedSession.status === "planned" && (
+                <div className="flex gap-2 pt-3 border-t border-dark-400">
+                  <button
+                    className="btn btn-ghost text-xs px-2 py-1"
+                    onClick={() => setFormOpen(true)}
+                  >
+                    <Pencil className="w-3 h-3" /> Editar
+                  </button>
+                  <button
+                    className="btn btn-ghost text-xs px-2 py-1 text-red-400 hover:text-red-300"
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar "${selectedSession.title ?? selectedSession.name}"?`)) {
+                        deleteMutation.mutate(selectedSession.id);
+                        setSelectedSession(null);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" /> Eliminar
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      <PlannedFormModal
+        open={formOpen}
+        session={selectedSession?.status === "planned" ? selectedSession : null}
+        onClose={() => setFormOpen(false)}
+      />
     </div>
   );
 }

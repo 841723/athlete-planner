@@ -7,36 +7,17 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import type { Session } from "@/types/session";
-import { getSessionTime } from "@/lib/utils";
+import { useCharts } from "@/hooks/use-charts";
 
-interface VolumeEvolutionChartProps {
-  sessions: Session[];
-}
-
-export function VolumeEvolutionChart({ sessions }: VolumeEvolutionChartProps) {
-  const sorted = [...sessions].sort(
-    (a, b) => a.start_date_local.localeCompare(b.start_date_local)
-  );
-
-  let cumulativeHours = 0;
-  let cumulativeDist = 0;
-
-  const data = sorted.map((s) => {
-    cumulativeHours += getSessionTime(s) / 3600;
-    cumulativeDist += (s.distance_m ?? 0) / 1000;
-    return {
-      date: s.start_date_local.slice(0, 10),
-      hours: Math.round(cumulativeHours * 10) / 10,
-      distance: Math.round(cumulativeDist * 10) / 10,
-    };
-  });
+export function VolumeEvolutionChart() {
+  const { data } = useCharts();
+  const chartData = data?.volumeEvolution ?? [];
 
   return (
     <div className="card p-5">
       <h2 className="text-lg font-semibold mb-4">Evolución del Volumen</h2>
       <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={data}>
+        <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f1f3a" />
           <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
           <YAxis stroke="#6b7280" fontSize={12} />

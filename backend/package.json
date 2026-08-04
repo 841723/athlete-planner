@@ -1,0 +1,12 @@
+{
+  "name": "ironman-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js --port 4000"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
+  }
+}
