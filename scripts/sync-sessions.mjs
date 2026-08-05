@@ -185,75 +185,6 @@ function hrZones(d) {  const zones = d?.data?.hr_zones ?? [];
   }));
 }
 
-function hrZoneForAvg(d, avgHr) {
-  const zones = d?.data?.hr_zones ?? [];
-  if (!zones.length || avgHr == null) return null;
-  let zone = null;
-  for (const z of zones) {
-    if (avgHr >= z.zoneLowBoundary) zone = z.zoneNumber;
-  }
-  return zone;
-}
-
-function detectIntervals(d, segs) {
-  const hasInt = d?.data?.activity?.hasIntensityIntervals;
-  const laps = d?.data?.splits?.lapDTOs ?? [];
-  const hasRest = laps.some((l) => l.intensityType === "REST");
-  if (!hasInt && !hasRest) return null;
-  const active = segs.filter((s) => s.intensity === "ACTIVE");
-  const counts = {};
-  for (const s of active) {
-    const key = Math.round(s.distance_m / 100) * 100;
-    counts[key] = (counts[key] || 0) + 1;
-  }
-  let best = null;
-  let bestCount = 0;
-  for (const [dist, count] of Object.entries(counts)) {
-    if (count > bestCount) {
-      bestCount = count;
-      best = Number(dist);
-    }
-  }
-  return bestCount >= 2 ? best : null;
-}
-
-function interpretTitle(a, d, segs) {
-  const sport = a.sport;
-  const zone = hrZoneForAvg(d, a.avg_heartrate);
-  const zlabel = zone ? `Z${zone}` : null;
-  const intervalDist = detectIntervals(d, segs);
-
-  if (sport === "open_water_swimming") {
-    return intervalDist ? `Series de ${intervalDist}m aguas abiertas` : "Natación aguas abiertas";
-  }
-  if (sport === "lap_swimming" || sport === "swimming") {
-    return intervalDist ? `Series de ${intervalDist}m piscina` : "Natación piscina";
-  }
-  if (sport === "strength_training" || sport === "strength") return "Fuerza";
-  if (sport === "hiking") return "Senderismo";
-  if (sport === "walking") return "Caminata";
-  if (sport === "paddelball") return "Padel";
-
-  if (sport === "running" || sport === "trail_running") {
-    if (intervalDist) return `Series de ${intervalDist}m`;
-    const base = sport === "trail_running" ? "Carrera de montaña" : "Carrera";
-    return zlabel ? `${base} en ${zlabel}` : base;
-  }
-
-  if (sport === "cycling" || sport === "virtual_ride" || sport === "indoor_cycling") {
-    if (intervalDist) return `Series de ${intervalDist}m en bici`;
-    const base =
-      sport === "virtual_ride" ? "Bici virtual" : sport === "indoor_cycling" ? "Bici indoor" : "Bici";
-    const distKm = a.distance_m ? a.distance_m / 1000 : 0;
-    const elevPerKm =
-      distKm > 0 && a.total_elevation_gain_m != null ? a.total_elevation_gain_m / distKm : null;
-    const label = base === "Bici" && elevPerKm != null && elevPerKm < 10 ? "Bici llana" : base;
-    return zlabel ? `${label} en ${zlabel}` : label;
-  }
-
-  return null;
-}
-
 let written = 0;
 let skipped = 0;
 let missing = 0;
@@ -281,8 +212,6 @@ for (const a of activities) {
   if (zones) session.hr_zones = zones;
   const self = selfEvaluation(d);
   if (self) Object.assign(session, self);
-  const title = interpretTitle(session, d, session.segments);
-  if (title) session.title = title;
   const date = (session.start_date_local ?? "").slice(0, 10).replace(/-/g, "") || "sinfecha";
   const file = path.join(sessionsDir, `${date}-${id}-${slugify(session.name)}.json`);
   if (force && fs.existsSync(file)) {

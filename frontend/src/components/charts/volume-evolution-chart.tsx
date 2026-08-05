@@ -33,8 +33,8 @@ export function VolumeEvolutionChart() {
             type="monotone"
             dataKey="hours"
             stackId="1"
-            stroke="#818cf8"
-            fill="#818cf8"
+            stroke="#3b82f6"
+            fill="#3b82f6"
             fillOpacity={0.3}
           />
           <Area

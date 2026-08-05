@@ -12,6 +12,7 @@ import {
   enrich,
   saveAthleteProfile,
   upsertSession,
+  updateSession,
 } from "./sessions.js";
 import { buildObjectives } from "./objectives.js";
 import { subWeeks, format, parseISO, startOfWeek } from "date-fns";
@@ -20,6 +21,7 @@ const execAsync = promisify(exec);
 
 const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
 const SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-system-prompt.txt");
+const TITLES_SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "session-titles-system-prompt.txt");
 
 function loadSystemPrompt() {
   try {
@@ -27,6 +29,32 @@ function loadSystemPrompt() {
   } catch {
     throw new Error("No se pudo cargar el system prompt del entrenador");
   }
+}
+
+function loadTitlesSystemPrompt() {
+  try {
+    return fs.readFileSync(TITLES_SYSTEM_PROMPT_PATH, "utf8");
+  } catch {
+    throw new Error("No se pudo cargar el system prompt de títulos de sesión");
+  }
+}
+
+async function runLLM(fullPrompt) {
+  const { stdout, stderr } = await execAsync(
+    `opencode run --format json --dir "${path.resolve(import.meta.dirname, "..", "..")}"`,
+    {
+      input: fullPrompt,
+      maxBuffer: 1024 * 1024 * 10,
+      timeout: 120000,
+      env: { ...process.env, FORCE_COLOR: "0" },
+    }
+  );
+
+  let responseText = stdout;
+  if (!responseText || responseText.trim().length === 0) {
+    responseText = stderr;
+  }
+  return responseText;
 }
 
 function getRecentSessions(weeks = 8) {
@@ -61,6 +89,99 @@ function formatSessionForPrompt(session) {
   const notes = session.notes ? `\n      Notas del atleta: ${session.notes}` : "";
 
   return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${distance} | ${pace} | ${duration} ${hr} ${watts}${notes}`.trim();
+}
+
+function formatSessionForTitles(session) {
+  const date = session.start_date_local
+    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
+    : "sin fecha";
+  const distance = session.distance_m
+    ? `${(session.distance_m / 1000).toFixed(2)} km`
+    : "sin distancia";
+  const pace = session.avg_pace_s_per_km
+    ? `${Math.floor(session.avg_pace_s_per_km / 60)}:${String(Math.floor(session.avg_pace_s_per_km % 60)).padStart(2, "0")}/km`
+    : "sin ritmo";
+  const duration = session.moving_time_s
+    ? `${Math.floor(session.moving_time_s / 3600)}h ${Math.floor((session.moving_time_s % 3600) / 60)}min`
+    : "sin duración";
+  const hr = session.avg_heartrate
+    ? `FC media ${session.avg_heartrate} (máx ${session.max_heartrate ?? "?"})`
+    : "";
+  const watts = session.avg_watts ? `Potencia ${session.avg_watts}W (máx ${session.max_watts ?? "?"})` : "";
+  const elev = session.total_elevation_gain_m ? `+${session.total_elevation_gain_m}m` : "";
+  const zones = session.hr_zones?.length
+    ? `Zonas FC: ${session.hr_zones.map((z) => `Z${z.zoneNumber} ${z.secsInZone}s`).join(", ")}`
+    : "";
+  const laps = session.segments?.length
+    ? `Laps (${session.segments.length}): ${session.segments
+        .map((s) => {
+          const parts = [];
+          if (s.distance_m) parts.push(`${(s.distance_m / 1000).toFixed(2)}km`);
+          if (s.avg_pace_s_per_km)
+            parts.push(
+              `${Math.floor(s.avg_pace_s_per_km / 60)}:${String(Math.floor(s.avg_pace_s_per_km % 60)).padStart(2, "0")}/km`
+            );
+          if (s.avg_heartrate) parts.push(`FC${s.avg_heartrate}`);
+          if (s.avg_watts) parts.push(`${s.avg_watts}W`);
+          if (s.intensity) parts.push(s.intensity);
+          return parts.join(" ");
+        })
+        .join(" | ")}`
+    : "";
+  const rpe = session.rpe != null ? `RPE ${session.rpe}` : "";
+  const feel = session.feel != null ? `Feel ${session.feel}` : "";
+  const notes = session.notes ? `Notas: ${session.notes}` : "";
+  const name = session.name ? `Nombre Garmin: "${session.name}"` : "";
+
+  return `- id: ${session.id} | ${date} | sport: ${session.sport} | ${name} | ${distance} | ${pace} | ${duration} | ${hr} | ${watts} | ${elev} | ${zones} | ${laps} | ${rpe} | ${feel} | ${notes}`
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function parseTitlesResponse(response) {
+  const jsonMatch = response.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("No se pudo encontrar JSON válido en la respuesta del LLM de títulos");
+  }
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return Array.isArray(parsed.titles) ? parsed.titles : [];
+  } catch {
+    throw new Error("Error al parsear la respuesta JSON de títulos");
+  }
+}
+
+async function generateSessionTitles(sessions) {
+  const untitled = sessions.filter((s) => !s.title && s.name);
+  if (untitled.length === 0) return [];
+
+  const systemPrompt = loadTitlesSystemPrompt();
+  const sessionsText = untitled.map(formatSessionForTitles).join("\n");
+
+  const userPrompt = `
+Analiza las siguientes sesiones y asigna un título a cada una según las convenciones del system prompt.
+
+SESIONES:
+
+${sessionsText}
+
+Responde únicamente con el JSON con los títulos.
+`.trim();
+
+  const responseText = await runLLM(`${systemPrompt}\n\n---\n\n${userPrompt}`);
+  const titles = parseTitlesResponse(responseText);
+
+  const applied = [];
+  for (const t of titles) {
+    const id = String(t?.id ?? "");
+    const title = String(t?.title ?? "").trim();
+    if (!id || !title) continue;
+    const session = untitled.find((s) => String(s.id) === id);
+    if (!session) continue;
+    updateSession(id, { title });
+    applied.push({ id, title });
+  }
+  return applied;
 }
 
 function deriveProfileMetrics(sessions) {
@@ -222,25 +343,18 @@ export async function generatePlan(comments, weeks = 1) {
   if (Object.keys(metrics).length > 0) {
     saveAthleteProfile(getTenantId(), updatedProfile);
   }
+  let titlesUpdated = [];
+  try {
+    titlesUpdated = await generateSessionTitles(recentSessions);
+  } catch (err) {
+    console.error("Error generando títulos de sesión:", err.message);
+  }
   const userPrompt = buildUserPrompt(comments, weeks, updatedProfile, metrics);
 
   const fullPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
 
   try {
-    const { stdout, stderr } = await execAsync(
-      `opencode run --format json --dir "${path.resolve(import.meta.dirname, "..", "..")}"`,
-      {
-        input: fullPrompt,
-        maxBuffer: 1024 * 1024 * 10,
-        timeout: 120000,
-        env: { ...process.env, FORCE_COLOR: "0" },
-      }
-    );
-
-    let responseText = stdout;
-    if (!responseText || responseText.trim().length === 0) {
-      responseText = stderr;
-    }
+    const responseText = await runLLM(fullPrompt);
 
     const { comments: llmComments, sessions: rawSessions } = parseLLMResponse(responseText);
 
@@ -259,6 +373,7 @@ export async function generatePlan(comments, weeks = 1) {
     return {
       comments: llmComments,
       sessions: createdSessions,
+      titlesUpdated,
     };
   } catch (err) {
     if (err.killed) {

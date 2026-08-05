@@ -1,8 +1,59 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Activity,
+  Bike,
+  CalendarClock,
+  Clock,
+  Flame,
+  Footprints,
+  Heart,
+  HeartCrack,
+  HeartOff,
+  HeartPulse,
+  Mountain,
+  Moon,
+  Ruler,
+  Snowflake,
+  Sunrise,
+  Thermometer,
+  TrendingUp,
+  Trophy,
+  Waves,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useStatsRecords } from "@/hooks/use-stats-records";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
 import type { StatRecord, BestEffortRecord } from "@/types/session";
+
+const recordIcons: Record<string, LucideIcon> = {
+  "heart-crack": HeartCrack,
+  "heart-pulse": HeartPulse,
+  heart: Heart,
+  "heart-off": HeartOff,
+  thermometer: Thermometer,
+  snowflake: Snowflake,
+  clock: Clock,
+  zap: Zap,
+  sunrise: Sunrise,
+  moon: Moon,
+  "calendar-clock": CalendarClock,
+  flame: Flame,
+  mountain: Mountain,
+  ruler: Ruler,
+  "trending-up": TrendingUp,
+  trophy: Trophy,
+};
+
+function RecordIcon({ name }: { name: string }) {
+  const Icon = recordIcons[name] ?? Activity;
+  return (
+    <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 text-accent-light ring-1 ring-accent/20">
+      <Icon className="w-5 h-5" />
+    </div>
+  );
+}
 
 function formatDuration(sec: number): string {
   const h = Math.floor(sec / 3600);
@@ -27,16 +78,19 @@ function formatPace100(secPer100m: number): string {
 
 function RecordCard({ record }: { record: StatRecord }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const isClickable = !!record.sessionId;
 
   return (
     <div
       className={`card p-5 ${isClickable ? "card-hover cursor-pointer" : ""}`}
-      onClick={isClickable ? () => navigate(`/session/${record.sessionId}`) : undefined}
+      onClick={isClickable ? () => navigate(`/session/${record.sessionId}`, { state: { from: location.pathname } }) : undefined}
     >
-      <div className="text-2xl mb-2">{record.icon}</div>
-      <div className="stat-label mb-1">{record.label}</div>
-      <div className="stat-value">{record.display}</div>
+      <RecordIcon name={record.icon} />
+      <div className="mt-3">
+        <div className="stat-label mb-1">{record.label}</div>
+        <div className="stat-value">{record.display}</div>
+      </div>
       {record.sessionName && (
         <div className="text-xs text-gray-500 mt-1 truncate">
           {record.sessionDate} · {record.sessionName}
@@ -49,20 +103,23 @@ function RecordCard({ record }: { record: StatRecord }) {
 function BestEffortList({
   efforts,
   sportLabel,
-  icon,
+  icon: Icon,
 }: {
   efforts: BestEffortRecord[];
   sportLabel: string;
-  icon: string;
+  icon: LucideIcon;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (efforts.length === 0) return null;
 
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">{icon}</span>
+        <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 text-accent-light ring-1 ring-accent/20">
+          <Icon className="w-5 h-5" />
+        </span>
         <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
           {sportLabel}
         </h3>
@@ -72,7 +129,7 @@ function BestEffortList({
           <div
             key={`${e.name}-${i}`}
             className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-dark-300/50 cursor-pointer transition-colors"
-            onClick={() => navigate(`/session/${e.sessionId}`)}
+            onClick={() => navigate(`/session/${e.sessionId}`, { state: { from: location.pathname } })}
           >
             <div className="flex items-center gap-2">
               <span className="text-gray-500 w-4 text-right">{i + 1}</span>
@@ -124,9 +181,9 @@ export function StatsRecords() {
         <div>
           <h2 className="text-xl font-bold mb-4">Mejores marcas por deporte</h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <BestEffortList efforts={bestEfforts.running} sportLabel="Carrera" icon="🏃" />
-            <BestEffortList efforts={bestEfforts.cycling} sportLabel="Bicicleta" icon="🚴" />
-            <BestEffortList efforts={bestEfforts.swimming} sportLabel="Natación" icon="🏊" />
+            <BestEffortList efforts={bestEfforts.running} sportLabel="Carrera" icon={Footprints} />
+            <BestEffortList efforts={bestEfforts.cycling} sportLabel="Bicicleta" icon={Bike} />
+            <BestEffortList efforts={bestEfforts.swimming} sportLabel="Natación" icon={Waves} />
           </div>
         </div>
       )}

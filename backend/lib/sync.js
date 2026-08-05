@@ -12,6 +12,7 @@ const SYNC_SESSIONS = path.join(SCRIPTS_DIR, "sync-sessions.mjs");
 
 const MIN_DATE = process.env.MIN_DATE ?? "2026-05-12";
 const GARMIN_DEPS = "garminconnect==0.3.8";
+const PYTHON_VERSION = "3.12";
 
 let syncing = false;
 
@@ -40,7 +41,7 @@ function run(cmd, args, { cwd = ROOT } = {}) {
 }
 
 function runPython(args) {
-  return run("uv", ["run", "--with", GARMIN_DEPS, "python", GARMIN_FETCH, ...args]);
+  return run("uv", ["run", "--python", PYTHON_VERSION, "--with", GARMIN_DEPS, "python", GARMIN_FETCH, ...args]);
 }
 
 function runNode(script, args) {

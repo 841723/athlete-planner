@@ -122,8 +122,10 @@ export function buildStats(completed) {
   const firstDate = sortedDates[0];
   const lastDate = sortedDates[sortedDates.length - 1];
 
+  const todayKey = toLocalDateKey(new Date());
+  const streakActive = dates.has(todayKey);
   let streak = 0;
-  let cursor = new Date();
+  let cursor = streakActive ? new Date() : new Date(Date.now() - 86400000);
   while (dates.has(toLocalDateKey(cursor))) {
     streak++;
     cursor = new Date(cursor.getTime() - 86400000);
@@ -180,6 +182,7 @@ export function buildStats(completed) {
       avgFeel,
       rpeCount,
       streak,
+      streakActive,
       longestStreak,
       activeWeeks,
       avgHr: avg(all.filter((s) => s.avg_heartrate).map((s) => s.avg_heartrate)),

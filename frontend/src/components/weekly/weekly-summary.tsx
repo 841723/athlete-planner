@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+import { format } from "@/lib/date-format";
 import type { WeeklySummary } from "@/types/session";
 import { SportDistribution } from "./sport-distribution";
 import { WeekChart } from "./week-chart";

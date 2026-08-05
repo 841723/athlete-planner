@@ -115,10 +115,15 @@ JSON dentro de la tabla `sessions` de la BD (un tenant por fila):
 - `sport`: valor de `activityType` de Garmin (`running`, `trail_running`, `cycling`,
   `virtual_ride`, `indoor_cycling`, `lap_swimming`, `open_water_swimming`,
   `strength_training`, `paddelball`, `walking`, `hiking`, `other`, `training`, ...).
-- `title`: tipo de entrenamiento interpretado (p.ej. "Carrera en Z2", "Carrera de
-  montaña", "Bici llana", "Natación aguas abiertas", "Natación piscina", "Padel",
-  "Series de 400m"). El usuario puede editarlo en la web/JSON; `/sync` lo preserva
-  y no lo sobreescribe.
+- `name`: título original de Garmin (p.ej. "Alcanar Ciclismo"). Es el valor de
+  origen; no se modifica.
+- `title`: tipo de entrenamiento interpretado (p.ej. "Tempo run", "Carrera en Z2",
+  "Ciclismo en rodillo", "Natación series", "Fuerza"). Lo genera una IA al analizar
+  la actividad, y **solo** cuando se ejecuta la generación de un plan con IA
+  (`POST /api/generate-plan`), sobre las sesiones completadas de las últimas 8
+  semanas que aún no tienen `title`. El código estático no genera títulos al
+  sincronizar: si no hay `title`, la UI muestra `name`. El usuario puede editarlo
+  en la web/JSON; `/sync` lo preserva y no lo sobreescribe.
 - `avg_pace_s_per_km`: ritmo promedio en segundos por kilómetro, derivado de la
   velocidad media (`1000 / avg_speed_ms`). Para actividades sin velocidad (p.ej.
   fuerza) se omite.
@@ -193,7 +198,10 @@ que las completadas, con campos opcionales adicionales:
     derivados de las sesiones de las últimas 8 semanas (rango de FC Z2 en
     running, potencia media en bici, ritmo en natación y `goal.current_week`)
     y los guarda con `saveAthleteProfile` (`backend/lib/trainer.js`). El prompt
-    del LLM incluye la sección "ÚLTIMOS DATOS OBTENIDOS".
+    del LLM incluye la sección "ÚLTIMOS DATOS OBTENIDOS". Además, como parte de
+    este endpoint, una IA analiza las sesiones completadas de las últimas 8
+    semanas que aún no tienen `title` y les asigna título (ver `title` en el
+    esquema); la lista actualizada se devuelve como `titlesUpdated`.
   - `POST /api/sync`: sincroniza Garmin (rol con permisos de edición).
 - El frontend consume todo vía `frontend/src/services/api.ts` (fetch a `/api`).
   No uses el backend como origen de datos si no está corriendo.

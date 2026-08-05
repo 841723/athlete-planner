@@ -1,4 +1,5 @@
-import { format, parseISO, differenceInDays } from "date-fns";
+import { parseISO, differenceInDays } from "date-fns";
+import { format } from "@/lib/date-format";
 import { useSessions } from "@/hooks/use-sessions";
 import { useMeta } from "@/hooks/use-meta";
 

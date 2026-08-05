@@ -1,15 +1,15 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { SlidersHorizontal, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";import {
+import { useNavigate, useLocation } from "react-router-dom";
+import { SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";import {
   startOfMonth,
   endOfMonth,
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
-  format,
   parseISO,
   isSameMonth,
 } from "date-fns";
+import { format } from "@/lib/date-format";
 import type { SessionWithStatus, FilterState, RaceGoal } from "@/types/session";
 import { CalendarDay } from "./calendar-day";
 import { CalendarFilters } from "./calendar-filters";
@@ -36,6 +36,7 @@ interface CalendarViewProps {
 
 export function CalendarView({ completed, planned, filters, setSport, setDateFrom, setDateTo, setShowCompleted, setShowPlanned, resetFilters }: CalendarViewProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentMonth, showFilters, setCurrentMonth, setShowFilters, goToToday } = useCalendarStore();
   const [selectedSession, setSelectedSession] = useState<SessionWithStatus | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -89,8 +90,8 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMonth} className="btn btn-ghost px-2">
-          <span className="hidden sm:inline">← Anterior</span>
-          <span className="sm:hidden text-lg leading-none">‹</span>
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Anterior</span>
         </button>
         <div className="flex flex-col items-center gap-0.5 min-w-0">
           <h2 className="text-base sm:text-xl font-bold truncate capitalize px-1">
@@ -112,8 +113,8 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
             {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
           <button onClick={nextMonth} className="btn btn-ghost px-2">
-            <span className="hidden sm:inline">Siguiente →</span>
-            <span className="sm:hidden text-lg leading-none">›</span>
+            <ChevronRight className="w-4 h-4" />
+            <span className="hidden sm:inline">Siguiente</span>
           </button>
         </div>
       </div>
@@ -154,7 +155,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                 goal={goalsByDate.get(dateStr)}
                 onClick={(s) => {
                   if (s.status === "completed") {
-                    navigate(`/session/${s.id}`);
+                    navigate(`/session/${s.id}`, { state: { from: location.pathname } });
                   } else {
                     setSelectedSession(s);
                   }
@@ -180,8 +181,8 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
               <h3 className="text-lg font-bold capitalize">
                 {format(parseISO(selectedDay), "EEEE d 'de' MMMM")}
               </h3>
-              <button onClick={() => setSelectedDay(null)} className="text-gray-400 hover:text-white">
-                ✕
+              <button onClick={() => setSelectedDay(null)} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-2">
@@ -196,7 +197,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                     onClick={() => {
                       setSelectedDay(null);
                       if (isPlanned) setSelectedSession(s);
-                      else navigate(`/session/${s.id}`);
+                      else navigate(`/session/${s.id}`, { state: { from: location.pathname } });
                     }}
                   >
                     <div
@@ -233,7 +234,9 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                 <h3 className="text-lg font-bold">{selectedSession.title ?? selectedSession.name}</h3>
                 <span className="badge badge-planned">Plan</span>
               </div>
-              <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-white">✕</button>
+              <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Fecha planificada</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>

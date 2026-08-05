@@ -32,7 +32,7 @@ export function CumulativeChart() {
           <Line
             type="monotone"
             dataKey="cumulative"
-            stroke="#818cf8"
+            stroke="#3b82f6"
             strokeWidth={2}
             dot={false}
           />

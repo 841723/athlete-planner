@@ -53,7 +53,7 @@ export function UpcomingGoals() {
                     className="progress-fill"
                     style={{
                       width: `${goalProgress}%`,
-                      backgroundColor: isCurrent ? "#818cf8" : "#4ade80",
+                      backgroundColor: isCurrent ? "#3b82f6" : "#4ade80",
                     }}
                   />
                 </div>

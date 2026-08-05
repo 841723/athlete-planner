@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import type { Session, WorkoutBlock } from "@/types/session";
 import { useCreatePlanned, useUpdatePlanned } from "@/hooks/use-planned";
 import { Button } from "@/components/ui/button";
@@ -183,7 +183,9 @@ export function PlannedFormModal({ open, session, defaultDate, onClose }: Planne
           <h3 className="text-lg font-bold">
             {session ? "Editar planificada" : "Nueva planificada"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4">

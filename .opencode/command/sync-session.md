@@ -15,7 +15,7 @@ Pasos:
    ```
    uv run --with garminconnect==0.3.8 python scripts/garmin-fetch.py details <activity_id> --list /tmp/opencode/raw-activities.json --out /tmp/opencode/details/<activity_id>.json
    ```
-4. Normaliza solo esa actividad (genera el JSON en `sessions/` con título interpretado, p. ej. "Carrera en Z2"):
+4. Normaliza solo esa actividad (genera el JSON en `sessions/` con el `name` original de Garmin; sin `title`, que lo asigna la IA al generar un plan):
    ```
    node scripts/sync-sessions.mjs /tmp/opencode/raw-activities.json /tmp/opencode/details --ids=<activity_id>
    ```
@@ -24,4 +24,4 @@ Pasos:
    ```
    node scripts/build-summary.mjs
    ```
-6. Muestra el resultado: archivo creado, título interpretado y número de segmentos/vueltas.
+6. Muestra el resultado: archivo creado, `name` original y número de segmentos/vueltas.

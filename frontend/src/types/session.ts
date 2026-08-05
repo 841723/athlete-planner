@@ -254,6 +254,7 @@ export interface StatsGlobal {
   avgFeel: number | null;
   rpeCount: number;
   streak: number;
+  streakActive: boolean;
   longestStreak: number;
   activeWeeks: number;
   avgHr: number | null;
@@ -292,6 +293,7 @@ export interface GeneratePlanRequest {
 export interface GeneratePlanResponse {
   comments: string;
   sessions: PlannedSessionView[];
+  titlesUpdated?: { id: string; title: string }[];
 }
 
 export interface SyncResult {

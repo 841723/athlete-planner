@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format } from "@/lib/date-format";
 import type { CSSProperties } from "react";
 import { Trophy } from "lucide-react";
 import type { SessionWithStatus, RaceGoal } from "@/types/session";

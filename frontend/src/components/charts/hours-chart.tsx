@@ -29,7 +29,7 @@ export function HoursChart() {
               color: "#e5e7eb",
             }}
           />
-          <Bar dataKey="hours" fill="#818cf8" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

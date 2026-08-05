@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
-import { Save, Loader2, ExternalLink } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { parseISO } from "date-fns";
+import { format } from "@/lib/date-format";
+import { Save, Loader2, ExternalLink, X } from "lucide-react";
 import type { Session } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
 import { useUpdateSession } from "@/hooks/use-update-session";
@@ -29,6 +30,7 @@ function intensityBadge(intensity: string): { label: string; className: string }
 
 export function SessionModal({ session, onClose }: SessionModalProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const color = getSportColor(session.category);
   const label = getSportLabel(session.category);
   const updateMutation = useUpdateSession();
@@ -50,7 +52,9 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
             <h3 className="text-xl font-bold">{session.title ?? session.name}</h3>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         {session.title && session.title !== session.name && (
           <p className="text-xs text-gray-500 -mt-3 mb-4">{session.name}</p>
@@ -201,7 +205,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           <button
             onClick={() => {
               onClose();
-              navigate(`/session/${session.id}`);
+              navigate(`/session/${session.id}`, { state: { from: location.pathname } });
             }}
             className="btn btn-ghost text-sm"
           >

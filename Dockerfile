@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 curl ca
 RUN curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh \
     && sh /tmp/uv-install.sh \
     && rm /tmp/uv-install.sh \
-    && /root/.local/bin/uv --version
+    && /root/.local/bin/uv --version \
+    && /root/.local/bin/uv python install 3.12
 ENV PATH="/root/.local/bin:${PATH}"
 ENV UV_CACHE_DIR="/root/.cache/uv"
 

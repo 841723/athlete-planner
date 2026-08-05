@@ -1,0 +1,151 @@
+{
+    "personal": {
+        "gender": "Masculino",
+        "age": 23,
+        "height_m": 1.81,
+        "weight_kg": 74
+    },
+    "schedule": {
+        "work": "Lunes a viernes, 9:00 a 18:00",
+        "sleep_hours": "7-8",
+        "training_days_per_week": 5,
+        "rest_day": "viernes",
+        "weekday_availability": "1-2 horas",
+        "weekend_availability": "más tiempo"
+    },
+    "equipment": [
+        "Garmin Forerunner 165",
+        "Bicicleta de carretera",
+        "Rodillo inteligente",
+        "Piscina de 25 m",
+        "Piscina de 14 m (verano)",
+        "Acceso ocasional a mar abierto",
+        "Rack de sentadillas",
+        "Barra 8kg",
+        "Banco",
+        "Barra de dominadas",
+        "Discos (~110 kg)"
+    ],
+    "goal": {
+        "race": "Ironman 70.3 Valencia",
+        "target_week": 49,
+        "current_week": 13,
+        "primary": "Terminar sano y fuerte",
+        "secondary": "Llegar con la mejor condición física posible"
+    },
+    "philosophy": [
+        "No entrenar por entrenar",
+        "Cada sesión debe tener un objetivo",
+        "Priorizar calidad sobre cantidad",
+        "No sobreentrenar",
+        "Prevenir lesiones",
+        "Trabajar por bloques con progresión",
+        "No recuperar entrenamientos perdidos",
+        "Adaptar la planificación según la fatiga y el progreso",
+        "Entrenar como triatleta, no como especialista de un único deporte"
+    ],
+    "analysis_requirements": [
+        "Evaluar si la carga fue adecuada",
+        "Determinar si debo progresar o mantener",
+        "Analizar qué revela la sesión sobre mi estado actual",
+        "Proponer cambios respecto al plan inicial",
+        "Identificar el principal indicador de preocupación",
+        "Definir qué debo mejorar a corto plazo",
+        "Definir qué debo mejorar a largo plazo"
+    ],
+    "strengths": {
+        "running": {
+            "level": "Fuerte",
+            "history": {
+                "5k": "22:04 (hace 10 meses)"
+            },
+            "current": {
+                "z2_hr": "130-140 ppm",
+                "brick_run": "20 min @ 5:35/km y 142 ppm con buenas sensaciones"
+            },
+            "notes": "Buena base aeróbica. La carrera requiere principalmente mantenimiento mientras mejora el ciclismo."
+        }
+    },
+    "weaknesses": {
+        "cycling": {
+            "level": "Principiante",
+            "notes": [
+                "Empezó desde cero en la semana 1",
+                "Muy poca experiencia en carretera",
+                "Todavía adaptándose a los pedales automáticos",
+                "El limitante principal es muscular, no cardiovascular"
+            ],
+            "training_method": "Principalmente por potencia",
+            "current_power": {
+                "steady_state": "130-135 W",
+                "preferred_cadence": "85-100 rpm"
+            },
+            "priority": "Es la disciplina con mayor potencial de mejora y la principal limitación para el Ironman 70.3."
+        },
+        "swimming": {
+            "level": "Intermedio inicial",
+            "current_pace": "2:25-2:35 /100 m cómodo",
+            "focus": "Eficiencia antes que velocidad",
+            "improvement_areas": [
+                "Posición del cuerpo",
+                "Agarre",
+                "Patada",
+                "Respiración",
+                "Mantener la técnica durante esfuerzos largos"
+            ],
+            "notes": "No se busca entrenar como un nadador puro, sino como un triatleta eficiente."
+        }
+    },
+    "current_training_focus": {
+        "block": "Base aeróbica",
+        "primary_objective": "Desarrollar resistencia muscular específica en bicicleta",
+        "secondary_objectives": [
+            "Mantener la base aeróbica de carrera",
+            "Mejorar la eficiencia en natación",
+            "Mantener la fuerza sin comprometer la recuperación"
+        ],
+        "avoid": [
+            "Exceso de intensidad",
+            "Fatiga acumulada innecesaria",
+            "Entrenamientos sin objetivo"
+        ]
+    },
+    "key_metrics": {
+        "bike": [
+            "FC para 135 W",
+            "Tiempo continuo a potencia objetivo",
+            "Fatiga muscular en cuádriceps",
+            "Cadencia eficiente"
+        ],
+        "run": [
+            "FC en Z2",
+            "RPE",
+            "Respuesta tras los bricks"
+        ],
+        "swim": [
+            "Ritmo cómodo",
+            "Eficiencia técnica",
+            "Capacidad de mantener la técnica con fatiga"
+        ],
+        "recovery": [
+            "Calidad del sueño",
+            "Fatiga acumulada",
+            "Interferencia del entrenamiento de fuerza"
+        ]
+    },
+    "trainer_behavior": {
+        "role": "Entrenador personal especializado en Ironman 70.3",
+        "rules": [
+            "Decir lo que el atleta necesita oír, no lo que quiere oír",
+            "Cuestionar cualquier propuesta que no sea óptima",
+            "Justificar cada decisión con fundamentos fisiológicos o de rendimiento",
+            "Tomar la iniciativa al modificar la planificación",
+            "Ser crítico, objetivo y basado en evidencia",
+            "Ser conciso y práctico",
+            "Priorizar el rendimiento a largo plazo sobre la satisfacción inmediata",
+            "Adaptar continuamente la planificación según el progreso",
+            "No compensar entrenamientos perdidos aumentando la carga",
+            "Priorizar la consistencia sobre sesiones aisladas muy exigentes"
+        ]
+    }
+}

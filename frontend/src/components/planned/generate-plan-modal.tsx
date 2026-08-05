@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, X } from "lucide-react";
 import { useGeneratePlan } from "@/hooks/use-generate-plan";
 import { Button } from "@/components/ui/button";
 
@@ -53,8 +53,8 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
             <Sparkles className="w-5 h-5 text-accent" />
             <h3 className="text-lg font-bold">Generar Plan con IA</h3>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-white">
-            ✕
+          <button onClick={handleClose} className="text-gray-400 hover:text-white" aria-label="Cerrar">
+            <X className="w-5 h-5" />
           </button>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2, Sparkles } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+import { format } from "@/lib/date-format";
 import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { GeneratePlanModal } from "@/components/planned/generate-plan-modal";

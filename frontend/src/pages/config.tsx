@@ -189,7 +189,7 @@ export function ConfigPage() {
                 />
                 <input
                   className="input py-1.5 text-sm"
-                  placeholder="Etiqueta (ej. Ironman 70.3)"
+                  placeholder="Etiqueta (ej. Athlete Planner)"
                   value={g.label}
                   onChange={(e) => patchGoal(i, { label: e.target.value })}
                 />

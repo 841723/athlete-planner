@@ -1,4 +1,5 @@
-import { format, parseISO, addDays } from "date-fns";
+import { parseISO, addDays } from "date-fns";
+import { format } from "@/lib/date-format";
 import type { Session } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
 

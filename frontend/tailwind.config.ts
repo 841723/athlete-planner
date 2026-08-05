@@ -28,9 +28,9 @@ const config: Config = {
           other: "#6b7280",
         },
         accent: {
-          DEFAULT: "#818cf8",
-          light: "#a5b4fc",
-          dark: "#6366f1",
+          DEFAULT: "#3b82f6",
+          light: "#60a5fa",
+          dark: "#2563eb",
         },
       },
       fontFamily: {

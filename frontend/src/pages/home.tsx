@@ -1,5 +1,7 @@
 import { HeroStats } from "@/components/home/hero-stats";
 import { TodayTomorrow } from "@/components/home/today-tomorrow";
+import { RecentActivities } from "@/components/home/recent-activities";
+import { CurrentWeek } from "@/components/home/current-week";
 import { UpcomingGoals } from "@/components/home/upcoming-goals";
 import { StreakCard } from "@/components/home/streak-card";
 import { SyncButton } from "@/components/layout/sync-button";
@@ -35,17 +37,18 @@ export function HomePage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inicio</h1>
-        {/* TEMPORAL: botón de sincronizar oculto */}
-        {/* {perms.canSync && <SyncButton />} */}
+        {perms.canSync && <SyncButton />}
       </div>
       <HeroStats />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <TodayTomorrow completed={completed} planned={planned} />
+          <RecentActivities completed={completed} />
         </div>
         <div className="space-y-4">
           <UpcomingGoals />
           <StreakCard />
+          <CurrentWeek completed={completed} planned={planned} />
         </div>
       </div>
     </div>

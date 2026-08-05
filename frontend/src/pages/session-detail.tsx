@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Save, Loader2, ExternalLink } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+import { format } from "@/lib/date-format";
 import { useSession } from "@/hooks/use-session";
 import { useSessions } from "@/hooks/use-sessions";
 import { useUpdateSession } from "@/hooks/use-update-session";
@@ -20,6 +21,8 @@ import {
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backTo = (location.state as { from?: string } | null)?.from ?? "/calendar";
   const { data: session, isLoading, error } = useSession(id);
   const { data: allSessions } = useSessions();
   const updateMutation = useUpdateSession();
@@ -51,7 +54,7 @@ export function SessionDetailPage() {
     return (
       <div className="animate-fade-in">
         <button
-          onClick={() => navigate("/calendar")}
+          onClick={() => navigate(backTo)}
           className="flex items-center gap-1 text-sm text-gray-400 hover:text-white mb-6"
         >
           <ArrowLeft className="w-4 h-4" /> Volver
@@ -83,14 +86,14 @@ export function SessionDetailPage() {
     <div className="animate-fade-in max-w-3xl mx-auto">
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <button
-          onClick={() => navigate("/calendar")}
+          onClick={() => navigate(backTo)}
           className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" /> Volver
         </button>
         <div className="flex-1" />
         <button
-          onClick={() => prevSession && navigate(`/session/${prevSession.id}`)}
+          onClick={() => prevSession && navigate(`/session/${prevSession.id}`, { state: { from: backTo } })}
           disabled={!prevSession}
           className="btn btn-ghost text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           title={prevSession ? prevSession.title ?? prevSession.name : undefined}
@@ -98,7 +101,7 @@ export function SessionDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Anterior
         </button>
         <button
-          onClick={() => nextSession && navigate(`/session/${nextSession.id}`)}
+          onClick={() => nextSession && navigate(`/session/${nextSession.id}`, { state: { from: backTo } })}
           disabled={!nextSession}
           className="btn btn-ghost text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           title={nextSession ? nextSession.title ?? nextSession.name : undefined}
