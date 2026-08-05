@@ -41,11 +41,12 @@ export function PlannedPage() {
           <p className="text-sm text-gray-500 mt-1">{sessions.length} entrenamientos planificados</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {perms.canGeneratePlan && (
+          {/* TEMPORAL: botón de generar plan oculto */}
+          {/* {perms.canGeneratePlan && (
             <Button variant="outline" onClick={() => setGenerateOpen(true)}>
               <Sparkles className="w-4 h-4" /> Generar Plan con IA
             </Button>
-          )}
+          )} */}
           {perms.canEdit && (
             <Button
               onClick={() => {

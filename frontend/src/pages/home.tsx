@@ -35,7 +35,8 @@ export function HomePage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inicio</h1>
-        {perms.canSync && <SyncButton />}
+        {/* TEMPORAL: botón de sincronizar oculto */}
+        {/* {perms.canSync && <SyncButton />} */}
       </div>
       <HeroStats />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

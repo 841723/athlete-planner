@@ -22,7 +22,7 @@ export function UserMenu() {
           <img
             src={user.picture}
             alt={user?.name ?? ""}
-            className="w-5 h-5 rounded-full"
+            className="w-7 aspect-square rounded-full"
             referrerPolicy="no-referrer"
           />
         ) : (
