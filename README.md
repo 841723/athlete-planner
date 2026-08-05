@@ -117,6 +117,8 @@ El cambio de tenant y el acceso a Configuración están en el menú del usuario
 
 ## Docker
 
+### Desarrollo
+
 ```sh
 docker compose up --build
 ```
@@ -128,6 +130,34 @@ configurado. Los tokens de Garmin se guardan en el volumen `garmin_tokens`
 ```sh
 docker compose exec app uvx garmin-connect-mcp auth
 ```
+
+### Producción
+
+El despliegue usa un único contenedor que sirve el frontend compilado y la API
+desde el mismo puerto (`Dockerfile.prod` + `docker-compose.prod.yml`). El
+frontend usa URLs relativas (`/api`), así que todo funciona bajo un único
+dominio sin configurar ninguna URL de endpoint.
+
+```sh
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Mapea el puerto `13799` (host) al `4000` (contenedor). Pasos para exponerlo a
+internet tras levantar el contenedor:
+
+1. **`.env` en el servidor**: copia el fichero `.env` (está en `.gitignore`).
+   Revisa `GOOGLE_CLIENT_ID`, `DEFAULT_OWNER_EMAIL` y `MIN_DATE`.
+2. **Google OAuth**: en Google Cloud Console → Credenciales → tu OAuth Client,
+   añade `https://<tu-subdominio>` en **Authorized JavaScript origins** (el
+   login usa el flujo de `credential`, no hace falta redirect URI).
+3. **Túnel de Cloudflare**: apunta un túnel (cloudflared) al puerto
+   `http://localhost:13799`. El backend no gestiona TLS; la termina Cloudflare.
+4. **Garmin (opcional)**: si reactivas el botón de sincronizar, autentica
+   dentro del contenedor para guardar los tokens en el volumen:
+
+   ```sh
+   docker compose -f docker-compose.prod.yml exec app uvx garmin-connect-mcp auth
+   ```
 
 ## Estructura
 
