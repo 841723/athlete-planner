@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Calendar, ChartBar, ClipboardList, Home, Menu, X, Trophy } from "lucide-react";
 import { useState } from "react";
+import { UserMenu } from "./user-menu";
 
-const navItems = [
+const baseNavItems = [
   { path: "/", label: "Inicio", icon: Home },
   { path: "/calendar", label: "Calendario", icon: Calendar },
   { path: "/weekly", label: "Semanal", icon: ChartBar },
@@ -49,12 +50,14 @@ export function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const navItems = baseNavItems;
+
   return (
     <>
       <header className="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            className="btn-icon lg:hidden"
+            className="btn-icon md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -64,26 +67,29 @@ export function Header() {
             <span className="font-bold text-lg hidden sm:block uppercase">Ironman 70.3</span>
           </Link>
         </div>
-        <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`btn px-3 py-1.5 text-sm ${
-                  isActive
-                    ? "bg-accent/20 text-accent-light"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-dark-300"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden lg:inline">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`btn px-3 py-1.5 text-sm ${
+                    isActive
+                      ? "bg-accent/20 text-accent-light"
+                      : "text-gray-400 hover:text-gray-200 hover:bg-dark-300"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden lg:inline">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <UserMenu />
+        </div>
       </header>
 
       {mobileOpen && (

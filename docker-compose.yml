@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Hot reload: mount source code into container
+      - ./backend:/app/backend
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/index.html:/app/frontend/index.html
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
+      - ./frontend/tailwind.config.ts:/app/frontend/tailwind.config.ts
+      - ./frontend/postcss.config.js:/app/frontend/postcss.config.js
+      - ./sessions:/app/sessions
+      - ./scripts:/app/scripts
+      # Base de datos SQLite (persiste en el host, fuera del repo)
+      - ./data:/app/data
+      # Garmin OAuth tokens (persisten fuera del repo)
+      - garmin_tokens:/root/.garminconnect
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  garmin_tokens:

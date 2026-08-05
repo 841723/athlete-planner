@@ -1,9 +1,16 @@
-import fs from "node:fs";
-import path from "node:path";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { differenceInDays, parseISO, startOfWeek } from "date-fns";
+import { getDb } from "./db.js";
 
-export const SESSIONS_DIR = path.resolve(import.meta.dirname, "..", "..", "sessions");
-export const PLANNED_DIR = path.join(SESSIONS_DIR, "planned");
+export const tenantContext = new AsyncLocalStorage();
+
+export function withTenant(tenantId, fn) {
+  return tenantContext.run({ tenantId }, fn);
+}
+
+export function getTenantId() {
+  return tenantContext.getStore()?.tenantId ?? null;
+}
 
 export const SPORT_CATEGORIES = {
   running: "running",
@@ -27,6 +34,7 @@ export const SPORT_CATEGORIES = {
 };
 
 export const RACKET_SPORTS = new Set(["paddelball", "tennis_v2"]);
+export const ELAPSED_TIME_SPORTS = new Set(["hiking", "walking"]);
 
 export const TRAINING_WEEK_ONE_START = "2026-05-11";
 
@@ -36,14 +44,30 @@ export function getSportCategory(sport) {
 
 export function getSessionTime(s) {
   const racket = RACKET_SPORTS.has(s.sport);
-  const primary = racket ? s.elapsed_time_s : s.moving_time_s;
-  const fallback = racket ? s.moving_time_s : s.elapsed_time_s;
-  return primary ?? fallback ?? 0;
+  const useElapsed = ELAPSED_TIME_SPORTS.has(s.sport);
+  if (racket || useElapsed) {
+    return s.elapsed_time_s ?? s.moving_time_s ?? 0;
+  }
+  return s.moving_time_s ?? s.elapsed_time_s ?? 0;
 }
 
-export function getWeekNumber(date) {
+export function getTenantSettings(tenantId = getTenantId()) {
+  if (!tenantId) return {};
+  const store = tenantContext.getStore();
+  if (store?.settings) return store.settings;
+  const row = getDb()
+    .prepare("SELECT * FROM tenant_settings WHERE tenant_id = ?")
+    .get(tenantId);
+  const settings = row ?? {};
+  if (store) store.settings = settings;
+  return settings;
+}
+
+export function getWeekNumber(date, weekOneStart) {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
-  const anchor = parseISO(TRAINING_WEEK_ONE_START);
+  const anchor = parseISO(
+    weekOneStart ?? getTenantSettings()?.training_week_one_start ?? TRAINING_WEEK_ONE_START
+  );
   const diffDays = differenceInDays(weekStart, anchor);
   return Math.floor(diffDays / 7) + 1;
 }
@@ -64,15 +88,6 @@ export function toLocalDateKey(date) {
   return `${y}-${m}-${d}`;
 }
 
-function readJson(file) {
-  try {
-    const s = JSON.parse(fs.readFileSync(file, "utf8"));
-    return s?.id ? s : null;
-  } catch {
-    return null;
-  }
-}
-
 export function enrich(session) {
   return {
     ...session,
@@ -84,31 +99,110 @@ export function enrich(session) {
   };
 }
 
+export function upsertSession(tenantId, kind, session) {
+  const db = getDb();
+  const data = JSON.stringify(session);
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO sessions (tenant_id, id, kind, sport, start_date_local, title, name, data, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(tenant_id, id) DO UPDATE SET
+       kind = excluded.kind,
+       sport = excluded.sport,
+       start_date_local = excluded.start_date_local,
+       title = excluded.title,
+       name = excluded.name,
+       data = excluded.data,
+       updated_at = excluded.updated_at`
+  ).run(
+    tenantId,
+    String(session.id),
+    kind,
+    session.sport ?? null,
+    session.start_date_local ?? null,
+    session.title ?? null,
+    session.name ?? null,
+    data,
+    now,
+    now
+  );
+}
+
+export function deleteSession(id) {
+  const db = getDb();
+  db.prepare("DELETE FROM sessions WHERE tenant_id = ? AND id = ?").run(
+    getTenantId(),
+    String(id)
+  );
+}
+
+function rowsToSessions(rows) {
+  return rows.map((r) => enrich(JSON.parse(r.data)));
+}
+
 export function loadCompletedSessions() {
-  if (!fs.existsSync(SESSIONS_DIR)) return [];
-  const sessions = [];
-  for (const file of fs.readdirSync(SESSIONS_DIR)) {
-    if (!file.endsWith(".json")) continue;
-    if (file === "all.json" || file === "missing.json") continue;
-    const full = path.join(SESSIONS_DIR, file);
-    if (fs.statSync(full).isDirectory()) continue;
-    const s = readJson(full);
-    if (s) sessions.push(enrich(s));
-  }
-  return sessions;
+  const tenantId = getTenantId();
+  if (!tenantId) return [];
+  const rows = getDb()
+    .prepare(
+      "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'completed' ORDER BY start_date_local"
+    )
+    .all(tenantId);
+  return rowsToSessions(rows);
 }
 
 export function loadPlannedSessions() {
-  if (!fs.existsSync(PLANNED_DIR)) return [];
-  const sessions = [];
-  for (const file of fs.readdirSync(PLANNED_DIR)) {
-    if (!file.endsWith(".json")) continue;
-    const s = readJson(path.join(PLANNED_DIR, file));
-    if (s) sessions.push(enrich(s));
-  }
-  return sessions;
+  const tenantId = getTenantId();
+  if (!tenantId) return [];
+  const rows = getDb()
+    .prepare(
+      "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' ORDER BY start_date_local"
+    )
+    .all(tenantId);
+  return rowsToSessions(rows);
 }
 
 export function loadAllSessions() {
   return { completed: loadCompletedSessions(), planned: loadPlannedSessions() };
+}
+
+export function getSession(id) {
+  const row = getDb()
+    .prepare("SELECT data, kind FROM sessions WHERE tenant_id = ? AND id = ?")
+    .get(getTenantId(), String(id));
+  if (!row) return null;
+  const session = JSON.parse(row.data);
+  return { ...enrich(session), kind: row.kind };
+}
+
+export function updateSession(id, updates) {
+  const row = getDb()
+    .prepare("SELECT data, kind FROM sessions WHERE tenant_id = ? AND id = ?")
+    .get(getTenantId(), String(id));
+  if (!row) return null;
+  const session = { ...JSON.parse(row.data), ...updates, id: String(id) };
+  upsertSession(getTenantId(), row.kind, session);
+  return enrich(session);
+}
+
+export function getAthleteProfile(tenantId = getTenantId()) {
+  if (!tenantId) return null;
+  const row = getDb()
+    .prepare("SELECT data FROM athlete_profiles WHERE tenant_id = ?")
+    .get(tenantId);
+  if (!row) return null;
+  try {
+    return JSON.parse(row.data);
+  } catch {
+    return null;
+  }
+}
+
+export function saveAthleteProfile(tenantId, profile) {
+  getDb()
+    .prepare(
+      `INSERT INTO athlete_profiles (tenant_id, data, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(tenant_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
+    )
+    .run(tenantId, JSON.stringify(profile), new Date().toISOString());
 }

@@ -29,6 +29,7 @@
       "avg_watts": 84,
       "max_watts": 162,
       "total_elevation_gain_m": 73,
+      "total_elevation_loss_m": 26,
       "intensity": "ACTIVE"
     },
     {
@@ -42,6 +43,7 @@
       "avg_watts": 135,
       "max_watts": 225,
       "total_elevation_gain_m": 212,
+      "total_elevation_loss_m": 248,
       "intensity": "ACTIVE"
     }
   ],

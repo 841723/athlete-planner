@@ -1,4 +1,5 @@
 import { StatsGrid } from "@/components/stats/stats-grid";
+import { StatsRecords } from "@/components/stats/stats-records";
 import { CumulativeChart } from "@/components/charts/cumulative-chart";
 import { VolumeEvolutionChart } from "@/components/charts/volume-evolution-chart";
 import { DistanceChart } from "@/components/charts/distance-chart";
@@ -11,6 +12,7 @@ import { SwimTimeChart } from "@/components/charts/swim-time-chart";
 export function StatsPage() {
   return (
     <div className="animate-fade-in space-y-6">
+      <StatsRecords />
       <StatsGrid />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <CumulativeChart />

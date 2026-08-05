@@ -5,9 +5,11 @@ import {
   updatePlanned,
   deletePlanned,
 } from "@/services/api";
+import { useToast } from "@/components/ui/toast";
+import { invalidateMany } from "@/lib/invalidate";
 import type { PlannedSessionView, Session } from "@/types/session";
 
-const INVALIDATE = ["sessions", "weekly", "stats", "charts", "planned"];
+const INVALIDATE = ["sessions", "session", "weekly", "stats", "charts", "planned", "stats-records"];
 
 export function usePlanned() {
   return useQuery<PlannedSessionView[]>({
@@ -19,25 +21,46 @@ export function usePlanned() {
 
 export function useCreatePlanned() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (payload: Partial<Session>) => createPlanned(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: INVALIDATE }),
+    onSuccess: () => {
+      invalidateMany(qc, INVALIDATE);
+      toast({ type: "success", title: "Sesión creada correctamente" });
+    },
+    onError: (err) => {
+      toast({ type: "error", title: "Error al crear la sesión", description: err.message });
+    },
   });
 }
 
 export function useUpdatePlanned() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<Session> }) =>
       updatePlanned(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: INVALIDATE }),
+    onSuccess: () => {
+      invalidateMany(qc, INVALIDATE);
+      toast({ type: "success", title: "Sesión actualizada correctamente" });
+    },
+    onError: (err) => {
+      toast({ type: "error", title: "Error al actualizar la sesión", description: err.message });
+    },
   });
 }
 
 export function useDeletePlanned() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => deletePlanned(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: INVALIDATE }),
+    onSuccess: () => {
+      invalidateMany(qc, INVALIDATE);
+      toast({ type: "success", title: "Sesión eliminada correctamente" });
+    },
+    onError: (err) => {
+      toast({ type: "error", title: "Error al eliminar la sesión", description: err.message });
+    },
   });
 }

@@ -28,6 +28,7 @@
       "max_heartrate": 116,
       "avg_watts": 97,
       "max_watts": 128,
+      "total_elevation_loss_m": 19,
       "intensity": "ACTIVE"
     },
     {
@@ -66,6 +67,7 @@
       "max_heartrate": 146,
       "avg_watts": 160,
       "max_watts": 180,
+      "total_elevation_loss_m": 10,
       "intensity": "ACTIVE"
     },
     {
@@ -79,6 +81,7 @@
       "avg_watts": 120,
       "max_watts": 165,
       "total_elevation_gain_m": 5,
+      "total_elevation_loss_m": 5,
       "intensity": "ACTIVE"
     },
     {
@@ -92,6 +95,7 @@
       "avg_watts": 160,
       "max_watts": 228,
       "total_elevation_gain_m": 28,
+      "total_elevation_loss_m": 28,
       "intensity": "ACTIVE"
     },
     {
@@ -105,6 +109,7 @@
       "avg_watts": 118,
       "max_watts": 184,
       "total_elevation_gain_m": 7,
+      "total_elevation_loss_m": 6,
       "intensity": "ACTIVE"
     },
     {
@@ -118,6 +123,7 @@
       "avg_watts": 99,
       "max_watts": 146,
       "total_elevation_gain_m": 31,
+      "total_elevation_loss_m": 16,
       "intensity": "ACTIVE"
     }
   ],

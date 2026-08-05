@@ -3,7 +3,7 @@
   "id": "23846209247",
   "sport": "paddelball",
   "name": "Alcanar Pádel",
-  "start_date_local": "2026-08-04T10:10:56",
+  "start_date_local": "2026-08-04T10:10:00",
   "distance_m": 2328.11,
   "moving_time_s": 1519,
   "elapsed_time_s": 4526,
@@ -11,7 +11,7 @@
   "avg_pace_s_per_km": 1898,
   "max_speed_ms": 2.799,
   "avg_heartrate": 111,
-  "max_heartrate": 204,
+  "max_heartrate": 140,
   "average_temp_c": 36.5,
   "training_effect": 1.8,
   "calories_kcal": 442,
@@ -55,5 +55,8 @@
       "secsInZone": 15
     }
   ],
-  "title": "Padel"
+  "rpe": 30,
+  "feel": 50,
+  "title": "Padel",
+  "notes": "Partido de padel en familia, algo tranquilo, pero con el calor ha sido algo duro"
 }

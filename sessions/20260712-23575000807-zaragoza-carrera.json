@@ -31,6 +31,7 @@
       "avg_watts": 360,
       "max_watts": 502,
       "total_elevation_gain_m": 11,
+      "total_elevation_loss_m": 1,
       "intensity": "ACTIVE"
     },
     {
@@ -44,6 +45,7 @@
       "avg_watts": 340,
       "max_watts": 392,
       "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 1,
       "intensity": "ACTIVE"
     },
     {
@@ -57,6 +59,7 @@
       "avg_watts": 333,
       "max_watts": 371,
       "total_elevation_gain_m": 1,
+      "total_elevation_loss_m": 4,
       "intensity": "ACTIVE"
     },
     {
@@ -70,6 +73,7 @@
       "avg_watts": 324,
       "max_watts": 404,
       "total_elevation_gain_m": 2,
+      "total_elevation_loss_m": 8,
       "intensity": "ACTIVE"
     }
   ],

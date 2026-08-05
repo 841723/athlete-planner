@@ -65,6 +65,7 @@
       "max_heartrate": 118,
       "avg_watts": 129,
       "max_watts": 142,
+      "total_elevation_loss_m": 0,
       "intensity": "ACTIVE"
     },
     {
@@ -102,6 +103,7 @@
       "max_heartrate": 119,
       "avg_watts": 90,
       "max_watts": 176,
+      "total_elevation_loss_m": 0,
       "intensity": "ACTIVE"
     },
     {
@@ -139,6 +141,7 @@
       "max_heartrate": 106,
       "avg_watts": 87,
       "max_watts": 138,
+      "total_elevation_loss_m": 0,
       "intensity": "ACTIVE"
     }
   ],

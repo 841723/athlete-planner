@@ -17,6 +17,7 @@
   "average_temp_c": 22.5,
   "training_effect": 2.2,
   "calories_kcal": 445,
+  "notes": "Caida en el km 12",
   "segments": [
     {
       "distance_m": 5000,

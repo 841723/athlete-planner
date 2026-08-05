@@ -111,6 +111,10 @@ function summary(a) {
   if (te) s.training_effect = round(te, 1);
   const cal = num(a.calories);
   if (cal) s.calories_kcal = Math.round(cal);
+  const notes = a.notes || a.description || null;
+  if (notes && typeof notes === "string" && notes.trim()) {
+    s.notes = notes.trim();
+  }
   return s;
 }
 

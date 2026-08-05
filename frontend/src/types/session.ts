@@ -48,11 +48,13 @@ export interface Session {
   avg_watts?: number;
   max_watts?: number;
   total_elevation_gain_m?: number;
+  total_elevation_loss_m?: number;
   average_temp_c?: number;
   training_effect?: number;
   calories_kcal?: number;
   rpe?: number;
   feel?: number;
+  notes?: string;
   segments?: SessionSegment[];
   best_efforts?: SessionBestEffort[];
   hr_zones?: HrZone[];
@@ -280,4 +282,52 @@ export interface ChartsData {
   swimMinutes: { date: string; minutes: number }[];
   weekChart: { week: string; hours: number; planned: number; distance: number }[];
   sportDistribution: { sport: string; value: number }[];
+}
+
+export interface GeneratePlanRequest {
+  comments: string;
+  weeks: number;
+}
+
+export interface GeneratePlanResponse {
+  comments: string;
+  sessions: PlannedSessionView[];
+}
+
+export interface SyncResult {
+  synced: number;
+  skipped: number;
+  filtered: number;
+  missing: number;
+  ids: string[];
+  message?: string;
+}
+
+export interface StatRecord {
+  id: string;
+  icon: string;
+  label: string;
+  display: string;
+  value?: number;
+  sessionId?: string;
+  sessionName?: string;
+  sessionDate?: string;
+}
+
+export interface BestEffortRecord {
+  name: string;
+  distance_m: number;
+  time_s: number;
+  sessionId: string;
+  sessionName: string;
+  sessionDate: string;
+}
+
+export interface StatsRecordsData {
+  records: StatRecord[];
+  bestEfforts: {
+    running: BestEffortRecord[];
+    cycling: BestEffortRecord[];
+    swimming: BestEffortRecord[];
+  };
 }

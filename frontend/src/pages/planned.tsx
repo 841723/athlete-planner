@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Sparkles } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
 import { PlannedFormModal } from "@/components/planned/planned-form";
+import { GeneratePlanModal } from "@/components/planned/generate-plan-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePermissions } from "@/hooks/use-permissions";
 import { getSportColor, getSportLabel, formatDistance } from "@/lib/utils";
 import type { PlannedSessionView } from "@/types/session";
 
 export function PlannedPage() {
   const { data: planned, isLoading } = usePlanned();
   const deleteMutation = useDeletePlanned();
+  const perms = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const [editing, setEditing] = useState<PlannedSessionView | null>(null);
 
   if (isLoading) {
@@ -31,19 +35,28 @@ export function PlannedPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Planificadas</h1>
           <p className="text-sm text-gray-500 mt-1">{sessions.length} entrenamientos planificados</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="w-4 h-4" /> Nueva planificada
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {perms.canGeneratePlan && (
+            <Button variant="outline" onClick={() => setGenerateOpen(true)}>
+              <Sparkles className="w-4 h-4" /> Generar Plan con IA
+            </Button>
+          )}
+          {perms.canEdit && (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4" /> Nueva planificada
+            </Button>
+          )}
+        </div>
       </div>
 
       {sessions.length === 0 ? (
@@ -83,29 +96,31 @@ export function PlannedPage() {
               {s.distance_m ? (
                 <div className="mt-3 text-xs text-gray-400">{formatDistance(s.distance_m)}</div>
               ) : null}
-              <div className="flex gap-2 mt-4 pt-3 border-t border-dark-400">
-                <Button
-                  variant="ghost"
-                  className="text-xs px-2 py-1"
-                  onClick={() => {
-                    setEditing(s);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Pencil className="w-3 h-3" /> Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
-                  onClick={() => {
-                    if (window.confirm(`¿Eliminar "${s.title ?? s.name}"?`)) {
-                      deleteMutation.mutate(s.id);
-                    }
-                  }}
-                >
-                  <Trash2 className="w-3 h-3" /> Eliminar
-                </Button>
-              </div>
+              {perms.canEdit && (
+                <div className="flex gap-2 mt-4 pt-3 border-t border-dark-400">
+                  <Button
+                    variant="ghost"
+                    className="text-xs px-2 py-1"
+                    onClick={() => {
+                      setEditing(s);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" /> Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar "${s.title ?? s.name}"?`)) {
+                        deleteMutation.mutate(s.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" /> Eliminar
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -117,6 +132,8 @@ export function PlannedPage() {
         defaultDate={new Date().toISOString().slice(0, 10)}
         onClose={() => setFormOpen(false)}
       />
+
+      <GeneratePlanModal open={generateOpen} onClose={() => setGenerateOpen(false)} />
     </div>
   );
 }

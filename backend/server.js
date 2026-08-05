@@ -1,18 +1,45 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { loadAllSessions, getSessionTime } from "./lib/sessions.js";
+
+try {
+  process.loadEnvFile();
+} catch {
+  // No .env (p.ej. variables ya exportadas); continuar.
+}
+import {
+  loadAllSessions,
+  getSessionTime,
+  getSession,
+  updateSession,
+  withTenant,
+  getTenantId,
+  getAthleteProfile,
+  saveAthleteProfile,
+} from "./lib/sessions.js";
 import { buildWeeklySummary } from "./lib/weekly.js";
 import { buildStats } from "./lib/stats.js";
 import { buildCharts } from "./lib/charts.js";
-import { RACE_GOALS } from "./lib/goals.js";
-import { META } from "./lib/meta.js";
+import { getGoals, saveGoals } from "./lib/goals.js";
+import { getMeta } from "./lib/meta.js";
+import { listPlanned, createPlanned, updatePlanned, deletePlanned } from "./lib/planned.js";
+import { generatePlan } from "./lib/trainer.js";
+import { buildStatsRecords } from "./lib/stats-records.js";
+import { runSync } from "./lib/sync.js";
+import { migrate } from "./lib/migrate.js";
 import {
-  listPlanned,
-  createPlanned,
-  updatePlanned,
-  deletePlanned,
-} from "./lib/planned.js";
+  AUTH_COOKIE,
+  TENANT_COOKIE,
+  verifyGoogleToken,
+  findOrCreateUser,
+  createSessionToken,
+  getUserByToken,
+  destroySessionToken,
+  getTenantMemberships,
+  getMembership,
+  publicUser,
+} from "./lib/auth.js";
+import { listMembers, addMember, updateMemberRole, removeMember, renameTenant } from "./lib/members.js";
 
 const args = process.argv.slice(2);
 const portArg = Number(process.env.PORT ?? 4000);
@@ -71,6 +98,25 @@ function readBody(req) {
   });
 }
 
+function parseCookies(req) {
+  const out = {};
+  const raw = req.headers.cookie ?? "";
+  for (const part of raw.split(";")) {
+    const i = part.indexOf("=");
+    if (i === -1) continue;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    if (k) out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+function setCookie(res, name, value, maxAge) {
+  const parts = [`${name}=${encodeURIComponent(value)}`, "Path=/", "HttpOnly", "SameSite=Lax"];
+  if (maxAge !== undefined) parts.push(`Max-Age=${maxAge}`);
+  res.setHeader("Set-Cookie", parts.join("; "));
+}
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -116,13 +162,29 @@ function serveStatic(req, res) {
   }
 }
 
-async function handleApi(req, res, pathname) {
-  const method = req.method;
-  const url = new URL(pathname, "http://localhost");
-
-  if (url.pathname === "/api/health" && method === "GET") {
-    return sendJson(res, 200, { ok: true });
+function requireMember(tenantId, user) {
+  const membership = getMembership(tenantId, user.id);
+  if (!membership) {
+    const err = new Error("Sin acceso a este tenant");
+    err.status = 403;
+    throw err;
   }
+  return membership;
+}
+
+function requireRole(membership, roles) {
+  if (!roles.includes(membership.role)) {
+    const err = new Error("No tienes permisos para esta acción");
+    err.status = 403;
+    throw err;
+  }
+}
+
+const canWrite = (m) => m.role !== "visitor";
+const canManage = (m) => m.role === "admin" || m.role === "athlete";
+
+async function handleTenantRoutes(req, res, url, method, user, membership) {
+  const tenantId = getTenantId();
 
   if (url.pathname === "/api/sessions" && method === "GET") {
     const { completed, planned } = loadAllSessions();
@@ -156,6 +218,11 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 200, buildStats(completed));
   }
 
+  if (url.pathname === "/api/stats-records" && method === "GET") {
+    const { completed } = loadAllSessions();
+    return sendJson(res, 200, buildStatsRecords(completed));
+  }
+
   if (url.pathname === "/api/charts" && method === "GET") {
     const { completed, planned } = loadAllSessions();
     const weekly = buildWeeklySummary(completed, planned);
@@ -163,16 +230,24 @@ async function handleApi(req, res, pathname) {
   }
 
   if (url.pathname === "/api/goals" && method === "GET") {
-    return sendJson(res, 200, RACE_GOALS);
+    return sendJson(res, 200, getGoals(tenantId));
+  }
+
+  if (url.pathname === "/api/goals" && method === "PUT") {
+    if (!canManage(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    saveGoals(tenantId, body?.goals);
+    return sendJson(res, 200, { ok: true });
   }
 
   if (url.pathname === "/api/meta" && method === "GET") {
-    return sendJson(res, 200, META);
+    return sendJson(res, 200, getMeta(tenantId));
   }
 
   if (url.pathname === "/api/planned") {
     if (method === "GET") return sendJson(res, 200, listPlanned());
     if (method === "POST") {
+      if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
       const body = await readBody(req);
       return sendJson(res, 201, createPlanned(body ?? {}));
     }
@@ -183,10 +258,12 @@ async function handleApi(req, res, pathname) {
   if (plannedMatch) {
     const id = decodeURIComponent(plannedMatch[1]);
     if (method === "PUT") {
+      if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
       const body = await readBody(req);
       return sendJson(res, 200, updatePlanned(id, body ?? {}));
     }
     if (method === "DELETE") {
+      if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
       deletePlanned(id);
       res.writeHead(204);
       return res.end();
@@ -194,7 +271,158 @@ async function handleApi(req, res, pathname) {
     return sendJson(res, 405, { error: "Método no permitido" });
   }
 
+  if (url.pathname === "/api/generate-plan" && method === "POST") {
+    if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    const comments = body?.comments ?? "";
+    const weeks = body?.weeks ?? 1;
+    const result = await generatePlan(comments, weeks);
+    return sendJson(res, 200, result);
+  }
+
+  if (url.pathname === "/api/sync" && method === "POST") {
+    if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    const result = await runSync({ force: body?.force === true });
+    return sendJson(res, 200, result);
+  }
+
+  if (url.pathname === "/api/profile" && method === "GET") {
+    return sendJson(res, 200, getAthleteProfile(tenantId) ?? {});
+  }
+
+  if (url.pathname === "/api/profile" && method === "PUT") {
+    if (!canManage(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    saveAthleteProfile(tenantId, body ?? {});
+    return sendJson(res, 200, { ok: true });
+  }
+
+  const sessionMatch = url.pathname.match(/^\/api\/sessions\/([^/]+)$/);
+  if (sessionMatch) {
+    const id = decodeURIComponent(sessionMatch[1]);
+    if (method === "GET") {
+      const session = getSession(id);
+      if (!session) return sendJson(res, 404, { error: "Sesión no encontrada" });
+      return sendJson(res, 200, session);
+    }
+    if (method === "PUT") {
+      if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+      const body = await readBody(req);
+      const updated = updateSession(id, body ?? {});
+      if (!updated) return sendJson(res, 404, { error: "Sesión no encontrada" });
+      return sendJson(res, 200, updated);
+    }
+    return sendJson(res, 405, { error: "Método no permitido" });
+  }
+
+  const membersMatch = url.pathname.match(/^\/api\/tenants\/([^/]+)\/members$/);
+  if (membersMatch) {
+    const targetTenantId = decodeURIComponent(membersMatch[1]);
+    const targetMembership = requireMember(targetTenantId, user);
+    if (method === "GET") return sendJson(res, 200, listMembers(targetTenantId));
+    if (method === "POST") {
+      if (!canManage(targetMembership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+      const body = await readBody(req);
+      return sendJson(res, 201, addMember(targetTenantId, body ?? {}));
+    }
+    return sendJson(res, 405, { error: "Método no permitido" });
+  }
+
+  const tenantNameMatch = url.pathname.match(/^\/api\/tenants\/([^/]+)\/name$/);
+  if (tenantNameMatch) {
+    const targetTenantId = decodeURIComponent(tenantNameMatch[1]);
+    const targetMembership = requireMember(targetTenantId, user);
+    if (!canManage(targetMembership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    if (method === "PUT") {
+      const body = await readBody(req);
+      return sendJson(res, 200, renameTenant(targetTenantId, body?.name));
+    }
+    return sendJson(res, 405, { error: "Método no permitido" });
+  }
+
+  const memberMatch = url.pathname.match(/^\/api\/tenants\/([^/]+)\/members\/([^/]+)$/);
+  if (memberMatch) {
+    const targetTenantId = decodeURIComponent(memberMatch[1]);
+    const targetUserId = decodeURIComponent(memberMatch[2]);
+    const targetMembership = requireMember(targetTenantId, user);
+    if (!canManage(targetMembership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    if (method === "PUT") {
+      const body = await readBody(req);
+      updateMemberRole(targetTenantId, targetUserId, body?.role);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (method === "DELETE") {
+      removeMember(targetTenantId, targetUserId);
+      res.writeHead(204);
+      return res.end();
+    }
+    return sendJson(res, 405, { error: "Método no permitido" });
+  }
+
   return sendJson(res, 404, { error: "Ruta no encontrada" });
+}
+
+async function handleApi(req, res, pathname) {
+  const method = req.method;
+  const url = new URL(pathname, "http://localhost");
+
+  if (url.pathname === "/api/health" && method === "GET") {
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === "/api/auth/config" && method === "GET") {
+    return sendJson(res, 200, { clientId: process.env.GOOGLE_CLIENT_ID ?? null });
+  }
+
+  if (url.pathname === "/api/auth/google" && method === "POST") {
+    const body = await readBody(req);
+    if (!body?.credential) return sendJson(res, 400, { error: "Falta el credential de Google" });
+    const googleUser = await verifyGoogleToken(body.credential);
+    const user = findOrCreateUser(googleUser);
+    const token = createSessionToken(user.id);
+    setCookie(res, AUTH_COOKIE, token, 60 * 60 * 24 * 30);
+    return sendJson(res, 200, { user: publicUser(user) });
+  }
+
+  const cookies = parseCookies(req);
+  const token = cookies[AUTH_COOKIE];
+  const user = getUserByToken(token);
+  if (!user) return sendJson(res, 401, { error: "No autenticado" });
+
+  if (url.pathname === "/api/auth/logout" && method === "POST") {
+    destroySessionToken(token);
+    setCookie(res, AUTH_COOKIE, "", 0);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === "/api/me" && method === "GET") {
+    const tenants = getTenantMemberships(user.id);
+    const requestedTenant = cookies[TENANT_COOKIE];
+    const activeTenantId =
+      tenants.find((t) => t.id === requestedTenant)?.id ?? tenants[0]?.id ?? null;
+    return sendJson(res, 200, {
+      user: publicUser(user),
+      tenants,
+      activeTenantId,
+    });
+  }
+
+  if (url.pathname === "/api/switch-tenant" && method === "POST") {
+    const body = await readBody(req);
+    const targetId = body?.tenantId;
+    if (!targetId) return sendJson(res, 400, { error: "Falta tenantId" });
+    requireMember(targetId, user);
+    setCookie(res, TENANT_COOKIE, targetId, 60 * 60 * 24 * 365);
+    return sendJson(res, 200, { activeTenantId: targetId });
+  }
+
+  const tenantId = req.headers["x-tenant-id"] ?? cookies[TENANT_COOKIE];
+  if (!tenantId) return sendJson(res, 400, { error: "Falta el tenant (X-Tenant-Id)" });
+  const membership = getMembership(tenantId, user.id);
+  if (!membership) return sendJson(res, 403, { error: "Sin acceso a este tenant" });
+
+  return withTenant(tenantId, () => handleTenantRoutes(req, res, url, method, user, membership));
 }
 
 const server = http.createServer((req, res) => {
@@ -207,6 +435,12 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, () => {
+  const migrated = migrate();
+  if (migrated.migrated) {
+    console.log(
+      `Migración de datos completada: ${migrated.completed} sesiones, ${migrated.planned} planificadas.`
+    );
+  }
   console.log(`Backend escuchando en http://localhost:${port}`);
   if (staticDir) console.log(`Sirviendo estáticos desde: ${staticDir}`);
 });

@@ -1,6 +1,11 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
+import { Save, Loader2, ExternalLink } from "lucide-react";
 import type { Session } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
+import { useUpdateSession } from "@/hooks/use-update-session";
+import { Button } from "@/components/ui/button";
 
 interface SessionModalProps {
   session: Session;
@@ -23,8 +28,19 @@ function intensityBadge(intensity: string): { label: string; className: string }
 }
 
 export function SessionModal({ session, onClose }: SessionModalProps) {
+  const navigate = useNavigate();
   const color = getSportColor(session.category);
   const label = getSportLabel(session.category);
+  const updateMutation = useUpdateSession();
+  const [notes, setNotes] = useState(session.notes ?? "");
+  const [isEditing, setIsEditing] = useState(false);
+
+  function handleSaveNotes() {
+    updateMutation.mutate(
+      { id: session.id, payload: { notes } },
+      { onSuccess: () => setIsEditing(false) }
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in" onClick={onClose}>
@@ -128,14 +144,76 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           </div>
         )}
 
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-gray-300">Comentarios</h4>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-accent hover:text-accent-light"
+              >
+                Editar
+              </button>
+            )}
+          </div>
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60 resize-none"
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Añade tus comentarios sobre esta sesión..."
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  className="text-xs px-2 py-1"
+                  onClick={() => {
+                    setNotes(session.notes ?? "");
+                    setIsEditing(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="text-xs px-2 py-1"
+                  onClick={handleSaveNotes}
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Save className="w-3 h-3" />
+                  )}
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 whitespace-pre-wrap">
+              {notes || "Sin comentarios"}
+            </p>
+          )}
+        </div>
+
         <div className="flex gap-2 mt-4 pt-4 border-t border-dark-400">
+          <button
+            onClick={() => {
+              onClose();
+              navigate(`/session/${session.id}`);
+            }}
+            className="btn btn-ghost text-sm"
+          >
+            <ExternalLink className="w-4 h-4" /> Ver página completa
+          </button>
           <a
             href={`https://connect.garmin.com/modern/activity/${session.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary text-sm"
+            className="btn btn-ghost text-sm"
           >
-            Ver en Garmin
+            Garmin
           </a>
           <a
             href={`https://www.strava.com/activities/${session.id}`}
@@ -143,7 +221,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
             rel="noopener noreferrer"
             className="btn btn-ghost text-sm"
           >
-            Ver en Strava
+            Strava
           </a>
         </div>
       </div>

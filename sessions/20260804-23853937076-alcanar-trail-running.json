@@ -1,0 +1,169 @@
+{
+  "schema_version": 4,
+  "id": "23853937076",
+  "sport": "trail_running",
+  "name": "Alcanar Trail running",
+  "start_date_local": "2026-08-04T21:13:58",
+  "distance_m": 6089.91,
+  "moving_time_s": 2323,
+  "elapsed_time_s": 2342,
+  "avg_speed_ms": 2.6,
+  "avg_pace_s_per_km": 385,
+  "max_speed_ms": 4.516,
+  "avg_heartrate": 135,
+  "max_heartrate": 158,
+  "avg_watts": 297,
+  "max_watts": 470,
+  "total_elevation_gain_m": 89,
+  "total_elevation_loss_m": 92,
+  "average_temp_c": 32.5,
+  "training_effect": 2.9,
+  "calories_kcal": 452,
+  "segments": [
+    {
+      "distance_m": 1000,
+      "time_s": 429,
+      "avg_speed_ms": 2.329,
+      "avg_pace_s_per_km": 429,
+      "max_speed_ms": 2.827,
+      "avg_heartrate": 125,
+      "max_heartrate": 139,
+      "avg_watts": 296,
+      "max_watts": 384,
+      "total_elevation_gain_m": 31,
+      "total_elevation_loss_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 417,
+      "avg_speed_ms": 2.398,
+      "avg_pace_s_per_km": 417,
+      "max_speed_ms": 3.574,
+      "avg_heartrate": 140,
+      "max_heartrate": 145,
+      "avg_watts": 290,
+      "max_watts": 446,
+      "total_elevation_gain_m": 29,
+      "total_elevation_loss_m": 19,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 343,
+      "avg_speed_ms": 2.919,
+      "avg_pace_s_per_km": 343,
+      "max_speed_ms": 4.516,
+      "avg_heartrate": 143,
+      "max_heartrate": 158,
+      "avg_watts": 318,
+      "max_watts": 470,
+      "total_elevation_gain_m": 8,
+      "total_elevation_loss_m": 28,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 367,
+      "avg_speed_ms": 2.727,
+      "avg_pace_s_per_km": 367,
+      "max_speed_ms": 2.893,
+      "avg_heartrate": 134,
+      "max_heartrate": 141,
+      "avg_watts": 293,
+      "max_watts": 355,
+      "total_elevation_gain_m": 5,
+      "total_elevation_loss_m": 14,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 366,
+      "avg_speed_ms": 2.734,
+      "avg_pace_s_per_km": 366,
+      "max_speed_ms": 3.303,
+      "avg_heartrate": 141,
+      "max_heartrate": 149,
+      "avg_watts": 312,
+      "max_watts": 411,
+      "total_elevation_gain_m": 11,
+      "total_elevation_loss_m": 10,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 387,
+      "avg_speed_ms": 2.584,
+      "avg_pace_s_per_km": 387,
+      "max_speed_ms": 2.762,
+      "avg_heartrate": 132,
+      "max_heartrate": 142,
+      "avg_watts": 281,
+      "max_watts": 390,
+      "total_elevation_gain_m": 5,
+      "total_elevation_loss_m": 18,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 89.91,
+      "time_s": 34,
+      "avg_speed_ms": 2.671,
+      "avg_pace_s_per_km": 374,
+      "max_speed_ms": 2.622,
+      "avg_heartrate": 137,
+      "max_heartrate": 140,
+      "avg_watts": 262,
+      "max_watts": 283,
+      "total_elevation_loss_m": 3,
+      "intensity": "ACTIVE"
+    }
+  ],
+  "best_efforts": [
+    {
+      "name": "1K",
+      "distance_m": 1000,
+      "elapsed_time_s": 307
+    },
+    {
+      "name": "1 Mile",
+      "distance_m": 1609,
+      "elapsed_time_s": 553
+    },
+    {
+      "name": "5K",
+      "distance_m": 5000,
+      "elapsed_time_s": 1875
+    }
+  ],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 98,
+      "secsInZone": 46
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 115,
+      "secsInZone": 1123
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 137,
+      "secsInZone": 1143
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 156,
+      "secsInZone": 13
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 176,
+      "secsInZone": 0
+    }
+  ],
+  "rpe": 60,
+  "feel": 100,
+  "title": "Carrera de montaña en Z2",
+  "notes": "Primera experiencia con el trail running. Me ha gustado mucho, me he sentido muy fuerte y he disfrutado.\nPor otro lado, me he sentido muy comodo corriendo a ritmos un poco más altos que los habituales cuando he corrido 5 minutos el kilómetro me he sentido muy bien, es cierto que eran tramos con desnivel negativo, pero aun así he disfrutado de la velocidad."
+}

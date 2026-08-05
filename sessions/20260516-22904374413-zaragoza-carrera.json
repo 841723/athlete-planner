@@ -31,6 +31,7 @@
       "avg_watts": 308,
       "max_watts": 460,
       "total_elevation_gain_m": 10,
+      "total_elevation_loss_m": 2,
       "intensity": "ACTIVE"
     },
     {
@@ -44,6 +45,21 @@
       "avg_watts": 286,
       "max_watts": 352,
       "total_elevation_gain_m": 7,
+      "total_elevation_loss_m": 6,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 396,
+      "avg_speed_ms": 2.522,
+      "avg_pace_s_per_km": 397,
+      "max_speed_ms": 2.631,
+      "avg_heartrate": 134,
+      "max_heartrate": 139,
+      "avg_watts": 308,
+      "max_watts": 352,
+      "total_elevation_gain_m": 5,
+      "total_elevation_loss_m": 1,
       "intensity": "ACTIVE"
     },
     {
@@ -57,6 +73,61 @@
       "avg_watts": 294,
       "max_watts": 309,
       "total_elevation_gain_m": 1,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 401,
+      "avg_speed_ms": 2.491,
+      "avg_pace_s_per_km": 401,
+      "max_speed_ms": 2.575,
+      "avg_heartrate": 132,
+      "max_heartrate": 136,
+      "avg_watts": 272,
+      "max_watts": 303,
+      "total_elevation_loss_m": 2,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 394,
+      "avg_speed_ms": 2.539,
+      "avg_pace_s_per_km": 394,
+      "max_speed_ms": 2.631,
+      "avg_heartrate": 136,
+      "max_heartrate": 140,
+      "avg_watts": 285,
+      "max_watts": 321,
+      "total_elevation_gain_m": 3,
+      "total_elevation_loss_m": 8,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 1000,
+      "time_s": 399,
+      "avg_speed_ms": 2.509,
+      "avg_pace_s_per_km": 399,
+      "max_speed_ms": 2.622,
+      "avg_heartrate": 135,
+      "max_heartrate": 139,
+      "avg_watts": 277,
+      "max_watts": 328,
+      "total_elevation_gain_m": 4,
+      "total_elevation_loss_m": 9,
+      "intensity": "ACTIVE"
+    },
+    {
+      "distance_m": 261.48,
+      "time_s": 106,
+      "avg_speed_ms": 2.46,
+      "avg_pace_s_per_km": 407,
+      "max_speed_ms": 2.669,
+      "avg_heartrate": 134,
+      "max_heartrate": 138,
+      "avg_watts": 285,
+      "max_watts": 325,
+      "total_elevation_gain_m": 3,
+      "total_elevation_loss_m": 6,
       "intensity": "ACTIVE"
     }
   ],
@@ -86,13 +157,25 @@
     {
       "zoneNumber": 2,
       "zoneLowBoundary": 117,
-      "secsInZone": 2479
+      "secsInZone": 2480
     },
     {
       "zoneNumber": 3,
       "zoneLowBoundary": 139,
       "secsInZone": 63
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 158,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 178,
+      "secsInZone": 0
     }
   ],
+  "rpe": 30,
+  "feel": 50,
   "title": "Carrera en Z2"
 }

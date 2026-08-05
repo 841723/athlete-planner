@@ -297,6 +297,33 @@
     }
   ],
   "best_efforts": [],
+  "hr_zones": [
+    {
+      "zoneNumber": 1,
+      "zoneLowBoundary": 124,
+      "secsInZone": 1177
+    },
+    {
+      "zoneNumber": 2,
+      "zoneLowBoundary": 136,
+      "secsInZone": 1131
+    },
+    {
+      "zoneNumber": 3,
+      "zoneLowBoundary": 154,
+      "secsInZone": 14
+    },
+    {
+      "zoneNumber": 4,
+      "zoneLowBoundary": 169,
+      "secsInZone": 0
+    },
+    {
+      "zoneNumber": 5,
+      "zoneLowBoundary": 183,
+      "secsInZone": 0
+    }
+  ],
   "rpe": 50,
   "feel": 50,
   "title": "Natación piscina"

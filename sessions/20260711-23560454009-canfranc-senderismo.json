@@ -27,6 +27,7 @@
       "avg_heartrate": 93,
       "max_heartrate": 103,
       "total_elevation_gain_m": 6,
+      "total_elevation_loss_m": 2,
       "intensity": "ACTIVE"
     },
     {
@@ -38,17 +39,19 @@
       "avg_heartrate": 108,
       "max_heartrate": 143,
       "total_elevation_gain_m": 585,
+      "total_elevation_loss_m": 169,
       "intensity": "ACTIVE"
     },
     {
       "distance_m": 4724.77,
       "time_s": 5294,
       "avg_speed_ms": 0.892,
-      "avg_pace_s_per_km": 1121,
+      "avg_pace_s_per_km": 1120,
       "max_speed_ms": 2.669,
       "avg_heartrate": 102,
       "max_heartrate": 129,
       "total_elevation_gain_m": 83,
+      "total_elevation_loss_m": 495,
       "intensity": "ACTIVE"
     }
   ],

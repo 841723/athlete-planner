@@ -1,0 +1,76 @@
+{
+  "personal": {
+    "gender": "Masculino",
+    "age": 30,
+    "height_m": 1.75,
+    "weight_kg": 70
+  },
+  "schedule": {
+    "work": "Lunes a viernes, 9:00 a 18:00",
+    "sleep_hours": "7-8",
+    "training_days_per_week": 5,
+    "rest_day": "viernes",
+    "weekday_availability": "1-2 horas",
+    "weekend_availability": "más tiempo"
+  },
+  "equipment": [
+    "Garmin Forerunner",
+    "Bicicleta de carretera",
+    "Rodillo inteligente",
+    "Piscina"
+  ],
+  "goal": {
+    "race": "Ironman 70.3",
+    "target_week": 40,
+    "current_week": 10,
+    "primary": "Terminar sano y fuerte",
+    "secondary": "Llegar con la mejor condición física posible"
+  },
+  "philosophy": [
+    "No entrenar por entrenar",
+    "Cada sesión debe tener un objetivo",
+    "Pocas sesiones bien diseñadas que muchas sin sentido",
+    "No sobreentrenar",
+    "Prevenir lesiones",
+    "Trabajar con bloques y progresión"
+  ],
+  "analysis_requirements": [
+    "Si la carga fue adecuada",
+    "Si debo progresar o mantener",
+    "Qué revela esa sesión sobre mi estado actual",
+    "Qué cambiarías respecto al plan inicial",
+    "Qué debo mejorar a corto plazo",
+    "Qué debo mejorar a largo plazo"
+  ],
+  "strengths": {
+    "running": {
+      "level": "Fuerte",
+      "history": "10K en 50 minutos",
+      "current": "Rodajes Z2 cómodos"
+    }
+  },
+  "weaknesses": {
+    "cycling": {
+      "level": "Principiante",
+      "notes": "Poca experiencia en carretera",
+      "training_method": "Principalmente por potencia"
+    },
+    "swimming": {
+      "level": "Intermedio",
+      "current_pace": "2:30 /100m cómodo",
+      "improvement_areas": [
+        "Posición del cuerpo",
+        "Eficiencia",
+        "Patada"
+      ]
+    }
+  },
+  "trainer_behavior": {
+    "rules": [
+      "No decir lo que quiero oír, sino lo que necesito oír para mejorar",
+      "Tomar la iniciativa - detectar cuándo modificar la planificación",
+      "Ser conciso - respuestas directas y prácticas",
+      "La planificación debe evolucionar continuamente según el progreso"
+    ]
+  }
+}

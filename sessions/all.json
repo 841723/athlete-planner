@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-04T11:51:59.259Z",
-  "count": 60,
+  "generated_at": "2026-08-04T21:47:01.785Z",
+  "count": 61,
   "sessions": [
     {
       "id": "22859095649",
@@ -38,7 +38,9 @@
       "moving_time_s": 2583,
       "avg_heartrate": 132,
       "avg_pace_s_per_km": 399,
-      "segments": 3
+      "rpe": 30,
+      "feel": 50,
+      "segments": 8
     },
     {
       "id": "23840984949",
@@ -754,6 +756,8 @@
       "moving_time_s": 3123,
       "avg_heartrate": 126,
       "avg_pace_s_per_km": 2101,
+      "rpe": 60,
+      "feel": 75,
       "segments": 10
     },
     {
@@ -766,7 +770,23 @@
       "moving_time_s": 1519,
       "avg_heartrate": 111,
       "avg_pace_s_per_km": 1898,
+      "rpe": 30,
+      "feel": 50,
       "segments": 1
+    },
+    {
+      "id": "23853937076",
+      "date": "2026-08-04",
+      "sport": "trail_running",
+      "name": "Alcanar Trail running",
+      "title": "Carrera de montaña en Z2",
+      "distance_m": 6089.91,
+      "moving_time_s": 2323,
+      "avg_heartrate": 135,
+      "avg_pace_s_per_km": 385,
+      "rpe": 60,
+      "feel": 100,
+      "segments": 7
     }
   ]
 }
