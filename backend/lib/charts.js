@@ -100,7 +100,6 @@ export function buildCharts(completed, weekly) {
   const weekChart = (weekly ?? []).map((w) => ({
     week: `W${w.weekNumber}`,
     hours: w.hours,
-    planned: w.plannedHours,
     distance: w.distance_km,
   }));
 

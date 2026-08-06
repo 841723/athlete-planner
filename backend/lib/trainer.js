@@ -1,7 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 import {
@@ -14,10 +12,10 @@ import {
   upsertSession,
   updateSession,
 } from "./sessions.js";
+import { getProfileVersion, saveProfileVersion } from "./profile-history.js";
+import { getPrompt } from "./ai-prompts.js";
 import { buildObjectives } from "./objectives.js";
 import { subWeeks, format, parseISO, startOfWeek } from "date-fns";
-
-const execAsync = promisify(exec);
 
 const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
 const SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-system-prompt.txt");
@@ -39,22 +37,35 @@ function loadTitlesSystemPrompt() {
   }
 }
 
-async function runLLM(fullPrompt) {
-  const { stdout, stderr } = await execAsync(
-    `opencode run --format json --dir "${path.resolve(import.meta.dirname, "..", "..")}"`,
+async function callGemini(apiKey, model, systemPrompt, userPrompt) {
+  const fullText = `${systemPrompt}\n\n---\n\n${userPrompt}`;
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
-      input: fullPrompt,
-      maxBuffer: 1024 * 1024 * 10,
-      timeout: 120000,
-      env: { ...process.env, FORCE_COLOR: "0" },
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullText }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+        },
+      }),
     }
   );
 
-  let responseText = stdout;
-  if (!responseText || responseText.trim().length === 0) {
-    responseText = stderr;
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Error de la API de Gemini: ${response.status} - ${errText}`);
   }
-  return responseText;
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Respuesta vacía de la API de Gemini");
+  return text;
 }
 
 function getRecentSessions(weeks = 8) {
@@ -151,7 +162,7 @@ function parseTitlesResponse(response) {
   }
 }
 
-async function generateSessionTitles(sessions) {
+async function generateSessionTitles(sessions, apiKey, model) {
   const untitled = sessions.filter((s) => !s.title && s.name);
   if (untitled.length === 0) return [];
 
@@ -168,7 +179,7 @@ ${sessionsText}
 Responde únicamente con el JSON con los títulos.
 `.trim();
 
-  const responseText = await runLLM(`${systemPrompt}\n\n---\n\n${userPrompt}`);
+  const responseText = await callGemini(apiKey, model, systemPrompt, userPrompt);
   const titles = parseTitlesResponse(responseText);
 
   const applied = [];
@@ -279,6 +290,7 @@ COMENTARIOS DEL ATLETA:
 ${comments}
 
 Genera un plan de entrenamiento para las próximas ${weeks} semana(s). Responde con el JSON estructurado como se indica en las instrucciones.
+Además, incluye un campo "updated_profile" con el perfil del atleta actualizado según tus observaciones de las últimas sesiones.
 `.trim();
 }
 
@@ -293,6 +305,7 @@ function parseLLMResponse(response) {
     return {
       comments: parsed.comments || "",
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      updated_profile: parsed.updated_profile || null,
     };
   } catch {
     throw new Error("Error al parsear la respuesta JSON del LLM");
@@ -316,6 +329,7 @@ function createPlannedSession(sessionData) {
     title: sessionData.title,
     name: sessionData.name ?? sessionData.title,
     start_date_local: sessionData.start_date_local,
+    workout_text: sessionData.workout_text,
     distance_m: sessionData.distance_m,
     moving_time_s: sessionData.moving_time_s ?? sessionData.elapsed_time_s,
     elapsed_time_s: sessionData.elapsed_time_s ?? sessionData.moving_time_s,
@@ -334,29 +348,50 @@ function clearPlannedSessions() {
   getDb().prepare("DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'").run(getTenantId());
 }
 
-export async function generatePlan(comments, weeks = 1) {
-  const systemPrompt = loadSystemPrompt();
-  const profile = getAthleteProfile() ?? {};
+export async function generatePlan({ comments = "", weeks = 1, profileVersionId = null, promptId = null, apiKey, provider, model }) {
+  const tenantId = getTenantId();
+
+  let profile;
+  if (profileVersionId) {
+    const version = getProfileVersion(profileVersionId);
+    if (version && version.tenant_id === tenantId) {
+      profile = version.data;
+    } else {
+      profile = getAthleteProfile() ?? {};
+    }
+  } else {
+    profile = getAthleteProfile() ?? {};
+  }
+
   const recentSessions = getRecentSessions(8);
   const metrics = deriveProfileMetrics(recentSessions);
   const updatedProfile = mergeProfileMetrics(profile, metrics);
-  if (Object.keys(metrics).length > 0) {
-    saveAthleteProfile(getTenantId(), updatedProfile);
-  }
+
   let titlesUpdated = [];
   try {
-    titlesUpdated = await generateSessionTitles(recentSessions);
+    titlesUpdated = await generateSessionTitles(recentSessions, apiKey, model);
   } catch (err) {
     console.error("Error generando títulos de sesión:", err.message);
   }
+
+  let systemPrompt;
+  if (promptId) {
+    const prompt = getPrompt(promptId);
+    if (prompt && prompt.tenant_id === tenantId) {
+      systemPrompt = prompt.content;
+    } else {
+      systemPrompt = loadSystemPrompt();
+    }
+  } else {
+    systemPrompt = loadSystemPrompt();
+  }
+
   const userPrompt = buildUserPrompt(comments, weeks, updatedProfile, metrics);
 
-  const fullPrompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-
   try {
-    const responseText = await runLLM(fullPrompt);
+    const responseText = await callGemini(apiKey, model, systemPrompt, userPrompt);
 
-    const { comments: llmComments, sessions: rawSessions } = parseLLMResponse(responseText);
+    const { comments: llmComments, sessions: rawSessions, updated_profile } = parseLLMResponse(responseText);
 
     clearPlannedSessions();
 
@@ -370,15 +405,22 @@ export async function generatePlan(comments, weeks = 1) {
       }
     }
 
+    let profileUpdated = false;
+    if (updated_profile && typeof updated_profile === "object") {
+      const versionId = saveProfileVersion(tenantId, updated_profile, "ai");
+      if (versionId) {
+        saveAthleteProfile(tenantId, updated_profile);
+        profileUpdated = true;
+      }
+    }
+
     return {
       comments: llmComments,
       sessions: createdSessions,
       titlesUpdated,
+      profileUpdated,
     };
   } catch (err) {
-    if (err.killed) {
-      throw new Error("La generación del plan tomó demasiado tiempo. Intenta con menos semanas.");
-    }
     throw new Error(`Error al generar el plan: ${err.message}`);
   }
 }

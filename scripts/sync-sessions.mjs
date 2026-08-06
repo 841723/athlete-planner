@@ -115,6 +115,10 @@ function summary(a) {
   if (notes && typeof notes === "string" && notes.trim()) {
     s.notes = notes.trim();
   }
+  const locationName = a.locationName || a.locationNameFull || null;
+  if (locationName && typeof locationName === "string" && locationName.trim()) {
+    s.location_name = locationName.trim();
+  }
   return s;
 }
 

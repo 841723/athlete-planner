@@ -40,6 +40,9 @@ import {
   publicUser,
 } from "./lib/auth.js";
 import { listMembers, addMember, updateMemberRole, removeMember, renameTenant } from "./lib/members.js";
+import { getAiSettings, getAiSettingsWithKey, saveAiSettings } from "./lib/ai-settings.js";
+import { getProfileHistory, getProfileVersion, saveProfileVersion } from "./lib/profile-history.js";
+import { getPrompts, getPrompt, savePrompt, deletePrompt } from "./lib/ai-prompts.js";
 
 const args = process.argv.slice(2);
 const portArg = Number(process.env.PORT ?? 4000);
@@ -188,7 +191,7 @@ async function handleTenantRoutes(req, res, url, method, user, membership) {
 
   if (url.pathname === "/api/sessions" && method === "GET") {
     const { completed, planned } = loadAllSessions();
-    const totals = [...completed, ...planned].reduce(
+    const totals = completed.reduce(
       (acc, s) => {
         acc.totalDistance += s.distance_m ?? 0;
         acc.totalHours += getSessionTime(s) / 3600;
@@ -209,8 +212,8 @@ async function handleTenantRoutes(req, res, url, method, user, membership) {
   }
 
   if (url.pathname === "/api/weekly" && method === "GET") {
-    const { completed, planned } = loadAllSessions();
-    return sendJson(res, 200, buildWeeklySummary(completed, planned));
+    const { completed } = loadAllSessions();
+    return sendJson(res, 200, buildWeeklySummary(completed));
   }
 
   if (url.pathname === "/api/stats" && method === "GET") {
@@ -224,8 +227,8 @@ async function handleTenantRoutes(req, res, url, method, user, membership) {
   }
 
   if (url.pathname === "/api/charts" && method === "GET") {
-    const { completed, planned } = loadAllSessions();
-    const weekly = buildWeeklySummary(completed, planned);
+    const { completed } = loadAllSessions();
+    const weekly = buildWeeklySummary(completed);
     return sendJson(res, 200, buildCharts(completed, weekly));
   }
 
@@ -276,7 +279,19 @@ async function handleTenantRoutes(req, res, url, method, user, membership) {
     const body = await readBody(req);
     const comments = body?.comments ?? "";
     const weeks = body?.weeks ?? 1;
-    const result = await generatePlan(comments, weeks);
+    const profileVersionId = body?.profileVersionId ?? null;
+    const promptId = body?.promptId ?? null;
+    const settings = getAiSettingsWithKey(tenantId);
+    if (!settings) return sendJson(res, 400, { error: "Configura un proveedor de IA en Configuración antes de generar un plan." });
+    const result = await generatePlan({
+      comments,
+      weeks,
+      profileVersionId,
+      promptId,
+      apiKey: settings.api_key,
+      provider: settings.provider,
+      model: settings.model,
+    });
     return sendJson(res, 200, result);
   }
 
@@ -295,7 +310,95 @@ async function handleTenantRoutes(req, res, url, method, user, membership) {
     if (!canManage(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
     const body = await readBody(req);
     saveAthleteProfile(tenantId, body ?? {});
+    saveProfileVersion(tenantId, body ?? {}, "user");
     return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === "/api/profile/history" && method === "GET") {
+    return sendJson(res, 200, getProfileHistory(tenantId));
+  }
+
+  const profileHistoryMatch = url.pathname.match(/^\/api\/profile\/history\/([^/]+)$/);
+  if (profileHistoryMatch && method === "GET") {
+    const versionId = decodeURIComponent(profileHistoryMatch[1]);
+    const version = getProfileVersion(versionId);
+    if (!version || version.tenant_id !== tenantId) return sendJson(res, 404, { error: "Versión no encontrada" });
+    return sendJson(res, 200, version);
+  }
+
+  if (url.pathname === "/api/profile/active" && method === "PUT") {
+    if (!canManage(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    if (!body?.versionId) return sendJson(res, 400, { error: "Falta versionId" });
+    const version = getProfileVersion(body.versionId);
+    if (!version || version.tenant_id !== tenantId) return sendJson(res, 404, { error: "Versión no encontrada" });
+    saveAthleteProfile(tenantId, version.data);
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === "/api/ai-settings" && method === "GET") {
+    return sendJson(res, 200, getAiSettings(tenantId) ?? {});
+  }
+
+  if (url.pathname === "/api/ai-settings" && method === "PUT") {
+    if (membership.role !== "athlete") return sendJson(res, 403, { error: "Solo el atleta puede configurar el proveedor de IA" });
+    const body = await readBody(req);
+    if (!body?.provider || !body?.apiKey) return sendJson(res, 400, { error: "Falta provider o apiKey" });
+    saveAiSettings(tenantId, {
+      provider: body.provider,
+      apiKey: body.apiKey,
+      model: body.model ?? "gemini-2.0-flash",
+    });
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (url.pathname === "/api/ai-settings/test" && method === "POST") {
+    if (membership.role !== "athlete") return sendJson(res, 403, { error: "Solo el atleta puede probar la conexión" });
+    const settings = getAiSettingsWithKey(tenantId);
+    if (!settings) return sendJson(res, 400, { error: "No hay proveedor de IA configurado" });
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${settings.model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-goog-api-key": settings.api_key },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Responde solo con 'OK'" }] }] }),
+        }
+      );
+      if (!response.ok) {
+        const err = await response.text();
+        return sendJson(res, 400, { error: `Error de la API: ${response.status} - ${err}` });
+      }
+      return sendJson(res, 200, { ok: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: `Error de conexión: ${err.message}` });
+    }
+  }
+
+  if (url.pathname === "/api/prompts" && method === "GET") {
+    return sendJson(res, 200, getPrompts(tenantId));
+  }
+
+  if (url.pathname === "/api/prompts" && method === "POST") {
+    if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(req);
+    if (!body?.name || !body?.content) return sendJson(res, 400, { error: "Falta name o content" });
+    try {
+      const id = savePrompt(tenantId, { name: body.name, content: body.content });
+      return sendJson(res, 201, { id });
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+  }
+
+  const promptMatch = url.pathname.match(/^\/api\/prompts\/([^/]+)$/);
+  if (promptMatch && method === "DELETE") {
+    if (!canWrite(membership)) return sendJson(res, 403, { error: "No tienes permisos para esta acción" });
+    const promptId = decodeURIComponent(promptMatch[1]);
+    const deleted = deletePrompt(promptId, tenantId);
+    if (!deleted) return sendJson(res, 404, { error: "Prompt no encontrado o es predefinido" });
+    res.writeHead(204);
+    return res.end();
   }
 
   const sessionMatch = url.pathname.match(/^\/api\/sessions\/([^/]+)$/);

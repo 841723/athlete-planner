@@ -37,6 +37,7 @@ export interface Session {
   name: string;
   title?: string;
   start_date_local: string;
+  workout_text?: string;
   distance_m?: number;
   moving_time_s?: number;
   elapsed_time_s?: number;
@@ -55,6 +56,7 @@ export interface Session {
   rpe?: number;
   feel?: number;
   notes?: string;
+  location_name?: string;
   segments?: SessionSegment[];
   best_efforts?: SessionBestEffort[];
   hr_zones?: HrZone[];
@@ -78,6 +80,7 @@ export interface SessionSegment {
   avg_watts?: number;
   max_watts?: number;
   total_elevation_gain_m?: number;
+  total_elevation_loss_m?: number;
   intensity?: "ACTIVE" | "REST" | "WARMUP" | "COOLDOWN" | string;
 }
 
@@ -142,9 +145,6 @@ export interface WeeklySummary {
   distance_km: number;
   elevation_m: number;
   bySport: Record<SportCategory, number>;
-  plannedSessions: number;
-  plannedDistance_km: number;
-  plannedHours: number;
 }
 
 export interface Goal {
@@ -281,19 +281,8 @@ export interface ChartsData {
   runningPaces: { date: string; pace: number }[];
   cyclingSpeeds: { date: string; speed: number }[];
   swimMinutes: { date: string; minutes: number }[];
-  weekChart: { week: string; hours: number; planned: number; distance: number }[];
+  weekChart: { week: string; hours: number; distance: number }[];
   sportDistribution: { sport: string; value: number }[];
-}
-
-export interface GeneratePlanRequest {
-  comments: string;
-  weeks: number;
-}
-
-export interface GeneratePlanResponse {
-  comments: string;
-  sessions: PlannedSessionView[];
-  titlesUpdated?: { id: string; title: string }[];
 }
 
 export interface SyncResult {
@@ -332,4 +321,45 @@ export interface StatsRecordsData {
     cycling: BestEffortRecord[];
     swimming: BestEffortRecord[];
   };
+}
+
+export interface AiSettings {
+  provider: string;
+  model: string;
+}
+
+export interface AiSettingsFull extends AiSettings {
+  apiKey: string;
+}
+
+export interface ProfileVersion {
+  id: string;
+  author: "user" | "ai";
+  created_at: string;
+}
+
+export interface ProfileVersionFull extends ProfileVersion {
+  data: Record<string, unknown>;
+  tenant_id: string;
+}
+
+export interface AiPrompt {
+  id: string;
+  name: string;
+  content: string;
+  is_predefined: number;
+}
+
+export interface GeneratePlanRequest {
+  comments: string;
+  weeks: number;
+  profileVersionId?: string;
+  promptId?: string;
+}
+
+export interface GeneratePlanResponse {
+  comments: string;
+  sessions: PlannedSessionView[];
+  titlesUpdated?: { id: string; title: string }[];
+  profileUpdated?: boolean;
 }

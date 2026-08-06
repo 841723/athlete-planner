@@ -1,9 +1,9 @@
 import { HeroStats } from "@/components/home/hero-stats";
 import { TodayTomorrow } from "@/components/home/today-tomorrow";
-import { RecentActivities } from "@/components/home/recent-activities";
-import { CurrentWeek } from "@/components/home/current-week";
 import { UpcomingGoals } from "@/components/home/upcoming-goals";
 import { StreakCard } from "@/components/home/streak-card";
+import { RecentActivity } from "@/components/home/recent-activity";
+import { WeeklyVolume } from "@/components/home/weekly-volume";
 import { SyncButton } from "@/components/layout/sync-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSessions } from "@/hooks/use-sessions";
@@ -43,12 +43,12 @@ export function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <TodayTomorrow completed={completed} planned={planned} />
-          <RecentActivities completed={completed} />
+          <RecentActivity />
         </div>
         <div className="space-y-4">
           <UpcomingGoals />
           <StreakCard />
-          <CurrentWeek completed={completed} planned={planned} />
+          <WeeklyVolume />
         </div>
       </div>
     </div>

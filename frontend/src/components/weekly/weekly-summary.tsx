@@ -37,7 +37,6 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
                 <th className="text-right py-2 px-3">Horas</th>
                 <th className="text-right py-2 px-3">Distancia</th>
                 <th className="text-right py-2 px-3">Desnivel</th>
-                <th className="text-right py-2 px-3">Planeado</th>
                 <th className="text-right py-2 px-3">Realizado</th>
               </tr>
             </thead>
@@ -61,9 +60,6 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
                   <td className="text-right py-2 px-3">{w.hours}h</td>
                   <td className="text-right py-2 px-3">{w.distance_km} km</td>
                   <td className="text-right py-2 px-3">{w.elevation_m} m</td>
-                  <td className="text-right py-2 px-3 text-gray-400">
-                    {w.plannedSessions} ses · {w.plannedDistance_km} km
-                  </td>
                   <td className="text-right py-2 px-3 text-accent-light">
                     {w.sessions} ses · {w.distance_km} km
                   </td>
@@ -101,10 +97,6 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Desnivel</span>
                   <span>{w.elevation_m} m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Planeado</span>
-                  <span>{w.plannedSessions} ses</span>
                 </div>
               </div>
             </div>

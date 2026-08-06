@@ -3,7 +3,7 @@ import { generatePlan } from "@/services/api";
 import { invalidateMany } from "@/lib/invalidate";
 import type { GeneratePlanRequest, GeneratePlanResponse } from "@/types/session";
 
-const INVALIDATE = ["sessions", "weekly", "stats", "charts", "planned", "stats-records", "profile"];
+const INVALIDATE = ["sessions", "weekly", "stats", "charts", "planned", "stats-records", "profile", "profile-history"];
 
 export function useGeneratePlan() {
   const qc = useQueryClient();

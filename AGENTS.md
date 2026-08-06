@@ -146,23 +146,26 @@ Viven en la BD (tabla `sessions` con `kind = 'planned'`). Usan el mismo esquema
 que las completadas, con campos opcionales adicionales:
 
 - `title`: tipo de entrenamiento (ej. "Carrera en Z2", "5K", "Series de 400m").
-  El backend lo interpreta para generar los objetivos (`objectives` en la API).
-- `workout`: pasos estructurados del entrenamiento:
-  ```json
-  {
-    "warmup_s": 600,
-    "blocks": [
-      { "type": "intervals", "repeat": 4, "distance_m": 400, "pace_s_per_km": 225, "rest_s": 120 },
-      { "type": "steady", "time_s": 2400, "hr_from": 130, "hr_to": 138 }
-    ],
-    "cooldown_s": 600
-  }
-  ```
-- `hr_from` / `hr_to`: rango de FC objetivo (para Z2, Z3, etc. sin workout).
-- Sin `workout` ni `title`: el backend genera objetivos genéricos de distancia,
-  ritmo, tiempo, FC según los campos numéricos disponibles.
+  El backend lo interpreta para generar los objetivos (`objectives` en la API)
+  solo cuando no hay `workout_text`.
+- `workout_text`: las "vueltas" del entrenamiento en texto libre (una línea por
+  bloque, series anidadas con `Nx` y pasos sangrados). Es el campo principal que
+  usa la UI: si existe, se muestra en lugar de `objectives`. Formato por deporte:
+  - Natación: líneas de vueltas (`300 suaves`, `4x28m Side Kick`, `7x112m continuos suaves`, ...).
+  - Ciclismo: minutos con potencia (`10 min @90W`, `15 min @130-135W`), series
+    anidadas con `3x` + pasos sangrados, o simplemente `MTB`.
+  - Carrera: `65 min @ Z2`, o `calentamiento libre` / `12x` + `400m @ 3:30 min/km`
+    + `1 min descanso` / `enfriamiento libre`.
+- (Legado) `workout`: pasos estructurados (warmup/blocks/cooldown). Ya no se
+  edita desde la web; el formulario lo limpia al guardar.
+- (Legado) `hr_from` / `hr_to`, `distance_m`, `moving_time_s`, ...: campos
+  numéricos opcionales. Las planificadas nuevas (manuales o IA) son solo texto y
+  no incluyen campos numéricos.
 - Las planificadas se crean/editan/borran desde la web (páginas `/planned` y
   calendario) con `schema_version: 2` e id `randomUUID()`.
+
+**Las planificadas no se contabilizan en el resumen semanal ni en los totales**:
+`/api/weekly` y los `totals` de `/api/sessions` solo usan sesiones completadas.
 
 ## Backend (`/backend`)
 
@@ -183,7 +186,8 @@ que las completadas, con campos opcionales adicionales:
   - `GET /api/sessions`: `{ completed, planned, totals, totalsCompleted }` con
     sesiones enriquecidas (`category`, `time_s`, `weekNumber`). `PUT /api/sessions/:id`
     para editar (notas, título).
-  - `GET /api/weekly`: resumen semanal (realizado + planeado).
+  - `GET /api/weekly`: resumen semanal (solo sesiones completadas; las
+    planificadas no se contabilizan).
   - `GET /api/stats`, `GET /api/stats-records`: totales y récords.
   - `GET /api/charts`: series listas para recharts (weeklyHours, trainingLoad,
     volumeEvolution, cumulativeDistance, distanceBySport, runningPaces,

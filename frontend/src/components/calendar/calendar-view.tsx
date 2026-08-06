@@ -20,6 +20,7 @@ import { useDeletePlanned } from "@/hooks/use-planned";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useCalendarStore } from "@/lib/calendar-store";
 import { PlannedFormModal } from "@/components/planned/planned-form";
+import { WorkoutText } from "@/components/session/workout-text";
 import { getWeekNumber, getSportLabel, getSportColor } from "@/lib/utils";
 
 interface CalendarViewProps {
@@ -241,7 +242,14 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-gray-400">Fecha planificada</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{getSportLabel(selectedSession.category)}</span></div>
-              {(() => {
+              {selectedSession.workout_text ? (
+                <div className="pt-2 border-t border-dark-400">
+                  <span className="text-gray-400 text-xs uppercase tracking-wider">Trabajo</span>
+                  <div className="mt-2">
+                    <WorkoutText text={selectedSession.workout_text} />
+                  </div>
+                </div>
+              ) : (() => {
                 const objectives = selectedSession.objectives ?? [];
                 return objectives.length > 0 ? (
                   <div className="pt-2 border-t border-dark-400">

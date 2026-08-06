@@ -30,7 +30,6 @@ export function WeekChart() {
             }}
           />
           <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Realizado" />
-          <Bar dataKey="planned" fill="#4ade80" radius={[4, 4, 0, 0]} name="Planeado" />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -31,6 +31,27 @@ export function formatPace(paceSperKm: number | undefined): string {
   return `${min}:${sec.toString().padStart(2, "0")} min/km`;
 }
 
+export function formatPacePer100m(secPer100m: number | undefined): string {
+  if (secPer100m == null) return "—";
+  const min = Math.floor(secPer100m / 60);
+  const sec = Math.floor(secPer100m % 60);
+  return `${min}:${sec.toString().padStart(2, "0")} min/100m`;
+}
+
+export function pacePer100m(timeS: number | undefined, distanceM: number | undefined): number | undefined {
+  if (timeS == null || distanceM == null || distanceM <= 0) return undefined;
+  return (timeS / distanceM) * 100;
+}
+
+export function getFeelLabel(feel: number | undefined): string {
+  if (feel == null) return "—";
+  if (feel <= 20) return "Muy débil";
+  if (feel <= 40) return "Débil";
+  if (feel <= 60) return "Media";
+  if (feel <= 80) return "Fuerte";
+  return "Muy fuerte";
+}
+
 export function formatSpeed(speedMs: number | undefined): string {
   if (speedMs == null) return "—";
   return `${(speedMs * 3.6).toFixed(1)} km/h`;

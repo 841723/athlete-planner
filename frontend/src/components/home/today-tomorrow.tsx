@@ -1,6 +1,7 @@
 import { parseISO, addDays } from "date-fns";
 import { format } from "@/lib/date-format";
 import type { Session } from "@/types/session";
+import { WorkoutText } from "@/components/session/workout-text";
 import { getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
 
 interface TodayTomorrowProps {
@@ -78,15 +79,21 @@ function SessionCard({ session, isPlanned }: { session: Session; isPlanned: bool
             <span className="mx-1">·</span>
             <span>{format(parseISO(session.start_date_local), "d MMM")}</span>
           </div>
-          {objectives.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {objectives.map((obj, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-xs">
-                  {obj.label && <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-accent/20 text-accent-light">{obj.label}</span>}
-                  <span className="text-gray-300">{obj.text}</span>
-                </div>
-              ))}
+          {isPlanned && session.workout_text ? (
+            <div className="mt-2">
+              <WorkoutText text={session.workout_text} />
             </div>
+          ) : (
+            objectives.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {objectives.map((obj, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs">
+                    {obj.label && <span className="text-[10px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-accent/20 text-accent-light">{obj.label}</span>}
+                    <span className="text-gray-300">{obj.text}</span>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

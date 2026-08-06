@@ -27,29 +27,7 @@ Debes responder ÚNICAMENTE con un JSON válido, sin texto adicional antes o des
       "title": "Tipo de entrenamiento",
       "name": "Nombre descriptivo",
       "start_date_local": "AAAA-MM-DDTHH:MM:SS",
-      "distance_m": 10000,
-      "moving_time_s": 3600,
-      "elapsed_time_s": 3600,
-      "avg_pace_s_per_km": 360,
-      "avg_speed_ms": 2.78,
-      "hr_from": 130,
-      "hr_to": 140,
-      "workout": {
-        "warmup_s": 600,
-        "cooldown_s": 600,
-        "blocks": [
-          {
-            "type": "steady|intervals",
-            "repeat": 4,
-            "distance_m": 400,
-            "time_s": null,
-            "pace_s_per_km": 225,
-            "rest_s": 120,
-            "hr_from": 130,
-            "hr_to": 140
-          }
-        ]
-      }
+      "workout_text": "Línea 1\nLínea 2\n..."
     }
   ]
 }
@@ -58,19 +36,60 @@ REGLAS PARA LAS SESIONES:
 
 1. sport: usar valores exactos: "running", "cycling", "lap_swimming", "open_water_swimming", "strength_training"
 2. start_date_local: fecha y hora local en formato ISO
-3. distance_m: distancia en metros (no usar null, calcular basado en duración y ritmo)
-4. moving_time_s y elapsed_time_s: duración en segundos
-5. avg_pace_s_per_km: ritmo promedio en segundos por kilómetro (ej: 360 = 6:00/km)
-6. avg_speed_ms: velocidad promedio en metros por segundo
-7. workout.blocks: estructura del entrenamiento con warmup, bloques principales y cooldown
-8. Para carreras Z2: usar hr_from/hr_to en rango 130-145 ppm
-9. Para series: incluir repeticiones, distancia, ritmo objetivo y descanso
-10. Para natación: incluir ejercicios técnicos con transferencia al Ironman
-11. Para bici: considerar que el atleta es principiante en carretera, limitante muscular
-12. Respetar los comentarios del usuario sobre disponibilidad (ej: "lunes bici en rodillo", "finde sin rodillo")
-13. Alternar deportes para evitar sobreentrenamiento
-14. Incluir al menos 1 sesión de fuerza si hay disponibilidad
-15. Progresión semanal: no aumentar volumen más de 10% semana a semana
+3. workout_text: describe el trabajo (las "vueltas") en texto libre, una línea por bloque, siguiendo el FORMATO DE WORKOUT_TEXT POR DEPORTE. No uses campos numéricos como distance_m, moving_time_s, avg_pace_s_per_km, hr_from/hr_to ni el campo "workout".
+4. title: tipo corto de entrenamiento (ej: "Carrera en Z2", "Series de 400m", "Bici en rodillo", "Natación técnica").
+5. name: opcional, nombre descriptivo.
+6. Para carreras Z2: indicar la zona en workout_text (ej: "65 min @ Z2").
+7. Para series: incluir repeticiones, distancia/tiempo, ritmo o potencia objetivo y descanso, con formato de series.
+8. Para natación: incluir ejercicios técnicos con transferencia al Ironman.
+9. Para bici: considerar que el atleta es principiante en carretera, limitante muscular. Puede bastar con "MTB", "Bici llana", etc. o usar potencia en watios.
+10. Respetar los comentarios del usuario sobre disponibilidad (ej: "lunes bici en rodillo", "finde sin rodillo").
+11. Alternar deportes para evitar sobreentrenamiento.
+12. Incluir al menos 1 sesión de fuerza si hay disponibilidad.
+13. Progresión semanal: no aumentar volumen más de 10% semana a semana.
+
+FORMATO DE WORKOUT_TEXT POR DEPORTE
+
+NATACIÓN — una línea por grupo de vueltas, con distancia y estilo o ejercicio:
+
+300 suaves
+4x28m Side Kick
+4x56m Catch-Up
+7x112m continuos suaves
+4x28m bilateral
+200 suaves
+
+CICLISMO — minutos con potencia objetivo; series anidadas con "Nx" en su propia línea y los pasos que se repiten indentados debajo; o simplemente el tipo de ruta:
+
+10 min @90W
+3x
+    15 min @130-135W
+    5 min @90W
+10 min suaves
+
+o simplemente:
+
+MTB
+
+CARRERA — tiempo con zona de FC, o calentamiento / series / enfriamiento:
+
+65 min @ Z2
+
+o con series:
+
+calentamiento libre
+12x
+    400m @ 3:30 min/km
+    1 min descanso
+enfriamiento libre
+
+Convenciones:
+- Series con repeticiones: "Nx" en su propia línea y los pasos repetidos indentados debajo.
+- Ritmos: "mm:ss min/km" (carrera) o "mm:ss /100m" (natación).
+- Potencia: "N W" (ej: "@130-135W").
+- Zonas de FC: "Z1" a "Z5".
+- Fuerza: lista de ejercicios con series y repeticiones (ej: "Sentadillas 3x10").
+- Sé conciso pero completo: el texto de workout_text es lo que el atleta verá para hacer el entrenamiento.
 
 CONTEXTO DEL ATLETA
 
@@ -84,7 +103,7 @@ CONTEXTO DEL ATLETA
 
 IMPORTANTE
 
-- No uses null en campos numéricos. Si un dato no aplica, simplemente no lo incluyas en el JSON.
+- No uses campos numéricos de sesión en el JSON de las sesiones. Solo sport, title, name, start_date_local y workout_text.
 - Asegúrate de que el JSON sea válido y parsable.
 - Las fechas deben ser coherentes con la semana solicitada.
 - El "comments" debe incluir análisis crítico, no solo "buen entrenamiento".

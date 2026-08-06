@@ -2,8 +2,6 @@ export { Shell } from "./layout/shell";
 export { Header } from "./layout/header";
 export { HeroStats } from "./home/hero-stats";
 export { TodayTomorrow } from "./home/today-tomorrow";
-export { RecentActivities } from "./home/recent-activities";
-export { CurrentWeek } from "./home/current-week";
 export { UpcomingGoals } from "./home/upcoming-goals";
 export { StreakCard } from "./home/streak-card";
 export { CalendarView } from "./calendar/calendar-view";

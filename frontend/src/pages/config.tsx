@@ -10,18 +10,26 @@ import {
   Trash2,
   Trash,
   UserPlus,
+  Brain,
+  History,
+  CheckCircle,
+  XCircle,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useMembers, useAddMember, useUpdateMemberRole, useRemoveMember } from "@/hooks/use-members";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import { useGoals, useUpdateGoals } from "@/hooks/use-goals";
-import { updateTenantName } from "@/services/api";
+import { useAiSettings, useUpdateAiSettings, useTestAiSettings } from "@/hooks/use-ai-settings";
+import { useProfileHistory, useSetActiveProfileVersion, useProfileVersion } from "@/hooks/use-profile-history";
+import { updateTenantName, fetchProfileVersion } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TenantRole } from "@/types/auth";
-import type { RaceGoal } from "@/types/session";
+import type { RaceGoal, ProfileVersion } from "@/types/session";
+import { lineDiff, type DiffLine } from "@/lib/diff";
 
 const ROLE_LABELS: Record<TenantRole, string> = {
   athlete: "Atleta",
@@ -77,6 +85,45 @@ export function ConfigPage() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TenantRole>("visitor");
 
+  const aiSettingsQuery = useAiSettings();
+  const updateAiMutation = useUpdateAiSettings();
+  const testAiMutation = useTestAiSettings();
+  const [aiProvider, setAiProvider] = useState("gemini");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiModel, setAiModel] = useState("gemini-2.0-flash");
+  useEffect(() => {
+    if (aiSettingsQuery.data?.provider) setAiProvider(aiSettingsQuery.data.provider);
+    if (aiSettingsQuery.data?.model) setAiModel(aiSettingsQuery.data.model);
+  }, [aiSettingsQuery.data]);
+
+  const profileHistoryQuery = useProfileHistory();
+  const setActiveVersionMutation = useSetActiveProfileVersion();
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [compareVersionId, setCompareVersionId] = useState<string | null>(null);
+  const [diffResult, setDiffResult] = useState<{ left: DiffLine[]; right: DiffLine[] } | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
+
+  async function handleCompareDiff() {
+    if (!selectedVersionId || !compareVersionId) return;
+    setDiffLoading(true);
+    try {
+      const [left, right] = await Promise.all([
+        fetchProfileVersion(selectedVersionId),
+        fetchProfileVersion(compareVersionId),
+      ]);
+      const leftJson = JSON.stringify(left.data, null, 2);
+      const rightJson = JSON.stringify(right.data, null, 2);
+      setDiffResult({
+        left: lineDiff(rightJson, leftJson),
+        right: lineDiff(leftJson, rightJson),
+      });
+    } catch {
+      toast({ type: "error", title: "Error al cargar versiones" });
+    } finally {
+      setDiffLoading(false);
+    }
+  }
+
   if (!perms.canManageUsers) {
     return (
       <div className="animate-fade-in">
@@ -116,12 +163,31 @@ export function ConfigPage() {
     setGoals((g) => g.map((goal, i) => (i === index ? { ...goal, ...patch } : goal)));
   }
 
+  function handleSaveAiSettings() {
+    if (!aiApiKey.trim()) {
+      toast({ type: "error", title: "Introduce tu API key" });
+      return;
+    }
+    updateAiMutation.mutate({
+      provider: aiProvider,
+      apiKey: aiApiKey,
+      model: aiModel,
+    });
+  }
+
+  function handleTestAi() {
+    testAiMutation.mutate(undefined, {
+      onSuccess: () => toast({ type: "success", title: "Conexión correcta" }),
+      onError: (err: Error) => toast({ type: "error", title: "Error de conexión", description: err.message }),
+    });
+  }
+
   return (
     <div className="animate-fade-in max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Configuración</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Nombre del atleta, perfil, objetivos y permisos del tenant.
+          Nombre del atleta, perfil, objetivos, IA y permisos del tenant.
         </p>
       </div>
 
@@ -147,26 +213,224 @@ export function ConfigPage() {
 
       <div className="card p-5">
         <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <UserPlus className="w-4 h-4" /> Perfil del atleta (JSON)
+          <Brain className="w-4 h-4" /> Proveedor de IA
+        </h2>
+        {perms.role === "athlete" ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Proveedor</label>
+                <select
+                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                >
+                  <option value="gemini">Google Gemini</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Modelo</label>
+                <select
+                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                  value={aiModel}
+                  onChange={(e) => setAiModel(e.target.value)}
+                >
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">API Key</label>
+              <input
+                type="password"
+                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                placeholder={aiSettingsQuery.data ? "•••••••• (guardada)" : "Introduce tu API key de Gemini"}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveAiSettings} disabled={updateAiMutation.isPending}>
+                {updateAiMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Guardar
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleTestAi}
+                disabled={testAiMutation.isPending || !aiSettingsQuery.data}
+              >
+                {testAiMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Probar conexión
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Tu API key se almacena de forma segura y solo se usa para generar planes de entrenamiento.
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">
+            Solo el atleta (rol Atleta) puede configurar el proveedor de IA.
+          </p>
+        )}
+      </div>
+
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <UserPlus className="w-4 h-4" /> Perfil del atleta
         </h2>
         {profileQuery.isLoading ? (
           <Skeleton className="h-40 rounded-xl" />
         ) : (
-          <>
-            <textarea
-              className="input w-full font-mono text-xs h-40 resize-y"
-              value={profileText}
-              onChange={(e) => setProfileText(e.target.value)}
-              spellCheck={false}
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-gray-500">Datos usados por el planificador y los objetivos.</span>
-              <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Guardar
-              </Button>
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-400">Versión activa del perfil</span>
+                <span className="text-xs text-gray-500">
+                  {profileHistoryQuery.data?.length ?? 0} versiones guardadas
+                </span>
+              </div>
+              <textarea
+                className="input w-full font-mono text-xs h-40 resize-y"
+                value={profileText}
+                onChange={(e) => setProfileText(e.target.value)}
+                spellCheck={false}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-gray-500">Edita manualmente y guarda como nueva versión.</span>
+                <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Guardar
+                </Button>
+              </div>
             </div>
-          </>
+
+            {profileHistoryQuery.data && profileHistoryQuery.data.length > 0 && (
+              <div className="border-t border-dark-400 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <History className="w-4 h-4" /> Historial de versiones
+                  </h3>
+                  <div className="flex gap-2">
+                    <select
+                      className="select text-xs py-1"
+                      value={selectedVersionId ?? ""}
+                      onChange={(e) => setSelectedVersionId(e.target.value || null)}
+                    >
+                      <option value="">Seleccionar versión...</option>
+                      {profileHistoryQuery.data.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {new Date(v.created_at).toLocaleString("es-ES")} - {v.author === "ai" ? "IA" : "Manual"}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="select text-xs py-1"
+                      value={compareVersionId ?? ""}
+                      onChange={(e) => setCompareVersionId(e.target.value || null)}
+                    >
+                      <option value="">Comparar con...</option>
+                      {profileHistoryQuery.data.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {new Date(v.created_at).toLocaleString("es-ES")} - {v.author === "ai" ? "IA" : "Manual"}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="ghost"
+                      className="text-xs"
+                      onClick={handleCompareDiff}
+                      disabled={!selectedVersionId || !compareVersionId || diffLoading}
+                    >
+                      {diffLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                      Ver diff
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {profileHistoryQuery.data.map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-dark-300/30 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          v.author === "ai" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"
+                        }`}>
+                          {v.author === "ai" ? "IA" : "Manual"}
+                        </span>
+                        <span className="text-gray-400">
+                          {new Date(v.created_at).toLocaleString("es-ES")}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="text-xs px-2 py-0.5"
+                        onClick={() => setActiveVersionMutation.mutate(v.id)}
+                        disabled={setActiveVersionMutation.isPending}
+                      >
+                        Usar esta versión
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {diffResult && (
+              <div className="border-t border-dark-400 pt-4">
+                <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3">Comparación</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-1">Versión A</div>
+                    <div className="text-[10px] text-gray-300 bg-dark-300/50 rounded-lg p-3 max-h-64 overflow-y-auto font-mono leading-4">
+                      {diffResult.left.map((l, i) => (
+                        <div
+                          key={i}
+                          className={
+                            l.kind === "removed"
+                              ? "bg-red-500/20 text-red-300"
+                              : l.kind === "added"
+                                ? "bg-green-500/20 text-green-300"
+                                : ""
+                          }
+                        >
+                          {l.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-1">Versión B</div>
+                    <div className="text-[10px] text-gray-300 bg-dark-300/50 rounded-lg p-3 max-h-64 overflow-y-auto font-mono leading-4">
+                      {diffResult.right.map((l, i) => (
+                        <div
+                          key={i}
+                          className={
+                            l.kind === "removed"
+                              ? "bg-red-500/20 text-red-300"
+                              : l.kind === "added"
+                                ? "bg-green-500/20 text-green-300"
+                                : ""
+                          }
+                        >
+                          {l.text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  className="text-xs mt-2"
+                  onClick={() => setDiffResult(null)}
+                >
+                  Cerrar diff
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

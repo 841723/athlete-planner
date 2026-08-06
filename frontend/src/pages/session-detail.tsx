@@ -15,8 +15,13 @@ import {
   formatDistance,
   formatDuration,
   formatPace,
+  formatPacePer100m,
   formatSpeed,
+  pacePer100m,
+  getFeelLabel,
 } from "@/lib/utils";
+import { SessionLapsChart } from "@/components/charts/session-laps-chart";
+import { WorkoutText } from "@/components/session/workout-text";
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -74,6 +79,13 @@ export function SessionDetailPage() {
   const color = getSportColor(session.category);
   const label = getSportLabel(session.category);
   const time = session.time_s ?? 0;
+  const isSwim = session.category === "swimming";
+  const isCycling = session.category === "cycling";
+  const isStrength = session.category === "strength";
+  const showPace = !isCycling && !isStrength && session.avg_pace_s_per_km != null;
+  const showSpeed = !isSwim && !isStrength && session.avg_speed_ms != null;
+  const swimPace = isSwim ? pacePer100m(session.moving_time_s ?? session.elapsed_time_s, session.distance_m) : undefined;
+  const swimMaxPace = isSwim && session.max_speed_ms ? 100 / session.max_speed_ms : undefined;
 
   function handleSaveNotes() {
     if (!session) return;
@@ -124,6 +136,9 @@ export function SessionDetailPage() {
           <p className="text-xs text-gray-500 mt-1">
             {label} · {format(parseISO(session.start_date_local), "d 'de' MMMM yyyy")} · Semana {session.weekNumber ?? "—"}
           </p>
+          {session.location_name && (
+            <p className="text-xs text-gray-400 mt-1">📍 {session.location_name}</p>
+          )}
         </div>
       </div>
 
@@ -170,23 +185,46 @@ export function SessionDetailPage() {
           <InfoItem label="Hora" value={format(parseISO(session.start_date_local), "HH:mm")} />
           <InfoItem label="Deporte" value={label} />
           <InfoItem label="Duración" value={time > 0 ? formatDuration(time) : "—"} />
-          {session.distance_m != null && <InfoItem label="Distancia" value={formatDistance(session.distance_m)} />}
-          {session.avg_pace_s_per_km != null && <InfoItem label="Ritmo medio" value={formatPace(session.avg_pace_s_per_km)} />}
-          {session.avg_speed_ms != null && <InfoItem label="Velocidad media" value={formatSpeed(session.avg_speed_ms)} />}
-          {session.max_speed_ms != null && <InfoItem label="Velocidad máx" value={formatSpeed(session.max_speed_ms)} />}
+          {session.distance_m != null && !isStrength && <InfoItem label="Distancia" value={formatDistance(session.distance_m)} />}
+          {isSwim ? (
+            <>
+              {swimPace != null && <InfoItem label="Ritmo medio" value={formatPacePer100m(swimPace)} />}
+              {swimMaxPace != null && <InfoItem label="Ritmo máx" value={formatPacePer100m(swimMaxPace)} />}
+            </>
+          ) : (
+            <>
+              {showPace && <InfoItem label="Ritmo medio" value={formatPace(session.avg_pace_s_per_km)} />}
+              {showSpeed && <InfoItem label="Velocidad media" value={formatSpeed(session.avg_speed_ms)} />}
+              {!isStrength && session.max_speed_ms != null && <InfoItem label="Velocidad máx" value={formatSpeed(session.max_speed_ms)} />}
+            </>
+          )}
           {session.avg_heartrate != null && <InfoItem label="FC media" value={`${session.avg_heartrate} bpm`} />}
           {session.max_heartrate != null && <InfoItem label="FC máx" value={`${session.max_heartrate} bpm`} />}
-          {session.avg_watts != null && <InfoItem label="Potencia media" value={`${session.avg_watts} W`} />}
-          {session.max_watts != null && <InfoItem label="Potencia máx" value={`${session.max_watts} W`} />}
-          {session.total_elevation_gain_m != null && <InfoItem label="Desnivel positivo" value={`${session.total_elevation_gain_m} m`} />}
-          {session.total_elevation_loss_m != null && <InfoItem label="Desnivel negativo" value={`${session.total_elevation_loss_m} m`} />}
+          {!isStrength && session.avg_watts != null && <InfoItem label="Potencia media" value={`${session.avg_watts} W`} />}
+          {!isStrength && session.max_watts != null && <InfoItem label="Potencia máx" value={`${session.max_watts} W`} />}
+          {(session.total_elevation_gain_m != null || session.total_elevation_loss_m != null) && (
+            <InfoItem
+              label="Desnivel"
+              value={`↑${session.total_elevation_gain_m ?? 0} m ↓${session.total_elevation_loss_m ?? 0} m`}
+            />
+          )}
           {session.calories_kcal != null && <InfoItem label="Calorías" value={`${session.calories_kcal} kcal`} />}
           {session.training_effect != null && <InfoItem label="Efecto entrenamiento" value={`${session.training_effect}`} />}
-          {session.rpe != null && <InfoItem label="RPE" value={`${session.rpe} / 100`} />}
-          {session.feel != null && <InfoItem label="Sensación" value={`${session.feel} / 100`} />}
+          {session.rpe != null && <InfoItem label="RPE" value={`${Math.round(session.rpe / 10)} / 10`} />}
+          {session.feel != null && <InfoItem label="Sensación" value={getFeelLabel(session.feel)} />}
           {session.average_temp_c != null && <InfoItem label="Temperatura" value={`${session.average_temp_c}°C`} />}
         </div>
       </div>
+
+      {/* Trabajo / Vueltas (planificadas) */}
+      {session.workout_text && (
+        <div className="card p-5 mb-4">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">
+            Trabajo / Vueltas
+          </h2>
+          <WorkoutText text={session.workout_text} />
+        </div>
+      )}
 
       {/* Segmentos / Vueltas */}
       {session.segments && session.segments.length > 0 && (
@@ -212,9 +250,17 @@ export function SessionDetailPage() {
                     <SegStat label="Distancia" value={seg.distance_m ? formatDistance(seg.distance_m) : "—"} />
                     <SegStat label="Tiempo" value={seg.time_s ? formatDuration(seg.time_s) : "—"} />
                     <SegStat
-                      label="Ritmo"
+                      label={isSwim ? "Ritmo" : isCycling ? "Velocidad" : "Ritmo"}
                       value={
-                        seg.avg_pace_s_per_km
+                        isSwim
+                          ? pacePer100m(seg.time_s, seg.distance_m)
+                            ? formatPacePer100m(pacePer100m(seg.time_s, seg.distance_m))
+                            : "—"
+                          : isCycling
+                          ? seg.avg_speed_ms
+                            ? formatSpeed(seg.avg_speed_ms)
+                            : "—"
+                          : seg.avg_pace_s_per_km
                           ? formatPace(seg.avg_pace_s_per_km)
                           : seg.avg_speed_ms
                           ? formatSpeed(seg.avg_speed_ms)
@@ -229,17 +275,23 @@ export function SessionDetailPage() {
                           : "—"
                       }
                     />
-                    <SegStat
-                      label="Potencia"
-                      value={
-                        seg.avg_watts
-                          ? `${seg.avg_watts}${seg.max_watts ? `/${seg.max_watts}` : ""} W`
-                          : "—"
-                      }
-                    />
+                    {!isStrength && (
+                      <SegStat
+                        label="Potencia"
+                        value={
+                          seg.avg_watts
+                            ? `${seg.avg_watts}${seg.max_watts ? `/${seg.max_watts}` : ""} W`
+                            : "—"
+                        }
+                      />
+                    )}
                     <SegStat
                       label="Desnivel"
-                      value={seg.total_elevation_gain_m ? `${seg.total_elevation_gain_m} m` : "—"}
+                      value={
+                        seg.total_elevation_gain_m != null || seg.total_elevation_loss_m != null
+                          ? `↑${seg.total_elevation_gain_m ?? 0} m ↓${seg.total_elevation_loss_m ?? 0} m`
+                          : "—"
+                      }
                     />
                   </div>
                 </div>
@@ -249,24 +301,52 @@ export function SessionDetailPage() {
         </div>
       )}
 
+      {/* Gráficos por vueltas */}
+      {session.segments && session.segments.length > 1 && (
+        <SessionLapsChart segments={session.segments} category={session.category} />
+      )}
+
       {/* Zonas de FC */}
       {session.hr_zones && session.hr_zones.length > 0 && (
         <div className="card p-5 mb-4">
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
             Tiempo por zonas de FC
           </h2>
-          <div className="flex items-end gap-1.5 h-24">
-            {session.hr_zones.map((z) => {
-              const total = session.hr_zones!.reduce((s, x) => s + x.secsInZone, 0) || 1;
+          <div className="space-y-2">
+            {session.hr_zones.map((z, i) => {
+              const zones = session.hr_zones!;
+              const total = zones.reduce((s, x) => s + x.secsInZone, 0) || 1;
               const pct = (z.secsInZone / total) * 100;
+              const upper =
+                zones[i + 1]?.zoneLowBoundary != null ? zones[i + 1].zoneLowBoundary - 1 : z.zoneLowBoundary + 19;
+              const zoneColor = HR_ZONE_COLORS[z.zoneNumber - 1] ?? "#6b7280";
               return (
-                <div key={z.zoneNumber} className="flex flex-col items-center flex-1 gap-1">
-                  <span className="text-[10px] text-gray-400">{formatDuration(z.secsInZone)}</span>
+                <div key={z.zoneNumber} className="flex items-center gap-3">
                   <div
-                    className="w-full rounded-t bg-gradient-to-t from-accent/30 to-accent-light"
-                    style={{ height: `${Math.max(pct, 4)}%` }}
-                  />
-                  <span className="text-[10px] text-gray-500">Z{z.zoneNumber}</span>
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ backgroundColor: `${zoneColor}22`, color: zoneColor }}
+                  >
+                    Z{z.zoneNumber}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400">
+                        {z.zoneLowBoundary}–{upper} bpm
+                      </span>
+                      <span className="text-gray-300 font-medium">
+                        {formatDuration(z.secsInZone)} · {pct.toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-dark-400/40 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(pct, 2)}%`,
+                          backgroundColor: zoneColor,
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -303,18 +383,12 @@ export function SessionDetailPage() {
         >
           <ExternalLink className="w-4 h-4" /> Ver en Garmin
         </a>
-        <a
-          href={`https://www.strava.com/activities/${session.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-ghost text-sm inline-flex items-center gap-1.5"
-        >
-          <ExternalLink className="w-4 h-4" /> Ver en Strava
-        </a>
       </div>
     </div>
   );
 }
+
+const HR_ZONE_COLORS = ["#60a5fa", "#4ade80", "#facc15", "#fb923c", "#f87171"];
 
 function intensityBadge(intensity: string): { label: string; className: string } {
   switch (intensity) {

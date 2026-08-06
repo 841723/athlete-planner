@@ -103,6 +103,9 @@ def format_activity(a: dict) -> dict:
     for df in ("startTimeLocal", "startTimeGMT", "endTimeLocal"):
         if a.get(df):
             f[df] = fmt_date(a[df])
+    for loc in ("locationName", "locationNameFull"):
+        if a.get(loc):
+            f[loc] = a[loc]
     if a.get("averageHR") is not None:
         f["heart_rate"] = {"avg_bpm": round(a["averageHR"])}
     if a.get("maxHR") is not None:

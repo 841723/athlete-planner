@@ -79,6 +79,33 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
   expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS ai_provider_settings (
+  tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL DEFAULT 'gemini',
+  api_key TEXT NOT NULL,
+  model TEXT DEFAULT 'gemini-2.0-flash',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS athlete_profile_history (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  author TEXT NOT NULL CHECK (author IN ('user', 'ai')),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_profile_history_tenant ON athlete_profile_history(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS ai_prompts (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  is_predefined INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_prompts_tenant ON ai_prompts(tenant_id);
 `;
 
 export function getDb() {

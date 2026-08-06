@@ -11,6 +11,10 @@ import type {
   GeneratePlanResponse,
   StatsRecordsData,
   SyncResult,
+  AiSettings,
+  ProfileVersion,
+  ProfileVersionFull,
+  AiPrompt,
 } from "@/types/session";
 import type { MeResponse, Member, User, TenantRole } from "@/types/auth";
 
@@ -182,4 +186,47 @@ export function updateMemberRole(
 
 export function removeMember(tenantId: string, userId: string): Promise<void> {
   return send(`/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(userId)}`, "DELETE");
+}
+
+export function fetchAiSettings(): Promise<AiSettings> {
+  return get("/ai-settings");
+}
+
+export function updateAiSettings(payload: {
+  provider: string;
+  apiKey: string;
+  model: string;
+}): Promise<{ ok: boolean }> {
+  return send("/ai-settings", "PUT", payload);
+}
+
+export function testAiSettings(): Promise<{ ok: boolean }> {
+  return send("/ai-settings/test", "POST");
+}
+
+export function fetchProfileHistory(): Promise<ProfileVersion[]> {
+  return get("/profile/history");
+}
+
+export function fetchProfileVersion(versionId: string): Promise<ProfileVersionFull> {
+  return get(`/profile/history/${encodeURIComponent(versionId)}`);
+}
+
+export function setActiveProfileVersion(versionId: string): Promise<{ ok: boolean }> {
+  return send("/profile/active", "PUT", { versionId });
+}
+
+export function fetchPrompts(): Promise<AiPrompt[]> {
+  return get("/prompts");
+}
+
+export function savePrompt(payload: {
+  name: string;
+  content: string;
+}): Promise<{ id: string }> {
+  return send("/prompts", "POST", payload);
+}
+
+export function deletePrompt(promptId: string): Promise<void> {
+  return send(`/prompts/${encodeURIComponent(promptId)}`, "DELETE");
 }
