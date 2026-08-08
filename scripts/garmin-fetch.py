@@ -7,6 +7,7 @@ Reutiliza los tokens guardados por `uvx garmin-connect-mcp auth` en
 Uso:
   python scripts/garmin-fetch.py list [--start N] [--limit N] [--min-date YYYY-MM-DD] [--out FILE]
   python scripts/garmin-fetch.py details <activity_id> [--list FILE] [--out FILE]
+  python scripts/garmin-fetch.py track <activity_id> [--out FILE]
   python scripts/garmin-fetch.py ids [--start N] [--limit N] [--min-date YYYY-MM-DD] [--json]
 
 El formato de salida de `list` y `details` es compatible con el que producía
@@ -201,6 +202,114 @@ def cmd_details(args) -> None:
     )
 
 
+def extract_polyline(details: dict) -> list:
+    points: list = []
+
+    def point_from(p: dict) -> list | None:
+        lat = p.get("lat")
+        lon = p.get("lon")
+        if lat is None or lon is None:
+            return None
+        alt = p.get("altitude", p.get("alt"))
+        return [lat, lon, alt]
+
+    dtos = details.get("geoPolylineDTO")
+    if isinstance(dtos, dict):
+        dtos = [dtos]
+    if not isinstance(dtos, list):
+        dtos = details.get("geoPolylineDTOs") or []
+
+    for dto in dtos:
+        if not isinstance(dto, dict):
+            continue
+        for pt in dto.get("polyline") or []:
+            point = point_from(pt)
+            if point is not None:
+                points.append(point)
+        for key in ("startPoint", "endPoint"):
+            point = point_from(dto.get(key) or {})
+            if point is not None:
+                points.append(point)
+
+    if not points:
+        return []
+
+    deduped: list = []
+    prev = None
+    for p in points:
+        if p != prev:
+            deduped.append(p)
+        prev = p
+
+    if len(deduped) > 1500:
+        step = len(deduped) / 1500
+        sampled = [deduped[int(i * step)] for i in range(1500)]
+        if sampled[-1] != deduped[-1]:
+            sampled.append(deduped[-1])
+        deduped = sampled
+
+    return deduped
+
+
+def extract_samples(details: dict) -> list:
+    try:
+        from garminconnect.activity_details import parse_activity_detail_metrics
+    except ImportError:
+        return []
+
+    try:
+        parsed = parse_activity_detail_metrics(details)
+    except Exception:
+        return []
+
+    keys = {
+        "directTimestamp": "t",
+        "directHeartRate": "hr",
+        "directSpeed": "speed",
+        "directPower": "power",
+        "directCadence": "cadence",
+        "sumDistance": "distance",
+        "directElevation": "elevation",
+    }
+    target = 600
+    step = max(1, len(parsed) // target)
+    samples: list = []
+    for i in range(0, len(parsed), step):
+        m = parsed[i]
+        sample = {}
+        for k, newk in keys.items():
+            v = m.get(k)
+            if v is not None:
+                sample[newk] = v
+        if sample:
+            samples.append(sample)
+    return samples
+
+
+def cmd_track(args) -> None:
+    g = get_client()
+    activity = g.get_activity(args.activity_id)
+    if not activity:
+        sys.exit(f"Actividad {args.activity_id} no encontrada.")
+
+    atype = activity.get("activityType") or {}
+    sport = atype.get("typeKey") if isinstance(atype, dict) else None
+
+    polyline: list = []
+    samples: list = []
+    try:
+        details = g.get_activity_details(args.activity_id, maxchart=1000, maxpoly=1500)
+    except Exception as e:
+        print(f"aviso: no se pudieron obtener detalles del track: {e}", file=sys.stderr)
+        details = None
+
+    if details:
+        polyline = extract_polyline(details)
+        samples = extract_samples(details)
+
+    write_json({"sport": sport, "polyline": polyline, "samples": samples}, args.out)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch directo de Garmin Connect (sin MCP).")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -224,6 +333,11 @@ def main() -> None:
     p_det.add_argument("--list", default=None, help="JSON del listado para enriquecer la actividad (hasIntensityIntervals, lapCount)")
     p_det.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
     p_det.set_defaults(func=cmd_details)
+
+    p_track = sub.add_parser("track", help="Track GPS + métricas por punto de una actividad.")
+    p_track.add_argument("activity_id", type=str)
+    p_track.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
+    p_track.set_defaults(func=cmd_track)
 
     args = parser.parse_args()
     args.func(args)

@@ -63,6 +63,8 @@ export interface Session {
   workout?: PlannedWorkout;
   hr_from?: number;
   hr_to?: number;
+  merged_with?: string;
+  plan_id?: string;
   category?: SportCategory;
   time_s?: number;
   weekNumber?: number | null;
@@ -175,6 +177,8 @@ export interface RaceGoal {
   label: string;
   date: string;
   targetPace?: string;
+  url?: string;
+  isPrimary?: boolean;
 }
 
 export interface MetaData {
@@ -326,10 +330,41 @@ export interface StatsRecordsData {
 export interface AiSettings {
   provider: string;
   model: string;
+  base_url?: string | null;
+  providers?: string[];
 }
 
 export interface AiSettingsFull extends AiSettings {
   apiKey: string;
+}
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  role: "admin" | "visitor";
+  active: boolean;
+  created_at: string;
+  last_used_at?: string | null;
+  created_by?: string | null;
+}
+
+export interface AiLog {
+  id: string;
+  user_id: string | null;
+  api_key_id: string | null;
+  auth_method: string;
+  actor: string | null;
+  provider: string;
+  model: string | null;
+  endpoint: string | null;
+  api_key_masked: string | null;
+  input: string | null;
+  response: string | null;
+  status: number | null;
+  ok: number;
+  duration_ms: number | null;
+  created_at: string;
 }
 
 export interface ProfileVersion {
@@ -362,4 +397,59 @@ export interface GeneratePlanResponse {
   sessions: PlannedSessionView[];
   titlesUpdated?: { id: string; title: string }[];
   profileUpdated?: boolean;
+  planId?: string;
+}
+
+export interface Plan {
+  id: string;
+  createdAt: string;
+  comments: string;
+  weeks: number;
+  responseId?: string | null;
+  profileVersionId?: string;
+  promptId?: string;
+  promptName?: string;
+}
+
+export interface PlanMessage {
+  id: string;
+  plan_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface PlanChat {
+  planId: string;
+  planCreatedAt: string;
+  canChat: boolean;
+  messages: PlanMessage[];
+}
+
+export interface PlanChatReply {
+  reply: string;
+  sessionsUpdated: number;
+  responseId: string | null;
+}
+
+export interface TrackPoint {
+  lat: number;
+  lng: number;
+  elevation_m?: number;
+}
+
+export interface TrackSample {
+  distance_m: number;
+  heartrate?: number;
+  watts?: number;
+  speed_ms?: number;
+  pace_s_per_km?: number;
+  elevation_m?: number;
+}
+
+export interface ActivityTrack {
+  sessionId: string;
+  sport: string;
+  points: TrackPoint[];
+  samples: TrackSample[];
 }

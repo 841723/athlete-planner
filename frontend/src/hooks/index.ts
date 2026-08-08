@@ -5,4 +5,6 @@ export { useStats } from "./use-stats";
 export { useCharts } from "./use-charts";
 export { useGoals } from "./use-goals";
 export { useMeta } from "./use-meta";
+export { usePlans } from "./use-plans";
+export { usePlanChat, useSendPlanChat, useDeletePlanChat } from "./use-plan-chat";
 export { usePlanned, useCreatePlanned, useUpdatePlanned, useDeletePlanned } from "./use-planned";

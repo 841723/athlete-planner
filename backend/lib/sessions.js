@@ -151,7 +151,26 @@ export function loadCompletedSessions() {
   return rowsToSessions(rows);
 }
 
+export function cleanupOldPlanned() {
+  const tenantId = getTenantId();
+  if (!tenantId) return 0;
+  const d = new Date();
+  d.setDate(d.getDate() - 5);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const cutoff = `${y}-${m}-${day}`;
+  return getDb()
+    .prepare(
+      `DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'
+       AND substr(start_date_local, 1, 10) < ?
+       AND (json_extract(data, '$.merged_with') IS NULL OR json_extract(data, '$.merged_with') = '')`
+    )
+    .run(tenantId, cutoff).changes;
+}
+
 export function loadPlannedSessions() {
+  cleanupOldPlanned();
   const tenantId = getTenantId();
   if (!tenantId) return [];
   const rows = getDb()
@@ -199,10 +218,19 @@ export function getAthleteProfile(tenantId = getTenantId()) {
 }
 
 export function saveAthleteProfile(tenantId, profile) {
+  if (
+    !profile ||
+    typeof profile !== "object" ||
+    Array.isArray(profile) ||
+    Object.keys(profile).length === 0
+  ) {
+    return false;
+  }
   getDb()
     .prepare(
       `INSERT INTO athlete_profiles (tenant_id, data, updated_at) VALUES (?, ?, ?)
        ON CONFLICT(tenant_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
     )
     .run(tenantId, JSON.stringify(profile), new Date().toISOString());
+  return true;
 }

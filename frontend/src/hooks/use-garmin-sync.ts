@@ -3,7 +3,7 @@ import { syncGarmin } from "@/services/api";
 import { invalidateMany } from "@/lib/invalidate";
 import type { SyncResult } from "@/types/session";
 
-const INVALIDATE = ["sessions", "weekly", "stats", "charts", "planned", "stats-records"];
+const INVALIDATE = ["sessions", "weekly", "stats", "charts", "planned", "stats-records", "track"];
 
 export function useGarminSync() {
   const qc = useQueryClient();

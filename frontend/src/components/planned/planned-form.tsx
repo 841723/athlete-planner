@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import type { Session } from "@/types/session";
 import { useCreatePlanned, useUpdatePlanned } from "@/hooks/use-planned";
 import { Button } from "@/components/ui/button";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 
 interface PlannedFormModalProps {
   open: boolean;
@@ -163,9 +164,9 @@ export function PlannedFormModal({ open, session, defaultDate, onClose }: Planne
           <label className="text-xs text-gray-400 block mb-1.5">
             Vueltas / Trabajo
           </label>
-          <textarea
-            className={`${field} resize-none font-mono text-[13px] leading-relaxed`}
-            rows={12}
+          <AutoTextarea
+            className={`${field} font-mono text-[13px] leading-relaxed`}
+            minRows={12}
             value={workoutText}
             onChange={(e) => setWorkoutText(e.target.value)}
             placeholder={PLACEHOLDERS[sport] ?? "Describe el trabajo a realizar..."}

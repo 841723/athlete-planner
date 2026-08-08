@@ -38,6 +38,15 @@ export function getProfileVersion(versionId) {
 }
 
 export function saveProfileVersion(tenantId, profile, author = "user") {
+  if (
+    !profile ||
+    typeof profile !== "object" ||
+    Array.isArray(profile) ||
+    Object.keys(profile).length === 0
+  ) {
+    return null;
+  }
+
   const lastVersion = getDb()
     .prepare(
       "SELECT data FROM athlete_profile_history WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1"

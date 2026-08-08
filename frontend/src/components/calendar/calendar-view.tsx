@@ -58,7 +58,9 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
   const allSessions = useMemo(() => {
     const sessions: SessionWithStatus[] = [
       ...completed.map((s) => ({ ...s, status: "completed" as const })),
-      ...planned.map((s) => ({ ...s, status: "planned" as const })),
+      ...planned
+        .filter((s) => !s.merged_with)
+        .map((s) => ({ ...s, status: "planned" as const })),
     ];
     return sessions.filter((s) => {
       if (filters.sport !== "all") {
@@ -154,6 +156,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                 date={day}
                 sessions={daySessions}
                 goal={goalsByDate.get(dateStr)}
+                primary={goalsByDate.get(dateStr)?.isPrimary}
                 onClick={(s) => {
                   if (s.status === "completed") {
                     navigate(`/session/${s.id}`, { state: { from: location.pathname } });

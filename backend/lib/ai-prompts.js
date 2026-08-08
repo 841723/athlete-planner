@@ -113,3 +113,15 @@ export function deletePrompt(promptId, tenantId) {
   getDb().prepare("DELETE FROM ai_prompts WHERE id = ?").run(promptId);
   return true;
 }
+
+export function updatePrompt(promptId, tenantId, { name, content }) {
+  const row = getDb()
+    .prepare("SELECT id, is_predefined FROM ai_prompts WHERE id = ? AND tenant_id = ?")
+    .get(promptId, tenantId);
+  if (!row) return false;
+  if (row.is_predefined) return false;
+  getDb()
+    .prepare("UPDATE ai_prompts SET name = ?, content = ? WHERE id = ?")
+    .run(name, content, promptId);
+  return true;
+}

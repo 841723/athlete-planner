@@ -13,6 +13,13 @@ modifiques.
 
 - Todo `/api/*` requiere sesión (cookie `endurance_tok`, HttpOnly) salvo
   `health`, `auth/config` y `auth/google`.
+- **Alternativa sin Google**: cada tenant puede crear **API keys**
+  (`backend/lib/api-keys.js`, tabla `api_keys`) y usarlas con la cabecera
+  `Authorization: Bearer <key>` o `X-Api-Key: <key>`. La key resuelve tenant +
+  rol (`admin`/`visitor`) y prevalece sobre `X-Tenant-Id`. Se gestionan desde
+  Configuración → Acceso (o por API, `GET/POST /api/api-keys`,
+  `DELETE /api/api-keys/:id`). La key raw solo se muestra una vez al crearla;
+  en BD se guarda solo su hash sha256.
 - El login es con Google (ID token verificado con `google-auth-library`;
   solo hace falta `GOOGLE_CLIENT_ID` en `.env`). Al primer login se crea el
   usuario automáticamente.
@@ -176,6 +183,28 @@ que las completadas, con campos opcionales adicionales:
     con proxy `/api → http://localhost:4000` (ya configurado en `vite.config.ts`).
   - Producción: `node backend/server.js --port 4000 --static` (sirve `frontend/dist`).
   - Requiere `.env` (ver `README.md`). Al arrancar hace la migración si la BD está vacía.
+- **Esquema**: el DDL vive en `backend/init.sql` (lo lee `backend/lib/db.js` al
+  primer acceso; `CREATE TABLE IF NOT EXISTS`). Las columnas nuevas sobre tablas
+  existentes se añaden con `ensureColumn` en `db.js`. **No hardcodees DDL en los
+  módulos del backend**; añádelo a `init.sql` (o como `ensureColumn`).
+- **Estructura**: `backend/server.js` es solo el arranque (http, dispatch estático/API,
+  auth cookie o API key, `withTenant`). Las rutas están divididas por dominio en
+  `backend/routes/` (`index.js` monta: auth, tenants, sessions, weekly, stats,
+  goals, planned, trainer, profile, ai, sync, api-keys, ai-logs). Cada handler
+  recibe un `ctx` con `{ user, token, tenantId, membership, actor, params }` y
+  helpers de `backend/lib/http.js` (`sendJson`, `readBody`, `requireRole`,
+  `canWrite`, `canManage`, ...). El enrutado usa `backend/lib/router.js`
+  (`createRouter` con `get/post/put/delete` y parámetros `:id`).
+- **Proveedores de IA**: `backend/lib/ai-provider.js` abstrae gemini/openai/
+  anthropic/openai_compatible (endpoint, header de auth, body y extracción por
+  proveedor). `callAi(settings, {systemPrompt, userPrompt}, actor)` usa
+  `ai_provider_settings.base_url` si existe; **no se hardcodea endpoint ni header
+  con la key en el código de negocio**. `backend/lib/trainer.js` llama a `callAi`
+  para títulos y plan.
+- **Log de IA**: cada llamada a un proveedor se registra en `ai_logs` con actor
+  (quién la generó), input, endpoint real, key enmascarada y respuesta/error
+  (`backend/lib/ai-logs.js`, `listAiLogs`, `logAiRequest`). La key **siempre
+  enmascarada** (`maskApiKey`); no se guarda nunca en claro.
 - Endpoints:
   - `GET /api/health`: comprobación de vida (sin auth).
   - `GET /api/auth/config`, `POST /api/auth/google`, `POST /api/auth/logout`,
@@ -207,6 +236,9 @@ que las completadas, con campos opcionales adicionales:
     semanas que aún no tienen `title` y les asigna título (ver `title` en el
     esquema); la lista actualizada se devuelve como `titlesUpdated`.
   - `POST /api/sync`: sincroniza Garmin (rol con permisos de edición).
+  - `GET/POST /api/api-keys` y `DELETE /api/api-keys/:id`: gestión de API keys
+    (solo `admin`/`athlete`). `GET /api/ai-logs`: log de solicitudes de IA
+    (solo `admin`/`athlete`).
 - El frontend consume todo vía `frontend/src/services/api.ts` (fetch a `/api`).
   No uses el backend como origen de datos si no está corriendo.
 
@@ -220,9 +252,10 @@ que las completadas, con campos opcionales adicionales:
   son responsive: el calendario en móvil muestra celdas compactas con puntos y
   una hoja inferior con las sesiones del día; el detalle navega Anterior/Siguiente
   entre sesiones y su botón "Volver" va al calendario.
-- Configuración (`frontend/src/pages/config.tsx`) agrupa: nombre del tenant
-  (`PUT /api/tenants/:id/name`), perfil del atleta en JSON (`GET/PUT /api/profile`),
-  próximos objetivos (`GET/PUT /api/goals`) y permisos (CRUD de miembros).
+- Configuración (`frontend/src/pages/config.tsx`) tiene un submenú con pestañas:
+  **General** (nombre del tenant, perfil en JSON, próximos objetivos), **IA y
+  planes** (proveedor de IA con base_url, prompts, log de solicitudes de IA) y
+  **Acceso** (CRUD de miembros y API keys).
 - Estado del calendario (mes, filtros, `showFilters`) vive fuera del componente
   en `frontend/src/lib/calendar-store.ts` (store externo con `useSyncExternalStore`)
   porque el detalle de sesión desmonta la página al navegar.

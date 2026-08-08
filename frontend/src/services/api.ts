@@ -15,6 +15,12 @@ import type {
   ProfileVersion,
   ProfileVersionFull,
   AiPrompt,
+  Plan,
+  PlanChat,
+  PlanChatReply,
+  ActivityTrack,
+  ApiKey,
+  AiLog,
 } from "@/types/session";
 import type { MeResponse, Member, User, TenantRole } from "@/types/auth";
 
@@ -119,6 +125,21 @@ export function syncGarmin(): Promise<SyncResult> {
   return send("/sync", "POST");
 }
 
+export function fetchPlans(): Promise<Plan[]> {
+  return get("/plans");
+}
+
+export function fetchTrack(sessionId: string): Promise<ActivityTrack> {
+  return get(`/sessions/${encodeURIComponent(sessionId)}/track`);
+}
+
+export function updatePrompt(
+  promptId: string,
+  payload: { name: string; content: string }
+): Promise<{ ok: boolean }> {
+  return send(`/prompts/${encodeURIComponent(promptId)}`, "PUT", payload);
+}
+
 export function updateSession(id: string, payload: Partial<Session>): Promise<Session> {
   return send(`/sessions/${encodeURIComponent(id)}`, "PUT", payload);
 }
@@ -196,12 +217,32 @@ export function updateAiSettings(payload: {
   provider: string;
   apiKey: string;
   model: string;
+  baseUrl?: string | null;
 }): Promise<{ ok: boolean }> {
   return send("/ai-settings", "PUT", payload);
 }
 
 export function testAiSettings(): Promise<{ ok: boolean }> {
   return send("/ai-settings/test", "POST");
+}
+
+export function fetchApiKeys(): Promise<ApiKey[]> {
+  return get("/api-keys");
+}
+
+export function createApiKey(payload: {
+  name: string;
+  role: "admin" | "visitor";
+}): Promise<{ apiKey: string }> {
+  return send("/api-keys", "POST", payload);
+}
+
+export function deleteApiKey(id: string): Promise<void> {
+  return send(`/api-keys/${encodeURIComponent(id)}`, "DELETE");
+}
+
+export function fetchAiLogs(limit = 50): Promise<AiLog[]> {
+  return get(`/ai-logs?limit=${limit}`);
 }
 
 export function fetchProfileHistory(): Promise<ProfileVersion[]> {
@@ -229,4 +270,16 @@ export function savePrompt(payload: {
 
 export function deletePrompt(promptId: string): Promise<void> {
   return send(`/prompts/${encodeURIComponent(promptId)}`, "DELETE");
+}
+
+export function fetchPlanChat(planId: string): Promise<PlanChat> {
+  return get(`/plans/${encodeURIComponent(planId)}/chat`);
+}
+
+export function sendPlanChat(planId: string, message: string): Promise<PlanChatReply> {
+  return send(`/plans/${encodeURIComponent(planId)}/chat`, "POST", { message });
+}
+
+export function deletePlanChat(planId: string): Promise<void> {
+  return send(`/plans/${encodeURIComponent(planId)}/chat`, "DELETE");
 }

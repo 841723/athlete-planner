@@ -7,6 +7,7 @@ import type { Session } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
 import { useUpdateSession } from "@/hooks/use-update-session";
 import { Button } from "@/components/ui/button";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 
 interface SessionModalProps {
   session: Session;
@@ -162,9 +163,9 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           </div>
           {isEditing ? (
             <div className="space-y-2">
-              <textarea
-                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60 resize-none"
-                rows={3}
+              <AutoTextarea
+                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                minRows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Añade tus comentarios sobre esta sesión..."

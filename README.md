@@ -165,13 +165,18 @@ internet tras levantar el contenedor:
 - `scripts/sync-sessions.mjs` — normaliza y escribe sesiones en la BD.
 - `scripts/migrate-to-db.mjs` — migra los JSON legados de `sessions/` a la BD.
 - `scripts/create-athlete.mjs` — crea un nuevo atleta/tenant.
-- `backend/lib/db.js` — SQLite (`data/endurance.db`) y esquema.
+- `backend/init.sql` — esquema SQLite (se aplica desde `backend/lib/db.js`).
+- `backend/lib/db.js` — acceso a SQLite (`data/endurance.db`) y migraciones.
 - `backend/lib/auth.js` — verificación del token de Google y sesiones.
+- `backend/lib/api-keys.js` — API keys por tenant para autenticación sin Google.
 - `backend/lib/sessions.js` — capa de datos multi-tenant (sesiones, perfil,
   ajustes).
 - `backend/lib/trainer.js` — genera el plan con IA y actualiza el perfil del
   atleta con los últimos datos de las sesiones.
-- `backend/server.js` — API REST con auth, tenants, roles y estáticos.
+- `backend/lib/ai-provider.js` — proveedores de IA (gemini/openai/anthropic/…)
+  y `callAi` con logging de cada solicitud (`backend/lib/ai-logs.js`).
+- `backend/server.js` — arranque HTTP: dispatch estático/API, auth (cookie o
+  API key) y montaje de las rutas de `backend/routes/` (divididas por dominio).
 - `frontend/` — interfaz web (Vite + React).
 - `sessions/` — legado en JSON (migrado a BD al primer arranque).
 - `AGENTS.md` — esquema JSON de sesión, endpoints y workflow de sync.

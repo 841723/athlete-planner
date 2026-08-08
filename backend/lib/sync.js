@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { getDb } from "./db.js";
 import { getTenantId, upsertSession } from "./sessions.js";
+import { saveTrack, existingTrackIds } from "./track.js";
+import { mergePlannedWithCompleted } from "./merge.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const SCRIPTS_DIR = path.join(ROOT, "scripts");
@@ -90,7 +92,25 @@ function importNormalizedSessions(dir, ids) {
   return imported;
 }
 
-export async function runSync({ force = false } = {}) {
+function importTracks(dir, ids) {
+  let imported = 0;
+  if (!fs.existsSync(dir)) return 0;
+  for (const file of fs.readdirSync(dir)) {
+    if (!file.endsWith(".json")) continue;
+    const m = file.match(/^(\d+)\.json$/);
+    if (!m || !ids.includes(m[1])) continue;
+    try {
+      const data = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+      saveTrack(getTenantId(), m[1], data);
+      imported++;
+    } catch {
+      /* ignorar track inválido */
+    }
+  }
+  return imported;
+}
+
+export async function runSync({ force = false, backfillTracks = false } = {}) {
   if (syncing) {
     const err = new Error("Ya hay una sincronización en curso");
     err.status = 409;
@@ -101,15 +121,20 @@ export async function runSync({ force = false } = {}) {
   const listFile = path.join(workDir, "raw-activities.json");
   const detailsDir = path.join(workDir, "details");
   const sessionsDir = path.join(workDir, "sessions");
+  const tracksDir = path.join(workDir, "tracks");
   try {
     fs.mkdirSync(detailsDir, { recursive: true });
     fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.mkdirSync(tracksDir, { recursive: true });
 
     const allIds = await fetchAllIds();
     const existing = existingIds();
     const missingIds = allIds.filter((id) => !existing.has(id));
 
-    if (!missingIds.length) {
+    const withTrack = existingTrackIds(getTenantId());
+    const trackIds = allIds.filter((id) => !withTrack.has(id));
+
+    if (!missingIds.length && !trackIds.length) {
       return {
         synced: 0,
         skipped: allIds.length,
@@ -120,19 +145,36 @@ export async function runSync({ force = false } = {}) {
       };
     }
 
-    await runPython(["list", "--min-date", MIN_DATE, "--out", listFile]);
-    for (const id of missingIds) {
-      await runPython(["details", id, "--list", listFile, "--out", path.join(detailsDir, `${id}.json`)]);
+    if (missingIds.length) {
+      await runPython(["list", "--min-date", MIN_DATE, "--out", listFile]);
+      for (const id of missingIds) {
+        await runPython(["details", id, "--list", listFile, "--out", path.join(detailsDir, `${id}.json`)]);
+      }
     }
 
-    const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`];
-    if (force) syncArgs.push("--force");
-    const syncOut = await runNode(SYNC_SESSIONS, syncArgs);
-    const imported = importNormalizedSessions(sessionsDir, missingIds);
+    let syncOut = "";
+    let imported = 0;
+    if (missingIds.length) {
+      const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`];
+      if (force) syncArgs.push("--force");
+      syncOut = await runNode(SYNC_SESSIONS, syncArgs);
+      imported = importNormalizedSessions(sessionsDir, missingIds);
+    }
+
+    for (const id of trackIds) {
+      await runPython(["track", id, "--out", path.join(tracksDir, `${id}.json`)]);
+    }
+    const trackCount = importTracks(tracksDir, trackIds);
+
+    const merged = mergePlannedWithCompleted();
 
     return {
-      ...(parseSummary(syncOut) ?? { synced: imported, skipped: 0, filtered: 0, missing: 0 }),
+      ...(syncOut
+        ? (parseSummary(syncOut) ?? { synced: imported, skipped: 0, filtered: 0, missing: 0 })
+        : { synced: 0, skipped: 0, filtered: 0, missing: 0 }),
       ids: missingIds,
+      tracks: trackCount,
+      merged,
     };
   } catch (err) {
     const message = err?.message ?? String(err);

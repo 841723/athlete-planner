@@ -7,6 +7,7 @@ import {
   getSportCategory,
   getTenantId,
   loadCompletedSessions,
+  loadPlannedSessions,
   enrich,
   saveAthleteProfile,
   upsertSession,
@@ -14,8 +15,11 @@ import {
 } from "./sessions.js";
 import { getProfileVersion, saveProfileVersion } from "./profile-history.js";
 import { getPrompt } from "./ai-prompts.js";
+import { savePlan } from "./plans.js";
 import { buildObjectives } from "./objectives.js";
-import { subWeeks, format, parseISO, startOfWeek } from "date-fns";
+import { callAi, callAiChat } from "./ai-provider.js";
+import { listPlanMessages, addPlanMessage, replacePlanSessions } from "./plan-chat.js";
+import { subWeeks, format, parseISO } from "date-fns";
 
 const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
 const SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-system-prompt.txt");
@@ -35,37 +39,6 @@ function loadTitlesSystemPrompt() {
   } catch {
     throw new Error("No se pudo cargar el system prompt de títulos de sesión");
   }
-}
-
-async function callGemini(apiKey, model, systemPrompt, userPrompt) {
-  const fullText = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: fullText }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 8192,
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Error de la API de Gemini: ${response.status} - ${errText}`);
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Respuesta vacía de la API de Gemini");
-  return text;
 }
 
 function getRecentSessions(weeks = 8) {
@@ -162,7 +135,7 @@ function parseTitlesResponse(response) {
   }
 }
 
-async function generateSessionTitles(sessions, apiKey, model) {
+async function generateSessionTitles(sessions, settings, actor) {
   const untitled = sessions.filter((s) => !s.title && s.name);
   if (untitled.length === 0) return [];
 
@@ -179,7 +152,7 @@ ${sessionsText}
 Responde únicamente con el JSON con los títulos.
 `.trim();
 
-  const responseText = await callGemini(apiKey, model, systemPrompt, userPrompt);
+  const responseText = await callAi(settings, { systemPrompt, userPrompt }, actor);
   const titles = parseTitlesResponse(responseText);
 
   const applied = [];
@@ -231,29 +204,53 @@ function deriveProfileMetrics(sessions) {
 }
 
 function mergeProfileMetrics(profile, metrics) {
-  const updated = { ...profile };
+  const updated = JSON.parse(JSON.stringify(profile ?? {}));
+  const datos = updated.datos_del_atleta ??= {};
+  const estado = datos.estado_actual ??= {};
   if (metrics.running) {
-    updated.strengths = {
-      ...(updated.strengths ?? {}),
-      running: { ...(updated.strengths?.running ?? {}), ...metrics.running },
-    };
+    estado.running = { ...(estado.running ?? {}), fc_z2: metrics.running.current };
   }
   if (metrics.cycling) {
-    updated.weaknesses = {
-      ...(updated.weaknesses ?? {}),
-      cycling: { ...(updated.weaknesses?.cycling ?? {}), ...metrics.cycling },
-    };
+    estado.cycling = { ...(estado.cycling ?? {}), potencia_w: metrics.cycling.current_power };
   }
   if (metrics.swimming) {
-    updated.weaknesses = {
-      ...(updated.weaknesses ?? {}),
-      swimming: { ...(updated.weaknesses?.swimming ?? {}), ...metrics.swimming },
-    };
+    estado.swimming = { ...(estado.swimming ?? {}), ritmo_100m: metrics.swimming.current_pace };
   }
   if (metrics.goal) {
-    updated.goal = { ...(updated.goal ?? {}), ...metrics.goal };
+    const estadoFisico = datos.estado_fisico ??= {};
+    estadoFisico.semanas_consecutivas = String(metrics.goal.current_week);
+    updated.goal = { ...(updated.goal ?? {}), current_week: metrics.goal.current_week };
   }
   return updated;
+}
+
+function normalizeProfile(profile) {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) return null;
+  if (Object.keys(profile).length === 0) return null;
+  if (profile.datos_del_atleta) return profile;
+
+  const out = {};
+  const d = (out.datos_del_atleta = {});
+  const estado = (d.estado_actual = {});
+  if (profile.strengths?.running?.current) {
+    estado.running = { fc_z2: profile.strengths.running.current };
+  }
+  if (profile.weaknesses?.cycling?.current_power) {
+    estado.cycling = { potencia_w: profile.weaknesses.cycling.current_power };
+  }
+  if (profile.weaknesses?.swimming?.current_pace) {
+    estado.swimming = { ritmo_100m: profile.weaknesses.swimming.current_pace };
+  }
+  if (profile.goal?.current_week) {
+    d.estado_fisico = { semanas_consecutivas: String(profile.goal.current_week) };
+  }
+  if (profile.objetivo) d.objetivo = profile.objetivo;
+  if (profile.nombre) d.datos_personales = { nombre: profile.nombre };
+  if (profile.filosofia) out.filosofia = profile.filosofia;
+  if (profile.trainer_behavior) out.trainer_behavior = profile.trainer_behavior;
+
+  if (Object.keys(d).length === 0 && Object.keys(out).length === 0) return profile;
+  return out;
 }
 
 function buildUserPrompt(comments, weeks, profile, metrics) {
@@ -261,12 +258,14 @@ function buildUserPrompt(comments, weeks, profile, metrics) {
 
   const sessionsText = sessions.map(formatSessionForPrompt).join("\n");
 
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const targetWeekStart = subWeeks(weekStart, -weeks);
-  const targetDate = format(targetWeekStart, "yyyy-MM-dd");
+  const today = format(new Date(), "yyyy-MM-dd");
+  const targetDate = today;
 
-  const currentWeek = profile.goal?.current_week ?? null;
-  const weekLabel = currentWeek != null ? `#${currentWeek + weeks}` : `+${weeks}`;
+  const currentWeek =
+    profile?.datos_del_atleta?.estado_fisico?.semanas_consecutivas ??
+    profile?.goal?.current_week ??
+    null;
+  const weekLabel = currentWeek != null ? `#${currentWeek}` : `#1`;
 
   const metricsLines = [];
   if (metrics?.goal?.current_week) metricsLines.push(`- Semana actual de entrenamiento: #${metrics.goal.current_week}`);
@@ -278,19 +277,28 @@ function buildUserPrompt(comments, weeks, profile, metrics) {
       ? `\nÚLTIMOS DATOS OBTENIDOS (derivados de tus sesiones de las últimas 8 semanas):\n${metricsLines.join("\n")}\n`
       : "";
 
+  const profileText =
+    profile && Object.keys(profile).length > 0
+      ? JSON.stringify(profile, null, 2)
+      : "(no hay perfil guardado)";
+
   return `
 CONTEXTO ACTUAL:
+- Hoy es: ${today}
 - Semana actual de entrenamiento: ${weekLabel}
-- Fecha objetivo: ${targetDate}
+- El plan empieza HOY: ${targetDate}. Programa las sesiones a partir de hoy (hoy incluido), no en el futuro ni esperando al lunes.
 - Sesiones de las últimas 8 semanas (incluye las notas que escribió el atleta tras cada sesión):
 
 ${sessionsText}
 ${metricsText}
+PERFIL DEL ATLETA (JSON):
+${profileText}
+
 COMENTARIOS DEL ATLETA:
 ${comments}
 
 Genera un plan de entrenamiento para las próximas ${weeks} semana(s). Responde con el JSON estructurado como se indica en las instrucciones.
-Además, incluye un campo "updated_profile" con el perfil del atleta actualizado según tus observaciones de las últimas sesiones.
+Además, incluye un campo "updated_profile" con el perfil del atleta actualizado según tus observaciones de las últimas sesiones. updated_profile DEBE respetar exactamente el FORMATO DEL PERFIL DEL ATLETA indicado en el system prompt, con la clave raíz "datos_del_atleta". Si el perfil ya trae "datos_del_atleta", actualízalo manteniendo su estructura. No inventes campos fuera de ese esquema.
 `.trim();
 }
 
@@ -321,23 +329,16 @@ function slugify(name) {
     .replace(/^-+|-+$/g, "");
 }
 
-function createPlannedSession(sessionData) {
+function createPlannedSession(sessionData, planId) {
   const session = {
     schema_version: 2,
     id: randomUUID(),
+    plan_id: planId ?? undefined,
     sport: sessionData.sport,
     title: sessionData.title,
     name: sessionData.name ?? sessionData.title,
     start_date_local: sessionData.start_date_local,
     workout_text: sessionData.workout_text,
-    distance_m: sessionData.distance_m,
-    moving_time_s: sessionData.moving_time_s ?? sessionData.elapsed_time_s,
-    elapsed_time_s: sessionData.elapsed_time_s ?? sessionData.moving_time_s,
-    avg_pace_s_per_km: sessionData.avg_pace_s_per_km,
-    avg_speed_ms: sessionData.avg_speed_ms,
-    hr_from: sessionData.hr_from,
-    hr_to: sessionData.hr_to,
-    workout: sessionData.workout,
   };
 
   upsertSession(getTenantId(), "planned", session);
@@ -345,10 +346,15 @@ function createPlannedSession(sessionData) {
 }
 
 function clearPlannedSessions() {
-  getDb().prepare("DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'").run(getTenantId());
+  getDb()
+    .prepare(
+      `DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'
+       AND (json_extract(data, '$.merged_with') IS NULL OR json_extract(data, '$.merged_with') = '')`
+    )
+    .run(getTenantId());
 }
 
-export async function generatePlan({ comments = "", weeks = 1, profileVersionId = null, promptId = null, apiKey, provider, model }) {
+export async function generatePlan({ comments = "", weeks = 1, profileVersionId = null, promptId = null, settings, actor }) {
   const tenantId = getTenantId();
 
   let profile;
@@ -369,7 +375,7 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
 
   let titlesUpdated = [];
   try {
-    titlesUpdated = await generateSessionTitles(recentSessions, apiKey, model);
+    titlesUpdated = await generateSessionTitles(recentSessions, settings, actor);
   } catch (err) {
     console.error("Error generando títulos de sesión:", err.message);
   }
@@ -389,16 +395,30 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
   const userPrompt = buildUserPrompt(comments, weeks, updatedProfile, metrics);
 
   try {
-    const responseText = await callGemini(apiKey, model, systemPrompt, userPrompt);
+    const { text: responseText, responseId } = await callAiChat(
+      settings,
+      { systemPrompt, input: userPrompt },
+      actor
+    );
 
     const { comments: llmComments, sessions: rawSessions, updated_profile } = parseLLMResponse(responseText);
+
+    const prompt = promptId ? getPrompt(promptId) : null;
+    const planId = savePlan(tenantId, {
+      comments: llmComments,
+      weeks,
+      profileVersionId,
+      promptId,
+      promptName: prompt?.name ?? null,
+      responseId,
+    });
 
     clearPlannedSessions();
 
     const createdSessions = [];
     for (const rawSession of rawSessions) {
       try {
-        const created = createPlannedSession(rawSession);
+        const created = createPlannedSession(rawSession, planId);
         createdSessions.push(created);
       } catch (err) {
         console.error("Error creando sesión planificada:", err.message);
@@ -407,14 +427,18 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
 
     let profileUpdated = false;
     if (updated_profile && typeof updated_profile === "object") {
-      const versionId = saveProfileVersion(tenantId, updated_profile, "ai");
-      if (versionId) {
-        saveAthleteProfile(tenantId, updated_profile);
-        profileUpdated = true;
+      const normalized = normalizeProfile(updated_profile);
+      if (normalized) {
+        const versionId = saveProfileVersion(tenantId, normalized, "ai");
+        if (versionId) {
+          saveAthleteProfile(tenantId, normalized);
+          profileUpdated = true;
+        }
       }
     }
 
     return {
+      planId,
       comments: llmComments,
       sessions: createdSessions,
       titlesUpdated,
@@ -423,4 +447,91 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
   } catch (err) {
     throw new Error(`Error al generar el plan: ${err.message}`);
   }
+}
+
+const CHAT_SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-chat-system-prompt.txt");
+
+function loadChatSystemPrompt() {
+  try {
+    return fs.readFileSync(CHAT_SYSTEM_PROMPT_PATH, "utf8");
+  } catch {
+    throw new Error("No se pudo cargar el system prompt del chat de entrenador");
+  }
+}
+
+function formatPlannedSessionForPrompt(session) {
+  const date = session.start_date_local
+    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
+    : "sin fecha";
+  return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
+}
+
+function buildChatUserPrompt(planId, message) {
+  const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
+  const planText =
+    planned.length > 0
+      ? planned.map(formatPlannedSessionForPrompt).join("\n")
+      : "(no hay sesiones planificadas para este plan)";
+  const profile = getAthleteProfile();
+  const profileText =
+    profile && Object.keys(profile).length > 0
+      ? JSON.stringify(profile, null, 2)
+      : "(no hay perfil guardado)";
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  return `
+Hoy es: ${today}
+
+PERFIL DEL ATLETA (JSON):
+${profileText}
+
+PLAN ACTUAL (sesiones planificadas de este plan):
+${planText}
+
+MENSAJE DEL ATLETA:
+${message}
+
+Responde con el JSON indicado en el system prompt.
+`.trim();
+}
+
+function parseChatResponse(response) {
+  const jsonMatch = response.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("No se pudo encontrar JSON válido en la respuesta del chat");
+  }
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      reply: typeof parsed.reply === "string" ? parsed.reply : "",
+      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+    };
+  } catch {
+    throw new Error("Error al parsear la respuesta JSON del chat");
+  }
+}
+
+export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
+  const tenantId = getTenantId();
+  const systemPrompt = loadChatSystemPrompt();
+  const userPrompt = buildChatUserPrompt(planId, message);
+
+  const { text, responseId } = await callAiChat(
+    settings,
+    { systemPrompt, input: userPrompt, previousResponseId },
+    actor
+  );
+
+  const parsed = parseChatResponse(text);
+  const reply = parsed.reply || text;
+
+  addPlanMessage(planId, "user", message);
+  addPlanMessage(planId, "assistant", reply);
+
+  let sessionsUpdated = [];
+  if (parsed.sessions.length > 0) {
+    sessionsUpdated = replacePlanSessions(planId, parsed.sessions);
+  }
+
+  return { reply, sessionsUpdated, responseId, tenantId };
 }

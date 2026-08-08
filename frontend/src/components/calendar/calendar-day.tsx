@@ -1,6 +1,6 @@
 import { format } from "@/lib/date-format";
 import type { CSSProperties } from "react";
-import { Trophy } from "lucide-react";
+import { Trophy, Star } from "lucide-react";
 import type { SessionWithStatus, RaceGoal } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, hexToRgba } from "@/lib/utils";
 
@@ -8,6 +8,7 @@ interface CalendarDayProps {
   date: Date;
   sessions: SessionWithStatus[];
   goal?: RaceGoal;
+  primary?: boolean;
   onClick: (session: SessionWithStatus) => void;
   onDayClick?: (date: string) => void;
   dimmed?: boolean;
@@ -30,7 +31,7 @@ function getCellBackground(sessions: SessionWithStatus[]): CSSProperties | undef
   return { backgroundImage: `linear-gradient(135deg, ${stops})` };
 }
 
-export function CalendarDay({ date, sessions, goal, onClick, onDayClick, dimmed }: CalendarDayProps) {
+export function CalendarDay({ date, sessions, goal, primary, onClick, onDayClick, dimmed }: CalendarDayProps) {
   const dateStr = format(date, "yyyy-MM-dd");
   const isToday = dateStr === format(new Date(), "yyyy-MM-dd");
   const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -58,14 +59,14 @@ export function CalendarDay({ date, sessions, goal, onClick, onDayClick, dimmed 
       <div className="text-[10px] sm:text-xs font-medium text-gray-300 mb-0.5 sm:mb-1 flex items-center justify-between">
         <span>
           <span className="hidden sm:inline">{format(date, "EEE")}</span>
-          <span className={`${isToday ? "text-accent-light font-bold" : ""} ${sessions.length === 0 ? "ml-0 sm:ml-1" : ""}`}>
+          <span className={`${isToday ? "text-accent-light font-bold" : ""} ml-0 sm:ml-1`}>
             {format(date, "d")}
           </span>
         </span>
       </div>
       {goal && (
         <div className="hidden sm:flex items-center gap-1 mb-1 px-1 py-0.5 rounded-md bg-[#C8102E] text-white text-[10px] font-semibold">
-          <Trophy className="w-3 h-3 flex-shrink-0" />
+          {primary ? <Star className="w-3 h-3 flex-shrink-0" /> : <Trophy className="w-3 h-3 flex-shrink-0" />}
           <span className="truncate">{goal.label}</span>
         </div>
       )}

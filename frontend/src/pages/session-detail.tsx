@@ -22,6 +22,7 @@ import {
 } from "@/lib/utils";
 import { SessionLapsChart } from "@/components/charts/session-laps-chart";
 import { WorkoutText } from "@/components/session/workout-text";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -167,9 +168,9 @@ export function SessionDetailPage() {
             </div>
           )}
         </div>
-        <textarea
-          className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60 resize-none"
-          rows={4}
+        <AutoTextarea
+          className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+          minRows={4}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           readOnly={!perms.canEdit}

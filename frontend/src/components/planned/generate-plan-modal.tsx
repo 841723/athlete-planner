@@ -5,6 +5,7 @@ import { useProfileHistory } from "@/hooks/use-profile-history";
 import { usePrompts, useSavePrompt } from "@/hooks/use-prompts";
 import { useAiSettings } from "@/hooks/use-ai-settings";
 import { Button } from "@/components/ui/button";
+import { AutoTextarea } from "@/components/ui/auto-textarea";
 
 interface GeneratePlanModalProps {
   open: boolean;
@@ -195,9 +196,9 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
               <label className="text-xs text-gray-400 block mb-1.5">
                 Comentarios sobre tus últimas sesiones
               </label>
-              <textarea
+              <AutoTextarea
                 className={field}
-                rows={4}
+                minRows={4}
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 placeholder="Ej: Esta semana he entrenado poco por trabajo. Las piernas están cargadas. Hazme el plan de la semana #14..."

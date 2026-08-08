@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchPrompts, savePrompt, deletePrompt } from "@/services/api";
+import { fetchPrompts, savePrompt, deletePrompt, updatePrompt } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
 
 export function usePrompts() {
@@ -36,6 +36,22 @@ export function useDeletePrompt() {
     },
     onError: (err: Error) => {
       toast({ type: "error", title: "Error al eliminar", description: err.message });
+    },
+  });
+}
+
+export function useUpdatePrompt() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ promptId, payload }: { promptId: string; payload: { name: string; content: string } }) =>
+      updatePrompt(promptId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["prompts"] });
+      toast({ type: "success", title: "Prompt actualizado" });
+    },
+    onError: (err: Error) => {
+      toast({ type: "error", title: "Error al actualizar", description: err.message });
     },
   });
 }
