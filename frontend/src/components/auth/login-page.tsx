@@ -91,12 +91,11 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-dark-50 p-4">
       <div className="card p-8 max-w-md w-full text-center">
         <img
-          src="/edasi-square.png"
+          src="/edasi-light-long.png"
           alt="edasi logo"
-          className="h-24 w-24 object-contain mx-auto mb-3"
+          className="h-24 object-contain mx-auto mb-12"
         />
-        <div className="text-2xl font-bold mb-2">Athlete Planner</div>
-        <p className="text-sm text-gray-400 mb-8">Inicia sesión con tu cuenta de Google</p>
+        <p className="text-sm text-gray-400 mb-4">Inicia sesión con tu cuenta de Google</p>
 
         {loading && (
           <div className="flex items-center justify-center gap-2 text-gray-400">
