@@ -3,6 +3,7 @@ import {
   fetchSyncSources,
   garminConnect,
   garminMfa,
+  garminTokens,
   stravaConnect,
   disconnectSyncSource,
   updateSyncSourceConfig,
@@ -29,6 +30,10 @@ export function useSyncSourceMutations() {
       mutationFn: (body: { email: string; password: string; code: string }) => garminMfa(body),
       onSuccess: invalidate,
     }),
+    garminTokens: useMutation({
+      mutationFn: (body: { tokens: string }) => garminTokens(body),
+      onSuccess: invalidate,
+    }),
     stravaConnect: useMutation({
       mutationFn: () => stravaConnect(),
     }),
@@ -37,8 +42,8 @@ export function useSyncSourceMutations() {
       onSuccess: invalidate,
     }),
     updateConfig: useMutation({
-      mutationFn: (body: { provider: string; min_date?: string | null }) =>
-        updateSyncSourceConfig(body.provider, { min_date: body.min_date }),
+      mutationFn: (body: { provider: string; min_date?: string | null; max_date?: string | null }) =>
+        updateSyncSourceConfig(body.provider, { min_date: body.min_date, max_date: body.max_date }),
       onSuccess: invalidate,
     }),
   };

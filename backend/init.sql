@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS tenant_settings (
   plan_start TEXT,
   goal_date TEXT,
   training_week_one_start TEXT,
-  min_date TEXT
+  min_date TEXT,
+  focus_sports TEXT
 );
 
 CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -100,6 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_profile_history_tenant ON athlete_profile_history
 CREATE TABLE IF NOT EXISTS ai_prompts (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'plan',
   name TEXT NOT NULL,
   content TEXT NOT NULL,
   is_predefined INTEGER NOT NULL DEFAULT 0,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, CheckCircle2, Loader2, RefreshCw, ShieldAlert, Unplug, Wifi } from "lucide-react";
+import { Activity, CheckCircle2, ClipboardPaste, Loader2, RefreshCw, Save, ShieldAlert, Unplug, Wifi } from "lucide-react";
 import { useSyncSources, useSyncSourceMutations } from "@/hooks/use-sync-sources";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -46,17 +46,64 @@ function StatusBadge({ source }: { source: SyncSource }) {
   );
 }
 
-function GarminCard({ source }: { source: SyncSource }) {
+function DateRangeEditor({ source, defaultMinDate }: { source: SyncSource; defaultMinDate?: string | null }) {
   const { toast } = useToast();
   const mutations = useSyncSourceMutations();
+  const [minDate, setMinDate] = useState(source.min_date ?? defaultMinDate ?? "");
+  const [maxDate, setMaxDate] = useState(source.max_date ?? "");
+
+  useEffect(() => {
+    setMinDate(source.min_date ?? defaultMinDate ?? "");
+    setMaxDate(source.max_date ?? "");
+  }, [source.min_date, source.max_date, defaultMinDate]);
+
+  function handleSave() {
+    mutations.updateConfig.mutate(
+      { provider: source.provider, min_date: minDate || null, max_date: maxDate || null },
+      {
+        onSuccess: () => toast({ type: "success", title: "Rango de sincronización guardado" }),
+        onError: (e) => toast({ type: "error", title: "Error al guardar", description: e.message }),
+      }
+    );
+  }
+
+  return (
+    <div className="rounded-xl bg-dark-300/50 p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Sincronizar desde</label>
+          <input type="date" className="input" value={minDate} onChange={(e) => setMinDate(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Hasta</label>
+          <input type="date" className="input" value={maxDate} onChange={(e) => setMaxDate(e.target.value)} />
+          <p className="text-xs text-gray-500 mt-1">Vacío = hasta la actualidad.</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 mt-2">
+        <Button className="text-xs px-3 py-1.5" onClick={handleSave} disabled={mutations.updateConfig.isPending}>
+          {mutations.updateConfig.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          Guardar rango
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function GarminCard({ source, defaultMinDate }: { source: SyncSource; defaultMinDate?: string | null }) {
+  const { toast } = useToast();
+  const mutations = useSyncSourceMutations();
+  const [method, setMethod] = useState<"tokens" | "password">("tokens");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
+  const [tokensJson, setTokensJson] = useState("");
   const [mfaPending, setMfaPending] = useState(false);
 
   const pending =
     mutations.garminConnect.isPending ||
     mutations.garminMfa.isPending ||
+    mutations.garminTokens.isPending ||
     mutations.disconnect.isPending;
 
   function handleConnect() {
@@ -76,6 +123,23 @@ function GarminCard({ source }: { source: SyncSource }) {
             setEmail("");
             setPassword("");
           }
+        },
+        onError: (e) => toast({ type: "error", title: "No se pudo conectar Garmin", description: e.message }),
+      }
+    );
+  }
+
+  function handleTokens() {
+    if (!tokensJson.trim()) {
+      toast({ type: "error", title: "Pega el JSON con los tokens de Garmin" });
+      return;
+    }
+    mutations.garminTokens.mutate(
+      { tokens: tokensJson },
+      {
+        onSuccess: () => {
+          toast({ type: "success", title: "Garmin conectado con tus tokens" });
+          setTokensJson("");
         },
         onError: (e) => toast({ type: "error", title: "No se pudo conectar Garmin", description: e.message }),
       }
@@ -108,6 +172,20 @@ function GarminCard({ source }: { source: SyncSource }) {
     }
   }
 
+  const methodTab = (id: "tokens" | "password", label: string) => (
+    <button
+      type="button"
+      onClick={() => setMethod(id)}
+      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+        method === id
+          ? "bg-accent/20 text-accent-light border border-accent/40"
+          : "bg-dark-300/40 text-gray-400 border border-transparent hover:text-gray-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -133,6 +211,7 @@ function GarminCard({ source }: { source: SyncSource }) {
               <p className="text-xs text-gray-500 mt-1">Sincroniza desde {source.min_date}</p>
             )}
           </div>
+          <DateRangeEditor source={source} defaultMinDate={defaultMinDate} />
           <div className="flex flex-wrap gap-2">
             <Button
               variant="ghost"
@@ -147,59 +226,97 @@ function GarminCard({ source }: { source: SyncSource }) {
         </div>
       ) : (
         <div className="space-y-3">
-          <div>
-            <input
-              type="email"
-              className="input"
-              placeholder="Email de Garmin"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={pending}
-            />
+          <div className="flex gap-1.5 mb-1">
+            {methodTab("tokens", "Pegar tokens")}
+            {methodTab("password", "Email y contraseña")}
           </div>
-          <div>
-            <input
-              type="password"
-              className="input"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={pending}
-            />
-          </div>
-          {mfaPending && (
-            <div>
-              <input
-                type="text"
-                className="input"
-                placeholder="Código de verificación (6 dígitos)"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+
+          {method === "tokens" ? (
+            <>
+              <div className="p-3 rounded-xl bg-dark-300/50 text-xs text-gray-400 space-y-2">
+                <p className="flex items-center gap-1.5 font-medium text-gray-300">
+                  <ClipboardPaste className="w-3.5 h-3.5" /> Sin compartir tu contraseña
+                </p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>
+                    En tu ordenador ejecuta:{" "}
+                    <code className="text-accent-light">uv run --with garminconnect==0.3.8 python scripts/garmin-token-export.py --email TU_EMAIL</code>
+                  </li>
+                  <li>Introduce tu contraseña de Garmin cuando se pida. No sale de tu equipo.</li>
+                  <li>Copia el JSON que imprime (empieza por <code className="text-accent-light">{"{\"tokens\": \"..."}</code>) y pégalo abajo.</li>
+                </ol>
+                <p>Tu contraseña de Garmin nunca se envía a esta app.</p>
+              </div>
+              <textarea
+                className="input h-24 font-mono text-xs resize-none"
+                placeholder='{"tokens": "..."}'
+                value={tokensJson}
+                onChange={(e) => setTokensJson(e.target.value)}
                 disabled={pending}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Garmin te ha enviado un código de verificación (email o SMS).
+              {source.error && <p className="text-xs text-red-400">{source.error}</p>}
+              <Button onClick={handleTokens} disabled={pending}>
+                {mutations.garminTokens.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
+                Conectar con tokens
+              </Button>
+            </>
+          ) : (
+            <>
+              <div>
+                <input
+                  type="email"
+                  className="input"
+                  placeholder="Email de Garmin"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={pending}
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={pending}
+                />
+              </div>
+              {mfaPending && (
+                <div>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Código de verificación (6 dígitos)"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    disabled={pending}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Garmin te ha enviado un código de verificación (email o SMS).
+                  </p>
+                </div>
+              )}
+              {source.error && <p className="text-xs text-red-400">{source.error}</p>}
+              <Button
+                onClick={mfaPending ? handleMfa : handleConnect}
+                disabled={pending}
+              >
+                {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
+                {mfaPending ? "Verificar y conectar" : "Conectar Garmin"}
+              </Button>
+              <p className="text-xs text-gray-500">
+                La contraseña se usa una sola vez para obtener un token; no se almacena en el servidor.
               </p>
-            </div>
+            </>
           )}
-          {source.error && <p className="text-xs text-red-400">{source.error}</p>}
-          <Button
-            onClick={mfaPending ? handleMfa : handleConnect}
-            disabled={pending}
-          >
-            {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
-            {mfaPending ? "Verificar y conectar" : "Conectar Garmin"}
-          </Button>
-          <p className="text-xs text-gray-500">
-            Las credenciales se envían solo al login de Garmin; no se almacenan en el servidor.
-          </p>
         </div>
       )}
     </div>
   );
 }
 
-function StravaCard({ source, stravaConfigured }: { source: SyncSource; stravaConfigured: boolean }) {
+function StravaCard({ source, stravaConfigured, defaultMinDate }: { source: SyncSource; stravaConfigured: boolean; defaultMinDate?: string | null }) {
   const { toast } = useToast();
   const mutations = useSyncSourceMutations();
   const { refetch } = useSyncSources();
@@ -266,6 +383,7 @@ function StravaCard({ source, stravaConfigured }: { source: SyncSource; stravaCo
               <p className="text-xs text-gray-500 mt-1">Sincroniza desde {source.min_date}</p>
             )}
           </div>
+          <DateRangeEditor source={source} defaultMinDate={defaultMinDate} />
           <Button
             variant="ghost"
             className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 w-fit"
@@ -280,7 +398,8 @@ function StravaCard({ source, stravaConfigured }: { source: SyncSource; stravaCo
         <div className="space-y-3">
           {!stravaConfigured ? (
             <p className="text-xs text-red-400">
-              Strava no está configurado en el servidor. Añade STRAVA_CLIENT_ID y STRAVA_CLIENT_SECRET en el .env.
+              Strava no está configurado todavía. 
+              {/* Añade STRAVA_CLIENT_ID y STRAVA_CLIENT_SECRET en el .env. */}
             </p>
           ) : (
             <>
@@ -294,6 +413,10 @@ function StravaCard({ source, stravaConfigured }: { source: SyncSource; stravaCo
               </Button>
               <p className="text-xs text-gray-500">
                 Se abrirá una ventana de autorización de Strava. No es necesario guardar credenciales aquí.
+              </p>
+              <p className="text-xs text-gray-500">
+                ¿Usas Garmin? Activa el auto-sync Garmin→Strava en Strava y conéctala aquí; así no tendrás que
+                compartir tu contraseña de Garmin.
               </p>
             </>
           )}
@@ -317,11 +440,12 @@ export function SyncTab() {
 
   const garmin = data?.items.find((s) => s.provider === "garmin");
   const strava = data?.items.find((s) => s.provider === "strava");
+  const defaultMinDate = data?.defaultMinDate ?? null;
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {garmin && <GarminCard source={garmin} />}
-      {strava && <StravaCard source={strava} stravaConfigured={!!data?.stravaConfigured} />}
+      {strava && <StravaCard source={strava} stravaConfigured={!!data?.stravaConfigured} defaultMinDate={defaultMinDate} />}
+      {garmin && <GarminCard source={garmin} defaultMinDate={defaultMinDate} />}
       <p className="text-xs text-gray-500 lg:col-span-2">
         El botón Sincronizar de Inicio usa la fuente conectada. Solo puede haber una fuente activa a la vez.
       </p>

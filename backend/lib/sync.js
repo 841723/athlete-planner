@@ -20,8 +20,8 @@ function existingIds() {
   return new Set(rows.map((r) => String(r.id)));
 }
 
-async function fetchAllIds(tokensFile) {
-  const out = await runPython(GARMIN_FETCH, ["ids", "--min-date", MIN_DATE, "--tokens", tokensFile, "--json"]);
+async function fetchAllIds(tokensFile, dateArgs = []) {
+  const out = await runPython(GARMIN_FETCH, ["ids", "--tokens", tokensFile, "--json", ...dateArgs]);
   return JSON.parse(out || "[]").map(String);
 }
 
@@ -84,12 +84,21 @@ function connectedSource() {
 
 async function syncGarmin({ force = false }) {
   const tenantId = getTenantId();
+  const source = getSyncSource(tenantId, "garmin");
   const rawTokens = getSyncTokensRaw(tenantId, "garmin");
   if (!rawTokens) {
     const err = new Error("No hay tokens de Garmin para este atleta");
     err.status = 400;
     throw err;
   }
+
+  const config = JSON.parse(source?.config ?? "{}") ?? {};
+  const minDate = config.min_date ?? process.env.MIN_DATE ?? MIN_DATE;
+  const maxDate = config.max_date ?? null;
+
+  const dateArgs = [];
+  if (minDate) dateArgs.push("--min-date", minDate);
+  if (maxDate) dateArgs.push("--max-date", maxDate);
 
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "garmin-sync-"));
   const tokensFile = path.join(workDir, "tokens.json");
@@ -103,7 +112,7 @@ async function syncGarmin({ force = false }) {
     fs.mkdirSync(sessionsDir, { recursive: true });
     fs.mkdirSync(tracksDir, { recursive: true });
 
-    const allIds = await fetchAllIds(tokensFile);
+    const allIds = await fetchAllIds(tokensFile, dateArgs);
     const existing = existingIds();
     const missingIds = allIds.filter((id) => !existing.has(id));
 
@@ -122,7 +131,7 @@ async function syncGarmin({ force = false }) {
     }
 
     if (missingIds.length) {
-      await runPython(GARMIN_FETCH, ["list", "--min-date", MIN_DATE, "--tokens", tokensFile, "--out", listFile]);
+      await runPython(GARMIN_FETCH, ["list", "--tokens", tokensFile, "--out", listFile, ...dateArgs]);
       for (const id of missingIds) {
         await runPython(GARMIN_FETCH, ["details", id, "--list", listFile, "--tokens", tokensFile, "--out", path.join(detailsDir, `${id}.json`)]);
       }

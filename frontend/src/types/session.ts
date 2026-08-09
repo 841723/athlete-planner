@@ -186,7 +186,19 @@ export interface MetaData {
   trainingWeekOneStart: string;
   planStart: string;
   goalDate: string;
+  minDate?: string | null;
+  focusSports?: string[];
 }
+
+export interface MetaPayload {
+  plan_start?: string | null;
+  training_week_one_start?: string | null;
+  goal_date?: string | null;
+  min_date?: string | null;
+  focus_sports?: string[];
+}
+
+export type FocusSport = "running" | "cycling" | "swimming";
 
 export interface SessionTotals {
   totalDistance: number;
@@ -307,12 +319,14 @@ export interface SyncSource {
   account_name?: string | null;
   error?: string | null;
   min_date?: string | null;
+  max_date?: string | null;
   config?: Record<string, unknown>;
 }
 
 export interface SyncSourcesResponse {
   items: SyncSource[];
   stravaConfigured: boolean;
+  defaultMinDate?: string | null;
 }
 
 export interface StatRecord {

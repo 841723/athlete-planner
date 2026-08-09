@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Sparkles, X, Save, ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
+import { Sparkles, X, ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
 import { useGeneratePlan } from "@/hooks/use-generate-plan";
-import { usePrompts, useSavePrompt } from "@/hooks/use-prompts";
+import { usePrompts } from "@/hooks/use-prompts";
 import { useAiConfigs } from "@/hooks/use-ai-configs";
 import { useEquipment } from "@/hooks/use-equipment";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ interface GeneratePlanModalProps {
 export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
   const generateMutation = useGeneratePlan();
   const promptsQuery = usePrompts();
-  const savePromptMutation = useSavePrompt();
   const aiConfigsQuery = useAiConfigs();
   const equipmentQuery = useEquipment();
 
@@ -25,7 +24,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
   const [selectedConfigId, setSelectedConfigId] = useState<string>("");
   const [selectedPromptId, setSelectedPromptId] = useState<string>("");
   const [promptPreview, setPromptPreview] = useState(false);
-  const [savePromptName, setSavePromptName] = useState("");
   const [equipment, setEquipment] = useState<string[]>([]);
 
   if (!open) return null;
@@ -34,8 +32,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
   const configsLoading = aiConfigsQuery.isLoading;
   const selectedConfig = configs.find((c) => c.id === selectedConfigId);
   const hasAiConfig = configs.length > 0;
-  const customPrompts = promptsQuery.data?.filter((p) => !p.is_predefined) ?? [];
-  const canSavePrompt = customPrompts.length < 5;
   const selectedPrompt = promptsQuery.data?.find((p) => p.id === selectedPromptId);
   const equipmentItems = equipmentQuery.data?.items ?? [];
 
@@ -60,23 +56,12 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
     );
   }
 
-  function handleSavePrompt() {
-    if (!savePromptName.trim()) return;
-    const prompt = promptsQuery.data?.find((p) => p.id === selectedPromptId);
-    if (!prompt) return;
-    savePromptMutation.mutate(
-      { name: savePromptName, content: prompt.content },
-      { onSuccess: () => setSavePromptName("") }
-    );
-  }
-
   function handleClose() {
     setComments("");
     setWeeks(1);
     setSelectedConfigId("");
     setSelectedPromptId("");
     setPromptPreview(false);
-    setSavePromptName("");
     setEquipment([]);
     generateMutation.reset();
     onClose();
@@ -207,24 +192,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
                       {selectedPrompt.content}
                     </pre>
                   )}
-                </div>
-              )}
-              {selectedPromptId && canSavePrompt && (
-                <div className="flex gap-2 mt-2">
-                  <input
-                    className={field}
-                    value={savePromptName}
-                    onChange={(e) => setSavePromptName(e.target.value)}
-                    placeholder="Nombre para copiar como personalizado"
-                  />
-                  <Button
-                    variant="ghost"
-                    className="text-xs whitespace-nowrap"
-                    onClick={handleSavePrompt}
-                    disabled={!savePromptName.trim() || savePromptMutation.isPending}
-                  >
-                    <Save className="w-3.5 h-3.5" /> Copiar
-                  </Button>
                 </div>
               )}
             </div>

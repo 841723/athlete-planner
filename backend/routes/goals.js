@@ -1,5 +1,5 @@
 import { getGoals, saveGoals } from "../lib/goals.js";
-import { getMeta } from "../lib/meta.js";
+import { getMeta, saveMeta } from "../lib/meta.js";
 import { sendJson, readBody, canManage } from "../lib/http.js";
 
 export function register(router) {
@@ -15,6 +15,13 @@ export function register(router) {
   });
 
   router.get("/api/meta", (c) => {
+    return sendJson(c.res, 200, getMeta(c.tenantId));
+  });
+
+  router.put("/api/meta", async (c) => {
+    if (!canManage(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(c.req);
+    saveMeta(c.tenantId, body);
     return sendJson(c.res, 200, getMeta(c.tenantId));
   });
 }

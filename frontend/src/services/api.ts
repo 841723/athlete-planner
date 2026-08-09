@@ -7,6 +7,7 @@ import type {
   ChartsData,
   RaceGoal,
   MetaData,
+  MetaPayload,
   StatsRecordsData,
   SyncResult,
   SyncSourcesResponse,
@@ -96,6 +97,9 @@ export function fetchMeta(): Promise<MetaData> {
   return get("/meta");
 }
 
+export function updateMeta(payload: Partial<MetaPayload>): Promise<MetaData> {
+  return send("/meta", "PUT", payload);
+}
 export function fetchPlanned(): Promise<PlannedSessionView[]> {
   return get("/planned");
 }
@@ -131,6 +135,10 @@ export function garminMfa(body: { email: string; password: string; code: string 
   return send("/sync-sources/garmin/mfa", "POST", body);
 }
 
+export function garminTokens(body: { tokens: string }): Promise<{ ok: boolean; item?: SyncSource }> {
+  return send("/sync-sources/garmin/tokens", "POST", body);
+}
+
 export function stravaConnect(): Promise<{ url: string; redirectUri: string }> {
   return send("/sync-sources/strava/connect", "POST");
 }
@@ -139,7 +147,7 @@ export function disconnectSyncSource(provider: string): Promise<{ ok: boolean; i
   return send(`/sync-sources/${encodeURIComponent(provider)}/disconnect`, "POST");
 }
 
-export function updateSyncSourceConfig(provider: string, body: { min_date?: string | null }): Promise<{ ok: boolean; item: SyncSource }> {
+export function updateSyncSourceConfig(provider: string, body: { min_date?: string | null; max_date?: string | null }): Promise<{ ok: boolean; item: SyncSource }> {
   return send(`/sync-sources/${encodeURIComponent(provider)}/config`, "PUT", body);
 }
 

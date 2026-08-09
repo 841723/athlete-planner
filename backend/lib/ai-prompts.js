@@ -1,7 +1,25 @@
+import fs from "node:fs";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 
-const MAX_CUSTOM_PROMPTS = 5;
+const MAX_CUSTOM_PROMPTS = 20;
+
+const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
+
+const ROLE_FILES = {
+  system: "trainer-system-prompt.txt",
+  titles: "session-titles-system-prompt.txt",
+  chat: "trainer-chat-system-prompt.txt",
+};
+
+const ROLE_FALLBACK = {
+  system:
+    "Eres un entrenador personal de triatlón especializado en Ironman 70.3. Analiza las sesiones del atleta y genera planes progresivos.\n\nFORMATO DE RESPUESTA\n\nDebes responder únicamente con un JSON válido con esta estructura: { \"comments\": \"\", \"sessions\": [{ \"sport\": \"\", \"title\": \"\", \"name\": \"\", \"start_date_local\": \"AAAA-MM-DDTHH:MM:SS\", \"workout_text\": \"\" }], \"updated_profile\": {} }",
+  titles:
+    "Analiza cada sesión y asigna un título corto de entrenamiento en español (ej: 'Carrera en Z2', 'Series de 400m'). Responde únicamente con un JSON: { \"titles\": [{ \"id\": \"\", \"title\": \"\" }] }",
+  chat: "Eres el entrenador del plan de este atleta. Responde con un JSON: { \"reply\": \"texto\", \"sessions\": [] }. reply es tu análisis/respuesta; sessions, si propones cambios, son sesiones nuevas que reemplazan a las del plan.",
+};
 
 const PREDEFINED_PROMPTS = [
   {
@@ -54,15 +72,53 @@ REGLAS:
   },
 ];
 
+function loadRoleFile(role) {
+  try {
+    const content = fs.readFileSync(path.join(DATA_DIR, ROLE_FILES[role]), "utf8");
+    if (content.trim()) return content;
+  } catch {
+    /* ignorar, usar fallback */
+  }
+  return ROLE_FALLBACK[role];
+}
+
+function hasRole(tenantId, role) {
+  return (
+    getDb()
+      .prepare("SELECT COUNT(*) AS cnt FROM ai_prompts WHERE tenant_id = ? AND role = ?")
+      .get(tenantId, role).cnt > 0
+  );
+}
+
+export function seedRolePrompt(tenantId, role) {
+  if (hasRole(tenantId, role)) return;
+  const insert = getDb().prepare(
+    "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)"
+  );
+  const now = new Date().toISOString();
+  const nameByRole = {
+    system: "Prompt base",
+    titles: "Títulos de sesión",
+    chat: "Chat del plan",
+  };
+  insert.run(randomUUID(), tenantId, role, nameByRole[role] ?? role, loadRoleFile(role), now);
+}
+
+export function seedTenantPrompts(tenantId) {
+  for (const role of Object.keys(ROLE_FILES)) {
+    seedRolePrompt(tenantId, role);
+  }
+  seedPredefinedPrompts(tenantId);
+}
+
 export function seedPredefinedPrompts(tenantId) {
-  const db = getDb();
-  const existing = db
-    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND is_predefined = 1")
+  const existing = getDb()
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 1")
     .get(tenantId).cnt;
   if (existing >= PREDEFINED_PROMPTS.length) return;
 
-  const insert = db.prepare(
-    "INSERT OR IGNORE INTO ai_prompts (id, tenant_id, name, content, is_predefined, created_at) VALUES (?, ?, ?, ?, 1, ?)"
+  const insert = getDb().prepare(
+    "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 1, ?)"
   );
   const now = new Date().toISOString();
   for (const p of PREDEFINED_PROMPTS) {
@@ -71,26 +127,44 @@ export function seedPredefinedPrompts(tenantId) {
 }
 
 export function getPrompts(tenantId) {
-  seedPredefinedPrompts(tenantId);
+  seedTenantPrompts(tenantId);
   return getDb()
     .prepare(
-      "SELECT id, name, content, is_predefined FROM ai_prompts WHERE tenant_id = ? ORDER BY is_predefined DESC, name ASC"
+      `SELECT id, role, name, content, is_predefined FROM ai_prompts
+       WHERE tenant_id = ? AND (role = 'plan' OR role = 'system')
+       ORDER BY CASE role WHEN 'system' THEN 0 ELSE 1 END, is_predefined DESC, name ASC`
     )
     .all(tenantId);
 }
 
 export function getPrompt(promptId) {
   const row = getDb()
-    .prepare("SELECT id, tenant_id, name, content, is_predefined FROM ai_prompts WHERE id = ?")
+    .prepare("SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE id = ?")
     .get(promptId);
   return row ?? null;
 }
 
+export function getRolePrompt(tenantId, role) {
+  seedRolePrompt(tenantId, role);
+  return (
+    getDb()
+      .prepare("SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE tenant_id = ? AND role = ? ORDER BY is_predefined DESC, created_at ASC LIMIT 1")
+      .get(tenantId, role) ?? null
+  );
+}
+
+export function getFormatBlock(tenantId) {
+  const systemPrompt = getRolePrompt(tenantId, "system");
+  const content = systemPrompt?.content ?? "";
+  const marker = "FORMATO DE RESPUESTA";
+  const idx = content.indexOf(marker);
+  if (idx === -1) return "";
+  return content.slice(idx).trim();
+}
+
 export function savePrompt(tenantId, { name, content }) {
   const count = getDb()
-    .prepare(
-      "SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND is_predefined = 0"
-    )
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 0")
     .get(tenantId).cnt;
   if (count >= MAX_CUSTOM_PROMPTS) {
     throw new Error(`Maximo ${MAX_CUSTOM_PROMPTS} prompts personalizados permitidos`);
@@ -98,9 +172,27 @@ export function savePrompt(tenantId, { name, content }) {
   const id = randomUUID();
   getDb()
     .prepare(
-      "INSERT INTO ai_prompts (id, tenant_id, name, content, is_predefined, created_at) VALUES (?, ?, ?, ?, 0, ?)"
+      "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 0, ?)"
     )
     .run(id, tenantId, name, content, new Date().toISOString());
+  return id;
+}
+
+export function duplicatePrompt(promptId, tenantId) {
+  const row = getPrompt(promptId);
+  if (!row || row.tenant_id !== tenantId) return null;
+  const count = getDb()
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 0")
+    .get(tenantId).cnt;
+  if (count >= MAX_CUSTOM_PROMPTS) {
+    throw new Error(`Maximo ${MAX_CUSTOM_PROMPTS} prompts personalizados permitidos`);
+  }
+  const id = randomUUID();
+  getDb()
+    .prepare(
+      "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 0, ?)"
+    )
+    .run(id, tenantId, `Copia de ${row.name}`, row.content, new Date().toISOString());
   return id;
 }
 

@@ -90,6 +90,7 @@ export function toSyncSourceDto(row, provider) {
     connected: status === "connected",
     config: {
       min_date: config.min_date ?? null,
+      max_date: config.max_date ?? null,
       account_name: config.account_name ?? null,
     },
     error: row?.error ?? null,

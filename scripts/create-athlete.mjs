@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { getDb } from "../backend/lib/db.js";
 import { seedDefaultEquipment } from "../backend/lib/equipment.js";
 import { seedDefaultAiConfig } from "../backend/lib/ai-configs.js";
+import { seedTenantPrompts } from "../backend/lib/ai-prompts.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_MIN_DATE = "2026-05-12";
@@ -86,6 +87,7 @@ try {
 
   seedDefaultEquipment(tenantId);
   seedDefaultAiConfig(tenantId);
+  seedTenantPrompts(tenantId);
 
   db.exec("COMMIT");
   console.log("Atleta creado:");

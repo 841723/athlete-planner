@@ -1,9 +1,11 @@
 # AGENTS.md
 
 Proyecto personal de seguimiento de entrenamientos para Ironman 70.3.
-Los entrenamientos se descargan desde Garmin Connect mediante la API directa
-(`scripts/garmin-fetch.py`) y se guardan en una base de datos SQLite
-(`data/endurance.db`), aislada por **tenant** (un tenant = un atleta).
+Los entrenamientos se descargan desde **Garmin Connect** (API directa vía
+`scripts/garmin-fetch.py`) o **Strava** (OAuth, `backend/lib/strava.js`) y se
+guardan en una base de datos SQLite (`data/endurance.db`), aislada por
+**tenant** (un tenant = un atleta). Cada tenant conecta **una** fuente a la vez
+(tabla `sync_sources`, gestionada desde Configuración → Sincronización).
 
 `sessions/` (JSON) es **legado**: se migró una sola vez a la BD al primer
 arranque (`backend/lib/migrate.js`). No lo uses como origen de datos ni lo
@@ -39,7 +41,10 @@ modifiques.
 El usuario invoca `/sync-all` (o `/sync`, su alias) para sincronizar solo las
 sesiones que faltan. También desde la web con el botón **Sincronizar** de la
 página de Inicio (llama a `POST /api/sync`); el backend ejecuta la misma
-pipeline (`backend/lib/sync.js`) con `uv run` y los scripts. **Nunca hagas
+pipeline (`backend/lib/sync.js`) con `uv run` y los scripts. `runSync` usa la
+**fuente conectada** del tenant (`sync_sources`): Garmin (tokens del tenant en
+fichero temporal, pasados con `--tokens`) o Strava (`backend/lib/strava.js`).
+Si no hay fuente conectada, devuelve error claro. **Nunca hagas
 sincronizaciones automáticas sin que el usuario lo pida.**
 
 Comandos disponibles:
@@ -50,22 +55,32 @@ Comandos disponibles:
 - `/sync-session <activity_id>`: sincroniza una única sesión.
 - `/sync-all`: sincroniza todas las sesiones pendientes del tenant activo.
 
-## Fuente de datos: API directa de Garmin (sin MCP)
+## Fuentes de datos (Garmin y Strava)
 
-- **No uses el MCP para obtener datos.** Toda la descarga se hace con
-  `scripts/garmin-fetch.py`, que usa la librería `garminconnect` y reutiliza los
-  tokens de `~/.garminconnect`.
-- La autenticación se hace una sola vez con `uvx garmin-connect-mcp auth` (guarda
-  tokens en `~/.garminconnect`). A partir de ahí el MCP ya no se usa.
-- Ejecuta siempre con `uv run --with garminconnect==0.3.8 python scripts/garmin-fetch.py ...`.
+- **Garmin (API directa, sin MCP)**: toda la descarga se hace con
+  `scripts/garmin-fetch.py`, que usa la librería `garminconnect`. El login se
+  hace con `backend/lib/garmin.js` (`garminLogin`, soporta MFA) desde
+  `POST /api/sync-sources/garmin/connect`; los tokens se guardan **en la BD del
+  tenant** (columna `tokens` de `sync_sources`, el string raw que devuelve
+  `dumps()`), no en `~/.garminconnect`. Al sincronizar se escriben en un fichero
+  temporal y se pasan con `--tokens <file>`.
+- **Strava (OAuth)**: `backend/lib/strava.js` (authorize/exchange/refresh). La
+  conexión se inicia con `POST /api/sync-sources/strava/connect` (devuelve la
+  URL con un `state` = tenantId.nonce), y el callback público
+  `GET /api/sync-sources/strava/callback` canjea el `code`, guarda los tokens y
+  redirige a `/<tenantId>/config/sync?connected=strava`. Necesita
+  `STRAVA_CLIENT_ID` y `STRAVA_CLIENT_SECRET` en `.env`.
+- Ejecuta siempre Garmin con `uv run --with garminconnect==0.3.8 python scripts/garmin-fetch.py ...`.
 - Subcomandos de `scripts/garmin-fetch.py`:
-  - `list [--min-date YYYY-MM-DD] [--out FILE]`: listado de actividades con el
-    mismo formato que consumía el MCP (`data.activities`).
-  - `details <activity_id> [--list FILE] [--out FILE]`: detalle de una actividad
-    (splits `lapDTOs`, `hr_zones`, RPE/feel en `activity.summaryDTO`).
-  - `ids [--min-date YYYY-MM-DD] [--json]`: imprime los activity IDs.
-- `--min-date 2026-05-12` es el rango de sincronización (debe coincidir con
-  `MIN_DATE` de `.env` y con `tenant_settings.min_date`).
+  - `list [--min-date YYYY-MM-DD] [--max-date YYYY-MM-DD] [--tokens FILE] [--out FILE]`.
+  - `details <activity_id> [--list FILE] [--tokens FILE] [--out FILE]`: detalle
+    de una actividad (splits `lapDTOs`, `hr_zones`, RPE/feel en `activity.summaryDTO`).
+  - `ids [--min-date ...] [--max-date ...] [--tokens FILE] [--json]`: activity IDs.
+- **Rango de fechas por fuente**: cada fuente conectada puede definir
+  `min_date`/`max_date` (Configuración → Sincronización). `sync.js` y
+  `syncStrava` los pasan a la fuente (`--min-date/--max-date`; en Strava
+  `after`/`before`). Si no se definen, se usa el fallback
+  `config.min_date` → `process.env.MIN_DATE` → `tenant_settings.min_date`.
 
 ## Esquema JSON de sesión
 
@@ -190,7 +205,8 @@ que las completadas, con campos opcionales adicionales:
 - **Estructura**: `backend/server.js` es solo el arranque (http, dispatch estático/API,
   auth cookie o API key, `withTenant`). Las rutas están divididas por dominio en
   `backend/routes/` (`index.js` monta: auth, tenants, sessions, weekly, stats,
-  goals, planned, trainer, profile, ai, sync, api-keys, ai-logs). Cada handler
+  goals, planned, trainer, profile, ai, sync, sync-sources, api-keys, ai-logs,
+  plan-chat, equipment, ai-configs). Cada handler
   recibe un `ctx` con `{ user, token, tenantId, membership, actor, params }` y
   helpers de `backend/lib/http.js` (`sendJson`, `readBody`, `requireRole`,
   `canWrite`, `canManage`, ...). El enrutado usa `backend/lib/router.js`
@@ -205,6 +221,23 @@ que las completadas, con campos opcionales adicionales:
   (quién la generó), input, endpoint real, key enmascarada y respuesta/error
   (`backend/lib/ai-logs.js`, `listAiLogs`, `logAiRequest`). La key **siempre
   enmascarada** (`maskApiKey`); no se guarda nunca en claro.
+- **Prompts (100% por tenant, sin prompts compartidos)**: viven en la tabla
+  `ai_prompts` con una columna `role`:
+  - `system` ("Prompt base"), `titles` (títulos de sesión) y `chat` (chat del
+    plan): **defaults por tenant**, sembrados al crear el atleta y de forma
+    perezosa para tenants existentes (`seedTenantPrompts` en
+    `backend/lib/ai-prompts.js`, contenido tomado de `data/*.txt` como plantilla).
+    Son `is_predefined = 1` (solo lectura). `titles` y `chat` son internos (no se
+    muestran en la UI).
+  - `plan`: prompts seleccionables al generar (4 predefinidos de solo lectura +
+    personalizados). Los predefinidos **no se editan**: se duplican con
+    `POST /api/prompts/:id/duplicate` y la copia (`is_predefined = 0`,
+    `role = 'plan'`, nombre "Copia de X") ya es editable (nombre y contenido).
+    Máximo 20 personalizados (`MAX_CUSTOM_PROMPTS`).
+  - `backend/lib/trainer.js` lee `getRolePrompt(tenantId, role)` para el base,
+    títulos y chat; los prompts de plan personalizados reciben además el bloque
+    FORMATO DE RESPUESTA del `system` del tenant (`getFormatBlock`). No se leen
+    ficheros `.txt` en runtime.
 - Endpoints:
   - `GET /api/health`: comprobación de vida (sin auth).
   - `GET /api/auth/config`, `POST /api/auth/google`, `POST /api/auth/logout`,
@@ -222,8 +255,14 @@ que las completadas, con campos opcionales adicionales:
     volumeEvolution, cumulativeDistance, distanceBySport, runningPaces,
     cyclingSpeeds, swimMinutes, weekChart, sportDistribution).
   - `GET/PUT /api/goals`: objetivos del plan (`GET` libre para miembros con
-    acceso; `PUT` guarda, solo `admin`/`athlete`). `GET /api/meta` (fechas del
-    plan) y `GET/PUT /api/profile` (perfil del atleta) — todo por tenant.
+    acceso; `PUT` guarda, solo `admin`/`athlete`). `GET/PUT /api/meta` (fechas
+    del plan: `plan_start`, `training_week_one_start`, `goal_date`, `min_date`,
+    y `focus_sports`) y `GET/PUT /api/profile` (perfil del atleta) — todo por tenant.
+  - `GET /api/sync-sources` (estado de fuentes), `POST .../garmin/connect`
+    (login con MFA, devuelve `202 {mfaRequired:true}` si pide código),
+    `POST .../garmin/mfa`, `POST .../strava/connect` (URL OAuth),
+    `POST .../:provider/disconnect` y `PUT .../:provider/config`
+    (guarda `min_date`/`max_date`). Callback público `GET /api/sync-sources/strava/callback`.
   - `GET/POST /api/planned` y `PUT/DELETE /api/planned/:id`: CRUD de planificadas
     (en BD; el id es el del JSON).
   - `POST /api/generate-plan`: genera planificadas con IA (rol con permisos de
@@ -231,11 +270,14 @@ que las completadas, con campos opcionales adicionales:
     derivados de las sesiones de las últimas 8 semanas (rango de FC Z2 en
     running, potencia media en bici, ritmo en natación y `goal.current_week`)
     y los guarda con `saveAthleteProfile` (`backend/lib/trainer.js`). El prompt
-    del LLM incluye la sección "ÚLTIMOS DATOS OBTENIDOS". Además, como parte de
+    del LLM incluye la sección "ÚLTIMOS DATOS OBTENIDOS" y "DEPORTES DE ENFOQUE"
+    (los deportes de `focus_sports` del tenant; la IA genera siempre sesiones de
+    esos deportes). Además, como parte de
     este endpoint, una IA analiza las sesiones completadas de las últimas 8
     semanas que aún no tienen `title` y les asigna título (ver `title` en el
     esquema); la lista actualizada se devuelve como `titlesUpdated`.
-  - `POST /api/sync`: sincroniza Garmin (rol con permisos de edición).
+  - `POST /api/sync`: sincroniza la fuente conectada del tenant (rol con
+    permisos de edición).
   - `GET/POST /api/api-keys` y `DELETE /api/api-keys/:id`: gestión de API keys
     (solo `admin`/`athlete`). `GET /api/ai-logs`: log de solicitudes de IA
     (solo `admin`/`athlete`).
@@ -253,9 +295,13 @@ que las completadas, con campos opcionales adicionales:
   una hoja inferior con las sesiones del día; el detalle navega Anterior/Siguiente
   entre sesiones y su botón "Volver" va al calendario.
 - Configuración (`frontend/src/pages/config.tsx`) tiene un submenú con pestañas:
-  **General** (nombre del tenant, perfil en JSON, próximos objetivos), **IA y
-  planes** (proveedor de IA con base_url, prompts, log de solicitudes de IA) y
-  **Acceso** (CRUD de miembros y API keys).
+  **General** (nombre del tenant, fecha de inicio del plan, deportes de enfoque,
+  perfil del atleta, próximos objetivos), **IA y planes** (proveedor de IA con
+  base_url, prompts, log de solicitudes de IA), **Sincronización** (conexión y
+  rango de fechas de Garmin/Strava) y **Acceso** (CRUD de miembros y API keys).
+- El perfil muestra los bloques de "Estado actual por disciplina" solo de los
+  **deportes de enfoque** seleccionados (`focus_sports`: running/ciclismo/natación;
+  fuerza siempre). Los datos de deportes deseleccionados se conservan al guardar.
 - Estado del calendario (mes, filtros, `showFilters`) vive fuera del componente
   en `frontend/src/lib/calendar-store.ts` (store externo con `useSyncExternalStore`)
   porque el detalle de sesión desmonta la página al navegar.
@@ -273,5 +319,7 @@ que las completadas, con campos opcionales adicionales:
   tenant). Soporta `--force` (sobreescribir conservando el `title`) y
   `--ids=id1,id2` (solo esos).
 - Para crear un atleta nuevo: `node scripts/create-athlete.mjs --name "X"
-  --owner-email correo@example.com [--profile ruta.json]` (idempotente).
+  --owner-email correo@example.com [--profile ruta.json]` (idempotente). Al
+  crearlo se siembran los prompts por defecto del tenant (`seedTenantPrompts`),
+  el equipamiento y la configuración de IA.
 - No modifiques los datos de un tenant sin que el usuario lo pida.

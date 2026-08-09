@@ -1,6 +1,6 @@
 import { getAiSettings, getAiSettingsWithKey, saveAiSettings, chatDurationLabel } from "../lib/ai-settings.js";
 import { callAi, getProvidersList } from "../lib/ai-provider.js";
-import { getPrompts, savePrompt, deletePrompt, updatePrompt } from "../lib/ai-prompts.js";
+import { getPrompts, savePrompt, deletePrompt, updatePrompt, duplicatePrompt } from "../lib/ai-prompts.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 export function register(router) {
@@ -83,6 +83,17 @@ export function register(router) {
     const updated = updatePrompt(c.params.id, c.tenantId, { name: body.name, content: body.content });
     if (!updated) return sendJson(c.res, 404, { error: "Prompt no encontrado o es predefinido" });
     return sendJson(c.res, 200, { ok: true });
+  });
+
+  router.post("/api/prompts/:id/duplicate", (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    try {
+      const id = duplicatePrompt(c.params.id, c.tenantId);
+      if (!id) return sendJson(c.res, 404, { error: "Prompt no encontrado" });
+      return sendJson(c.res, 201, { id });
+    } catch (err) {
+      return sendJson(c.res, 400, { error: err.message });
+    }
   });
 
   router.delete("/api/prompts/:id", (c) => {

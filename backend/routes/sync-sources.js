@@ -8,9 +8,10 @@ import {
   saveSyncConfig,
   toSyncSourceDto,
 } from "../lib/sync-sources.js";
-import { garminLogin } from "../lib/garmin.js";
+import { garminLogin, extractTokens, validateGarminTokens } from "../lib/garmin.js";
 import { stravaConfigured, stravaAuthorizeUrl, stravaExchangeCode } from "../lib/strava.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
+import { getTenantSettings } from "../lib/sessions.js";
 
 function redirectUri(c) {
   if (process.env.STRAVA_REDIRECT_URI) return process.env.STRAVA_REDIRECT_URI;
@@ -73,7 +74,11 @@ export function registerPublic(router) {
 
 export function register(router) {
   router.get("/api/sync-sources", (c) => {
-    return sendJson(c.res, 200, { items: listSyncSources(c.tenantId), stravaConfigured: stravaConfigured() });
+    return sendJson(c.res, 200, {
+      items: listSyncSources(c.tenantId),
+      stravaConfigured: stravaConfigured(),
+      defaultMinDate: getTenantSettings(c.tenantId)?.min_date ?? null,
+    });
   });
 
   router.post("/api/sync-sources/garmin/connect", async (c) => {
@@ -99,6 +104,28 @@ export function register(router) {
       setSyncSource(c.tenantId, "garmin", { status: "error", error: err.message });
       return sendJson(c.res, 400, { error: err.message });
     }
+  });
+
+  router.post("/api/sync-sources/garmin/tokens", async (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(c.req);
+    const tokens = extractTokens(body?.tokens);
+    if (!tokens) {
+      return sendJson(c.res, 400, { error: "Pega el JSON con los tokens de Garmin" });
+    }
+    try {
+      await validateGarminTokens(tokens);
+    } catch (err) {
+      setSyncSource(c.tenantId, "garmin", { status: "error", error: err.message });
+      return sendJson(c.res, 400, { error: "Los tokens no son válidos o han caducado. Regenera los tokens en tu equipo e inténtalo de nuevo." });
+    }
+    setSyncSource(c.tenantId, "garmin", {
+      status: "connected",
+      tokens,
+      config: { account_name: "tokens manuales" },
+      error: null,
+    });
+    return sendJson(c.res, 200, { ok: true, item: syncSourceDto(c, "garmin") });
   });
 
   router.post("/api/sync-sources/garmin/mfa", async (c) => {
@@ -152,7 +179,10 @@ export function register(router) {
     if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
     if (!getSyncProvider(c.params.provider)) return sendJson(c.res, 400, { error: "Proveedor desconocido" });
     const body = await readBody(c.req);
-    saveSyncConfig(c.tenantId, c.params.provider, { min_date: body?.min_date ?? null });
+    saveSyncConfig(c.tenantId, c.params.provider, {
+      min_date: body?.min_date ?? null,
+      max_date: body?.max_date ?? null,
+    });
     return sendJson(c.res, 200, { ok: true, item: syncSourceDto(c, c.params.provider) });
   });
 }

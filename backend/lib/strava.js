@@ -221,7 +221,9 @@ export async function syncStrava(tenantId, source) {
 
   const config = source.config ?? {};
   const minDate = config.min_date ?? process.env.MIN_DATE ?? "2026-05-12";
+  const maxDate = config.max_date ?? null;
   const after = Math.floor(new Date(`${minDate}T00:00:00`).getTime() / 1000);
+  const before = maxDate ? Math.floor(new Date(`${maxDate}T00:00:00`).getTime() / 1000) : null;
 
   const existing = new Set(
     getDb()
@@ -233,7 +235,8 @@ export async function syncStrava(tenantId, source) {
   const newIds = [];
   let page = 1;
   while (true) {
-    const pageData = await stravaFetch(tokens, `/athlete/activities?after=${after}&per_page=200&page=${page}`);
+    const beforeParam = before != null ? `&before=${before}` : "";
+    const pageData = await stravaFetch(tokens, `/athlete/activities?after=${after}${beforeParam}&per_page=200&page=${page}`);
     if (!Array.isArray(pageData) || pageData.length === 0) break;
     for (const act of pageData) {
       if (!existing.has(String(act.id))) newIds.push(String(act.id));

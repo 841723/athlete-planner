@@ -126,7 +126,7 @@ def format_activity(a: dict) -> dict:
 # --- Subcomandos ------------------------------------------------------------
 
 
-def fetch_activities(g, start: int, limit: int, min_date: str | None) -> list:
+def fetch_activities(g, start: int, limit: int, min_date: str | None, max_date: str | None = None) -> list:
     activities: list = []
     cur = start
     while True:
@@ -146,18 +146,20 @@ def fetch_activities(g, start: int, limit: int, min_date: str | None) -> list:
         time.sleep(0.5)
     if min_date:
         activities = [a for a in activities if (a.get("startTimeLocal") or "")[:10] >= min_date]
+    if max_date:
+        activities = [a for a in activities if (a.get("startTimeLocal") or "")[:10] <= max_date]
     return activities[:limit] if limit else activities
 
 
 def cmd_list(args) -> None:
     g = get_client(args.tokens)
-    acts = fetch_activities(g, args.start, args.limit, args.min_date)
+    acts = fetch_activities(g, args.start, args.limit, args.min_date, args.max_date)
     write_json({"data": {"activities": [format_activity(a) for a in acts]}}, args.out)
 
 
 def cmd_ids(args) -> None:
     g = get_client(args.tokens)
-    acts = fetch_activities(g, args.start, args.limit, args.min_date)
+    acts = fetch_activities(g, args.start, args.limit, args.min_date, args.max_date)
     ids = [str(a.get("activityId")) for a in acts if a.get("activityId") is not None]
     if args.json:
         print(json.dumps(ids, ensure_ascii=False, indent=2))
@@ -323,6 +325,7 @@ def main() -> None:
     p_list.add_argument("--start", type=int, default=0)
     p_list.add_argument("--limit", type=int, default=0, help="0 = sin límite (todas)")
     p_list.add_argument("--min-date", default=None, help="Solo actividades de esta fecha (YYYY-MM-DD) o posteriores")
+    p_list.add_argument("--max-date", default=None, help="Solo actividades hasta esta fecha (YYYY-MM-DD)")
     p_list.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_list.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
     p_list.set_defaults(func=cmd_list)
@@ -331,6 +334,7 @@ def main() -> None:
     p_ids.add_argument("--start", type=int, default=0)
     p_ids.add_argument("--limit", type=int, default=0, help="0 = sin límite (todas)")
     p_ids.add_argument("--min-date", default=None)
+    p_ids.add_argument("--max-date", default=None)
     p_ids.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_ids.add_argument("--json", action="store_true", help="Salida como JSON array")
     p_ids.set_defaults(func=cmd_ids)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle, History, Loader2, Save } from "lucide-react";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import { useProfileHistory, useSetActiveProfileVersion } from "@/hooks/use-profile-history";
+import { useMeta } from "@/hooks/use-meta";
 import { fetchProfileVersion } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,8 @@ export function ProfileForm({ canManage }: { canManage: boolean }) {
   const updateProfileMutation = useUpdateProfile();
   const profileHistoryQuery = useProfileHistory();
   const setActiveVersionMutation = useSetActiveProfileVersion();
+  const { data: meta } = useMeta();
+  const focusSports: string[] = meta?.focusSports ?? ["running", "cycling", "swimming"];
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
@@ -272,22 +275,25 @@ export function ProfileForm({ canManage }: { canManage: boolean }) {
         <div>
           {sectionTitle("Estado actual por disciplina", "Ritmos, potencia y FC en Z2 (ritmo aeróbico de fondo, no el ritmo máximo que puedas mantener en distancias cortas)")}
           <div className="space-y-3 mt-2">
-            {disciplineBlock("running", "Running", [
-              { label: "Nivel", field: "nivel" },
-              { label: "FC en Z2", field: "fc_z2" },
-              { label: "Ritmo en Z2 (min/km)", field: "ritmo", placeholder: "Ej. 6:15-6:35/km" },
-              { label: "Observaciones", field: "observaciones", full: true },
-            ])}
-            {disciplineBlock("cycling", "Ciclismo", [
-              { label: "Nivel", field: "nivel" },
-              { label: "Potencia en Z2 (W)", field: "potencia_w", placeholder: "Ej. 130-135 W" },
-              { label: "Observaciones", field: "observaciones", full: true },
-            ])}
-            {disciplineBlock("swimming", "Natación", [
-              { label: "Nivel", field: "nivel" },
-              { label: "Ritmo en Z2 (/100m)", field: "ritmo_100m", placeholder: "Ej. 2:25-2:35 /100m" },
-              { label: "Observaciones", field: "observaciones", full: true },
-            ])}
+            {focusSports.includes("running") &&
+              disciplineBlock("running", "Running", [
+                { label: "Nivel", field: "nivel" },
+                { label: "FC en Z2", field: "fc_z2" },
+                { label: "Ritmo en Z2 (min/km)", field: "ritmo", placeholder: "Ej. 6:15-6:35/km" },
+                { label: "Observaciones", field: "observaciones", full: true },
+              ])}
+            {focusSports.includes("cycling") &&
+              disciplineBlock("cycling", "Ciclismo", [
+                { label: "Nivel", field: "nivel" },
+                { label: "Potencia en Z2 (W)", field: "potencia_w", placeholder: "Ej. 130-135 W" },
+                { label: "Observaciones", field: "observaciones", full: true },
+              ])}
+            {focusSports.includes("swimming") &&
+              disciplineBlock("swimming", "Natación", [
+                { label: "Nivel", field: "nivel" },
+                { label: "Ritmo en Z2 (/100m)", field: "ritmo_100m", placeholder: "Ej. 2:25-2:35 /100m" },
+                { label: "Observaciones", field: "observaciones", full: true },
+              ])}
             {disciplineBlock("fuerza", "Fuerza", [
               { label: "Nivel", field: "nivel" },
               { label: "Observaciones", field: "observaciones", full: true },

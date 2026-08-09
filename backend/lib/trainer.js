@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 import {
@@ -15,60 +13,37 @@ import {
   updateSession,
 } from "./sessions.js";
 import { saveProfileVersion } from "./profile-history.js";
-import { getPrompt } from "./ai-prompts.js";
+import { getPrompt, getRolePrompt, getFormatBlock } from "./ai-prompts.js";
 import { savePlan, updatePlanStatus, updatePlanResult } from "./plans.js";
 import { buildObjectives } from "./objectives.js";
 import { callAi, callAiChat } from "./ai-provider.js";
 import { listPlanMessages, addPlanMessage, replacePlanSessions } from "./plan-chat.js";
 import { getEquipmentLabels } from "./equipment.js";
 import { getGoals } from "./goals.js";
-import { subWeeks, format, parseISO, differenceInCalendarDays } from "date-fns";
+import { getFocusSports } from "./meta.js";
+import { subWeeks, format, parseISO, differenceInCalendarDays, startOfWeek } from "date-fns";
 
-const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
-const SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-system-prompt.txt");
-const TITLES_SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "session-titles-system-prompt.txt");
-
-function loadSystemPrompt() {
-  try {
-    return fs.readFileSync(SYSTEM_PROMPT_PATH, "utf8");
-  } catch {
-    throw new Error("No se pudo cargar el system prompt del entrenador");
+function requireRolePrompt(role) {
+  const prompt = getRolePrompt(getTenantId(), role);
+  if (!prompt?.content) {
+    throw new Error(`No se pudo cargar el prompt de "${role}" del tenant`);
   }
+  return prompt.content;
 }
 
-function loadFormatBlock() {
-  try {
-    const content = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf8");
-    const marker = "FORMATO DE RESPUESTA";
-    const idx = content.indexOf(marker);
-    if (idx === -1) {
-      throw new Error("No se encontró el bloque de formato en el system prompt");
-    }
-    return content.slice(idx).trim();
-  } catch {
-    throw new Error("No se pudo cargar el bloque de formato del system prompt");
-  }
-}
-
-function loadTitlesSystemPrompt() {
-  try {
-    return fs.readFileSync(TITLES_SYSTEM_PROMPT_PATH, "utf8");
-  } catch {
-    throw new Error("No se pudo cargar el system prompt de títulos de sesión");
-  }
-}
-
-// El bloque de formato (FORMATO DE RESPUESTA) vive en data/trainer-system-prompt.txt,
-// cargado con loadSystemPrompt()/loadFormatBlock(). Se añade SIEMPRE al system prompt
-// (predefinido o personalizado), para que el LLM conozca el esquema JSON y el formato
-// de workout_text.
+// Los prompts (base, títulos y chat) viven en la BD por tenant (tabla ai_prompts),
+// sembrados al crear el tenant. No hay prompts compartidos entre tenants.
+// El bloque FORMATO DE RESPUESTA se extrae del prompt base del tenant (getFormatBlock)
+// y se añade SIEMPRE a los prompts de plan, para que el LLM conozca el esquema JSON
+// y el formato de workout_text.
 
 function computeCurrentWeek(tenantId) {
   const settings = getTenantSettings(tenantId);
   const planStart = settings?.plan_start;
   if (!planStart) return null;
   const start = parseISO(planStart.length === 10 ? `${planStart}T00:00:00` : planStart);
-  const diffDays = differenceInCalendarDays(new Date(), start);
+  const anchor = startOfWeek(start, { weekStartsOn: 1 });
+  const diffDays = differenceInCalendarDays(new Date(), anchor);
   const week = Math.floor(diffDays / 7) + 1;
   return week >= 1 ? week : 1;
 }
@@ -192,7 +167,7 @@ async function generateSessionTitles(sessions, settings, actor) {
   const untitled = sessions.filter((s) => !s.title && s.name);
   if (untitled.length === 0) return [];
 
-  const systemPrompt = loadTitlesSystemPrompt();
+  const systemPrompt = requireRolePrompt("titles");
   const sessionsText = untitled.map(formatSessionForTitles).join("\n");
 
   const userPrompt = `
@@ -411,6 +386,12 @@ function buildUserPrompt(comments, weeks, profile, metrics, equipment = null) {
             return all.length > 0 ? all.join(", ") : "sin datos";
           })();
 
+  const focusSports = getFocusSports(getTenantId());
+  const focusText =
+    focusSports.length > 0
+      ? focusSports.join(", ")
+      : "running, cycling, swimming";
+
   return `
 CONTEXTO ACTUAL:
 - Hoy es: ${today}
@@ -420,6 +401,9 @@ CONTEXTO ACTUAL:
 
 ${sessionsText}
 ${metricsText}
+DEPORTES DE ENFOQUE:
+${focusText}
+El atleta quiere mejorar principalmente en los deportes anteriores: genera SIEMPRE sesiones de entrenamiento de esos deportes (distribuidas en la semana). Puede practicar otros deportes puntualmente (p.ej. fuerza, senderismo), pero el plan debe centrarse en los deportes de enfoque.
 OBJETIVOS:
 ${goalsText}
 
@@ -508,8 +492,8 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
 
   const prompt = promptId ? getPrompt(promptId) : null;
   const systemPrompt = prompt && prompt.tenant_id === tenantId
-    ? `${prompt.content}\n\n${loadFormatBlock()}`
-    : loadSystemPrompt();
+    ? `${prompt.content}\n\n${getFormatBlock(tenantId)}`
+    : requireRolePrompt("system");
 
   let equipmentList = null;
   if (Array.isArray(equipment)) {
@@ -584,16 +568,6 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
   }
 }
 
-const CHAT_SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-chat-system-prompt.txt");
-
-function loadChatSystemPrompt() {
-  try {
-    return fs.readFileSync(CHAT_SYSTEM_PROMPT_PATH, "utf8");
-  } catch {
-    throw new Error("No se pudo cargar el system prompt del chat de entrenador");
-  }
-}
-
 function formatPlannedSessionForPrompt(session) {
   const date = session.start_date_local
     ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
@@ -624,6 +598,9 @@ function buildChatUserPrompt(planId, message) {
   }
   const equipmentLine = equipment.length > 0 ? equipment.join(", ") : "sin datos";
 
+  const focusSports = getFocusSports(getTenantId());
+  const focusText = focusSports.length > 0 ? focusSports.join(", ") : "running, cycling, swimming";
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   return `
@@ -634,6 +611,10 @@ ${profileText}
 ${coachText}
 EQUIPAMIENTO DISPONIBLE:
 ${equipmentLine}
+
+DEPORTES DE ENFOQUE:
+${focusText}
+El atleta quiere mejorar principalmente en estos deportes; el plan y tus propuestas deben centrarse en ellos (puede haber otros deportes puntuales).
 
 PLAN ACTUAL (sesiones planificadas de este plan):
 ${planText}
@@ -663,7 +644,7 @@ function parseChatResponse(response) {
 
 export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
   const tenantId = getTenantId();
-  const systemPrompt = loadChatSystemPrompt();
+  const systemPrompt = requireRolePrompt("chat");
   const userPrompt = buildChatUserPrompt(planId, message);
 
   const { text, responseId } = await callAiChat(
