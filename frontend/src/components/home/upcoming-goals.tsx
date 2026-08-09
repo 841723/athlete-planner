@@ -59,10 +59,22 @@ export function UpcomingGoals() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: primaryColor }} />
-              {faviconUrl(primary.url) ? (
-                <img src={faviconUrl(primary.url)!} alt="" className="w-5 h-5 rounded-sm" referrerPolicy="no-referrer" />
-              ) : null}
-              <span className="text-base font-bold truncate">{primary.label}</span>
+              {primary.url ? (
+                <a
+                  href={primary.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={primary.label}
+                  className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+                >
+                  {faviconUrl(primary.url) ? (
+                    <img src={faviconUrl(primary.url)!} alt="" className="w-5 h-5 rounded-sm shrink-0" referrerPolicy="no-referrer" />
+                  ) : null}
+                  <span className="text-base font-bold truncate">{primary.label}</span>
+                </a>
+              ) : (
+                <span className="text-base font-bold truncate">{primary.label}</span>
+              )}
             </div>
             <span className="text-xs text-gray-400 shrink-0">
               Semana {primary.week} · {formatDate(primary.date)}
@@ -109,10 +121,27 @@ export function UpcomingGoals() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
-                    {favicon ? (
-                      <img src={favicon} alt="" className="w-4 h-4 rounded-sm" referrerPolicy="no-referrer" />
-                    ) : null}
-                    <span className="truncate">{goal.label}</span>
+                    {goal.url ? (
+                      <a
+                        href={goal.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={goal.label}
+                        className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+                      >
+                        {favicon ? (
+                          <img src={favicon} alt="" className="w-4 h-4 rounded-sm shrink-0" referrerPolicy="no-referrer" />
+                        ) : null}
+                        <span className="truncate">{goal.label}</span>
+                      </a>
+                    ) : (
+                      <>
+                        {favicon ? (
+                          <img src={favicon} alt="" className="w-4 h-4 rounded-sm shrink-0" referrerPolicy="no-referrer" />
+                        ) : null}
+                        <span className="truncate">{goal.label}</span>
+                      </>
+                    )}
                   </span>
                   <span className="text-xs text-gray-500 shrink-0">Semana {goal.week}</span>
                 </div>

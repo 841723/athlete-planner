@@ -47,10 +47,27 @@ function GoalCard({ goal, planStart, today }: { goal: RaceGoal; planStart: strin
       <div className="flex items-center justify-between mb-1">
         <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
           {color ? <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} /> : null}
-          {favicon ? (
-            <img src={favicon} alt="" className="w-4 h-4 rounded-sm" referrerPolicy="no-referrer" />
-          ) : null}
-          <span className="truncate">{goal.label || "Sin etiqueta"}</span>
+          {goal.url ? (
+            <a
+              href={goal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={goal.label}
+              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+            >
+              {favicon ? (
+                <img src={favicon} alt="" className="w-4 h-4 rounded-sm shrink-0" referrerPolicy="no-referrer" />
+              ) : null}
+              <span className="truncate">{goal.label || "Sin etiqueta"}</span>
+            </a>
+          ) : (
+            <>
+              {favicon ? (
+                <img src={favicon} alt="" className="w-4 h-4 rounded-sm shrink-0" referrerPolicy="no-referrer" />
+              ) : null}
+              <span className="truncate">{goal.label || "Sin etiqueta"}</span>
+            </>
+          )}
           {goal.isPrimary && (
             <span
               className="shrink-0 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded text-white"
