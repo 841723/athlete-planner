@@ -9,12 +9,15 @@ import {
   User,
   ChevronDown,
   ChevronRight,
+  Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import { format } from "@/lib/date-format";
 import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
 import { usePlans } from "@/hooks/use-plans";
+import { useRetryPlan } from "@/hooks/use-generate-plan";
 import { useDeletePlanChat } from "@/hooks/use-plan-chat";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { GeneratePlanModal } from "@/components/planned/generate-plan-modal";
@@ -23,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
 import { WorkoutText } from "@/components/session/workout-text";
+import { Markdown } from "@/components/ui/markdown";
 import { getSportColor, getSportLabel, formatDistance } from "@/lib/utils";
 import type { PlannedSessionView, Plan } from "@/types/session";
 
@@ -31,6 +35,7 @@ export function PlannedPage() {
   const { data: plans } = usePlans();
   const deleteMutation = useDeletePlanned();
   const deletePlanMutation = useDeletePlanChat();
+  const retryMutation = useRetryPlan();
   const perms = usePermissions();
   const [formOpen, setFormOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -52,10 +57,16 @@ export function PlannedPage() {
 
   const sessions = planned ?? [];
 
+  const isGenerating = (plans ?? []).some(
+    (p) => p.status === "pending" || p.status === "generating"
+  );
+
   const planGroups: { plan: Plan | null; sessions: PlannedSessionView[] }[] = [];
   for (const plan of plans ?? []) {
     const group = sessions.filter((s) => s.plan_id === plan.id);
-    if (group.length > 0) planGroups.push({ plan, sessions: group });
+    if (group.length > 0 || plan.status !== "completed") {
+      planGroups.push({ plan, sessions: group });
+    }
   }
   const manual = sessions.filter((s) => !s.plan_id);
   if (manual.length > 0) planGroups.push({ plan: null, sessions: manual });
@@ -70,7 +81,12 @@ export function PlannedPage() {
         <div className="flex flex-wrap items-center gap-2">
           {/* TEMPORAL: botón de generar plan oculto */}
           {perms.canGeneratePlan && (
-            <Button variant="outline" onClick={() => setGenerateOpen(true)}>
+            <Button
+              variant="outline"
+              onClick={() => setGenerateOpen(true)}
+              disabled={isGenerating}
+              title={isGenerating ? "Ya hay un plan en generación" : undefined}
+            >
               <Sparkles className="w-4 h-4" /> Generar Plan con IA
             </Button>
           )}
@@ -87,7 +103,7 @@ export function PlannedPage() {
         </div>
       </div>
 
-      {sessions.length === 0 ? (
+      {planGroups.length === 0 ? (
         <div className="card p-10 text-center">
           <p className="text-gray-500">No hay entrenamientos planificados.</p>
         </div>
@@ -98,7 +114,7 @@ export function PlannedPage() {
             const groupKey = group.plan?.id ?? "manual";
             const isCollapsed = !!collapsed[groupKey];
             const plan = group.plan;
-            const hasChat = !!plan;
+            const hasChat = !!plan && plan.status === "completed";
             return (
               <section key={groupKey} className="card p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -129,6 +145,21 @@ export function PlannedPage() {
                       {group.plan.promptName}
                     </span>
                   )}
+                  {plan?.status === "pending" && (
+                    <span className="badge bg-gray-500/15 text-gray-300 border border-gray-500/20">
+                      Generación pendiente
+                    </span>
+                  )}
+                  {plan?.status === "generating" && (
+                    <span className="badge bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Generando...
+                    </span>
+                  )}
+                  {plan?.status === "failed" && (
+                    <span className="badge bg-red-500/15 text-red-400 border border-red-500/20">
+                      Error
+                    </span>
+                  )}
                   <span className="text-xs text-gray-500">
                     {group.sessions.length} sesiones
                     {done > 0 && <span className="text-green-400"> · {done} realizadas</span>}
@@ -152,11 +183,49 @@ export function PlannedPage() {
                     </Button>
                   )}
                 </div>
-                {group.plan?.comments && (
-                  <p className="text-xs text-gray-400 mb-4 italic">{group.plan.comments}</p>
-                )}
                 {!isCollapsed && (
-                  <div className={hasChat ? "grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 items-start" : ""}>
+                  <div className={hasChat ? "grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 items-start" : ""}>
+                    {plan && group.sessions.length === 0 && (plan.status === "pending" || plan.status === "generating") && (
+                      <div className="flex items-center gap-3 p-4 rounded-lg bg-dark-300/40 text-sm text-gray-300">
+                        <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                        La IA está generando el plan...
+                      </div>
+                    )}
+                    {plan && group.sessions.length === 0 && plan.status === "failed" && (
+                      <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 space-y-3">
+                        <p className="text-sm text-red-400">
+                          {plan.error ?? "No se pudo generar el plan."}
+                        </p>
+                        {perms.canEdit && (
+                          <Button
+                            variant="outline"
+                            className="text-xs px-2 py-1"
+                            onClick={() => retryMutation.mutate(plan.id)}
+                            disabled={retryMutation.isPending}
+                          >
+                            {retryMutation.isPending ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-3 h-3" />
+                            )}{" "}
+                            Reintentar
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {hasChat && (
+                      <div className="space-y-4 lg:sticky lg:top-4">
+                        {group.plan?.comments && (
+                          <div className="rounded-xl border border-dark-400 bg-dark-300/20 p-4">
+                            <div className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                              Análisis del entrenador
+                            </div>
+                            <Markdown text={group.plan.comments} />
+                          </div>
+                        )}
+                        <PlanChat plan={plan} />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {group.sessions.map((s) => {
                         const merged = !!s.merged_with;
@@ -242,11 +311,6 @@ export function PlannedPage() {
                         );
                       })}
                     </div>
-                    {hasChat && (
-                      <div className="lg:sticky lg:top-4">
-                        <PlanChat plan={plan} />
-                      </div>
-                    )}
                   </div>
                 )}
               </section>

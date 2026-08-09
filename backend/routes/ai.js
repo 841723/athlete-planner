@@ -1,13 +1,15 @@
-import { getAiSettings, getAiSettingsWithKey, saveAiSettings } from "../lib/ai-settings.js";
-import { callAi, getAiProviderNames } from "../lib/ai-provider.js";
+import { getAiSettings, getAiSettingsWithKey, saveAiSettings, chatDurationLabel } from "../lib/ai-settings.js";
+import { callAi, getProvidersList } from "../lib/ai-provider.js";
 import { getPrompts, savePrompt, deletePrompt, updatePrompt } from "../lib/ai-prompts.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 export function register(router) {
   router.get("/api/ai-settings", (c) => {
+    const settings = getAiSettings(c.tenantId) ?? {};
     return sendJson(c.res, 200, {
-      ...(getAiSettings(c.tenantId) ?? {}),
-      providers: getAiProviderNames(),
+      ...settings,
+      providers: getProvidersList(),
+      chatDurationLabel: chatDurationLabel(settings.chat_duration_hours),
     });
   });
 
@@ -16,12 +18,26 @@ export function register(router) {
       return sendJson(c.res, 403, { error: "Solo el atleta puede configurar el proveedor de IA" });
     }
     const body = await readBody(c.req);
-    if (!body?.provider || !body?.apiKey) return sendJson(c.res, 400, { error: "Falta provider o apiKey" });
+    if (!body?.provider) return sendJson(c.res, 400, { error: "Falta provider" });
+
+    const providerInfo = getProvidersList().find((p) => p.id === body.provider);
+    if (!providerInfo) {
+      return sendJson(c.res, 400, { error: `Proveedor de IA no soportado: ${body.provider}` });
+    }
+    const existing = getAiSettingsWithKey(c.tenantId);
+    const hasSavedKey = !!existing?.api_key;
+    if (providerInfo.needsApiKey && !body?.apiKey && !hasSavedKey) {
+      return sendJson(c.res, 400, { error: "Falta la API key para este proveedor" });
+    }
+
     saveAiSettings(c.tenantId, {
       provider: body.provider,
-      apiKey: body.apiKey,
+      apiKey: body.apiKey ?? "",
       model: body.model ?? null,
       baseUrl: body.baseUrl ?? null,
+      currency: body.currency,
+      chatDurationHours: body.chatDurationHours,
+      pricing: body.pricing,
     });
     return sendJson(c.res, 200, { ok: true });
   });

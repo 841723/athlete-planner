@@ -7,8 +7,10 @@ import { StatsPage } from "@/pages/stats";
 import { PlannedPage } from "@/pages/planned";
 import { SessionDetailPage } from "@/pages/session-detail";
 import { ConfigPage } from "@/pages/config";
+import { usePlanGenerationWatcher } from "@/hooks/use-plan-generation-watcher";
 
 function App() {
+  usePlanGenerationWatcher();
   return (
     <Shell>
       <Routes>

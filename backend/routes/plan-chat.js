@@ -1,18 +1,26 @@
 import { getPlan, updatePlanResponseId } from "../lib/plans.js";
 import { listPlanMessages, addPlanMessage, deletePlanAndSessions } from "../lib/plan-chat.js";
 import { chatWithPlan } from "../lib/trainer.js";
-import { getAiSettingsWithKey } from "../lib/ai-settings.js";
+import { getAiConfigWithKey, getDefaultAiConfig, getChatWindowMs, chatDurationLabel } from "../lib/ai-configs.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
-const CHAT_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-function isExpired(plan) {
-  const created = new Date(plan.created_at).getTime();
-  return Date.now() - created > CHAT_WINDOW_MS;
+function planConfig(c, plan) {
+  if (plan.aiConfigId) return getAiConfigWithKey(c.tenantId, plan.aiConfigId);
+  return getDefaultAiConfig(c.tenantId, true);
 }
 
-function canChat(plan) {
-  return !isExpired(plan);
+function isExpired(plan, windowMs) {
+  if (windowMs == null) return false;
+  const created = new Date(plan.created_at).getTime();
+  return Date.now() - created > windowMs;
+}
+
+function canChat(plan, windowMs) {
+  return plan.status === "completed" && !isExpired(plan, windowMs);
+}
+
+function isGenerating(plan) {
+  return plan.status === "pending" || plan.status === "generating";
 }
 
 function getPlanOr404(c, planId) {
@@ -25,10 +33,15 @@ export function register(router) {
   router.get("/api/plans/:id/chat", (c) => {
     const plan = getPlanOr404(c, c.params.id);
     if (!plan) return;
+    const config = planConfig(c, plan);
+    const windowMs = getChatWindowMs(config);
+    const chatHours = config?.chat_duration_hours ?? null;
     return sendJson(c.res, 200, {
       planId: plan.id,
       planCreatedAt: plan.created_at,
-      canChat: canChat(plan),
+      canChat: canChat(plan, windowMs),
+      chatDurationLabel: chatDurationLabel(chatHours),
+      expiresAt: windowMs == null ? null : new Date(new Date(plan.created_at).getTime() + windowMs).toISOString(),
       messages: listPlanMessages(plan.id),
     });
   });
@@ -39,9 +52,17 @@ export function register(router) {
     }
     const plan = getPlanOr404(c, c.params.id);
     if (!plan) return;
-    if (isExpired(plan)) {
+    if (isGenerating(plan)) {
+      return sendJson(c.res, 409, {
+        error: "El plan aún se está generando. Prueba de nuevo cuando termine.",
+      });
+    }
+    const config = planConfig(c, plan);
+    const windowMs = getChatWindowMs(config);
+    if (isExpired(plan, windowMs)) {
+      const label = chatDurationLabel(config?.chat_duration_hours ?? null);
       return sendJson(c.res, 403, {
-        error: "El chat con la IA ha expirado (disponible durante 24h desde la generación del plan).",
+        error: `El chat con la IA ha expirado (disponible durante ${label} desde la generación del plan).`,
       });
     }
     const body = await readBody(c.req);
@@ -49,8 +70,7 @@ export function register(router) {
     if (!message) {
       return sendJson(c.res, 400, { error: "El mensaje no puede estar vacío" });
     }
-    const settings = getAiSettingsWithKey(c.tenantId);
-    if (!settings) {
+    if (!config) {
       return sendJson(c.res, 400, {
         error: "Configura un proveedor de IA en Configuración antes de chatear.",
       });
@@ -60,7 +80,7 @@ export function register(router) {
       planId: plan.id,
       message,
       previousResponseId: plan.response_id ?? null,
-      settings,
+      settings: config,
       actor: c.actor,
     });
 

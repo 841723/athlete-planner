@@ -6,6 +6,7 @@ import {
   getAthleteProfile,
   getSportCategory,
   getTenantId,
+  getTenantSettings,
   loadCompletedSessions,
   loadPlannedSessions,
   enrich,
@@ -13,13 +14,15 @@ import {
   upsertSession,
   updateSession,
 } from "./sessions.js";
-import { getProfileVersion, saveProfileVersion } from "./profile-history.js";
+import { saveProfileVersion } from "./profile-history.js";
 import { getPrompt } from "./ai-prompts.js";
-import { savePlan } from "./plans.js";
+import { savePlan, updatePlanStatus, updatePlanResult } from "./plans.js";
 import { buildObjectives } from "./objectives.js";
 import { callAi, callAiChat } from "./ai-provider.js";
 import { listPlanMessages, addPlanMessage, replacePlanSessions } from "./plan-chat.js";
-import { subWeeks, format, parseISO } from "date-fns";
+import { getEquipmentLabels } from "./equipment.js";
+import { getGoals } from "./goals.js";
+import { subWeeks, format, parseISO, differenceInCalendarDays } from "date-fns";
 
 const DATA_DIR = process.env.DATA_DIR ?? path.resolve(import.meta.dirname, "..", "..", "data");
 const SYSTEM_PROMPT_PATH = path.join(DATA_DIR, "trainer-system-prompt.txt");
@@ -33,12 +36,62 @@ function loadSystemPrompt() {
   }
 }
 
+function loadFormatBlock() {
+  try {
+    const content = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf8");
+    const marker = "FORMATO DE RESPUESTA";
+    const idx = content.indexOf(marker);
+    if (idx === -1) {
+      throw new Error("No se encontró el bloque de formato en el system prompt");
+    }
+    return content.slice(idx).trim();
+  } catch {
+    throw new Error("No se pudo cargar el bloque de formato del system prompt");
+  }
+}
+
 function loadTitlesSystemPrompt() {
   try {
     return fs.readFileSync(TITLES_SYSTEM_PROMPT_PATH, "utf8");
   } catch {
     throw new Error("No se pudo cargar el system prompt de títulos de sesión");
   }
+}
+
+// El bloque de formato (FORMATO DE RESPUESTA) vive en data/trainer-system-prompt.txt,
+// cargado con loadSystemPrompt()/loadFormatBlock(). Se añade SIEMPRE al system prompt
+// (predefinido o personalizado), para que el LLM conozca el esquema JSON y el formato
+// de workout_text.
+
+function computeCurrentWeek(tenantId) {
+  const settings = getTenantSettings(tenantId);
+  const planStart = settings?.plan_start;
+  if (!planStart) return null;
+  const start = parseISO(planStart.length === 10 ? `${planStart}T00:00:00` : planStart);
+  const diffDays = differenceInCalendarDays(new Date(), start);
+  const week = Math.floor(diffDays / 7) + 1;
+  return week >= 1 ? week : 1;
+}
+
+function sanitizeProfile(profile) {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) return profile;
+  const out = JSON.parse(JSON.stringify(profile));
+  delete out.nombre;
+  delete out.filosofia;
+  delete out.trainer_behavior;
+  delete out.analisis_requerido;
+  delete out.goal;
+  const d = out.datos_del_atleta;
+  if (d && typeof d === "object") {
+    if (d.datos_personales && typeof d.datos_personales === "object") {
+      delete d.datos_personales.nombre;
+    }
+    delete d.objetivo;
+    if (d.estado_fisico && typeof d.estado_fisico === "object") {
+      delete d.estado_fisico.semanas_consecutivas;
+    }
+  }
+  return out;
 }
 
 function getRecentSessions(weeks = 8) {
@@ -197,9 +250,6 @@ function deriveProfileMetrics(sessions) {
     metrics.swimming = { current_pace: `${mm}:${String(ss).padStart(2, "0")}/100m` };
   }
 
-  const lastSession = sessions[sessions.length - 1];
-  if (lastSession?.weekNumber) metrics.goal = { current_week: lastSession.weekNumber };
-
   return metrics;
 }
 
@@ -215,11 +265,6 @@ function mergeProfileMetrics(profile, metrics) {
   }
   if (metrics.swimming) {
     estado.swimming = { ...(estado.swimming ?? {}), ritmo_100m: metrics.swimming.current_pace };
-  }
-  if (metrics.goal) {
-    const estadoFisico = datos.estado_fisico ??= {};
-    estadoFisico.semanas_consecutivas = String(metrics.goal.current_week);
-    updated.goal = { ...(updated.goal ?? {}), current_week: metrics.goal.current_week };
   }
   return updated;
 }
@@ -253,22 +298,88 @@ function normalizeProfile(profile) {
   return out;
 }
 
-function buildUserPrompt(comments, weeks, profile, metrics) {
+function isMeaningful(value) {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+}
+
+function mergePreserving(current, updated) {
+  if (updated == null || typeof updated !== "object" || Array.isArray(updated)) {
+    return current == null ? null : current;
+  }
+  const base =
+    current && typeof current === "object" && !Array.isArray(current)
+      ? JSON.parse(JSON.stringify(current))
+      : {};
+  for (const [key, newValue] of Object.entries(updated)) {
+    if (!isMeaningful(newValue)) continue;
+    if (
+      base[key] != null &&
+      typeof base[key] === "object" &&
+      !Array.isArray(base[key]) &&
+      typeof newValue === "object" &&
+      !Array.isArray(newValue)
+    ) {
+      base[key] = mergePreserving(base[key], newValue);
+    } else {
+      base[key] = newValue;
+    }
+  }
+  return base;
+}
+
+function mergeProfilePreserving(currentProfile, updatedProfile) {
+  return mergePreserving(currentProfile, updatedProfile);
+}
+export { mergeProfilePreserving };
+
+function formatCoachInstructions(profile) {
+  if (!profile || typeof profile !== "object") return "";
+  const lines = [];
+  const push = (label, value) => {
+    if (typeof value === "string" && value.trim()) {
+      lines.push(`- ${label}: ${value.trim()}`);
+    } else if (value && typeof value === "object") {
+      const text = JSON.stringify(value);
+      if (text !== "{}") lines.push(`- ${label}: ${text}`);
+    }
+  };
+  push("Comportamiento del entrenador", profile.trainer_behavior);
+  push("Filosofía de entrenamiento", profile.filosofia);
+  push("Análisis requerido", profile.analisis_requerido);
+  return lines.join("\n");
+}
+
+function buildUserPrompt(comments, weeks, profile, metrics, equipment = null) {
   const sessions = getRecentSessions(8);
 
   const sessionsText = sessions.map(formatSessionForPrompt).join("\n");
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const targetDate = today;
+  const todayStart = new Date(`${today}T00:00:00`);
 
-  const currentWeek =
-    profile?.datos_del_atleta?.estado_fisico?.semanas_consecutivas ??
-    profile?.goal?.current_week ??
-    null;
+  const currentWeek = computeCurrentWeek(getTenantId());
   const weekLabel = currentWeek != null ? `#${currentWeek}` : `#1`;
 
+  const goals = getGoals(getTenantId());
+  const primary = goals.find((g) => g.isPrimary) ?? goals[0];
+  const secondary = goals.filter((g) => g !== primary).filter((g) => {
+    if (!g.date) return false;
+    const diff = differenceInCalendarDays(parseISO(g.date), todayStart);
+    return diff >= 0 && diff <= 28;
+  });
+  const goalsText = [
+    `OBJETIVO PRINCIPAL:`,
+    primary ? `- ${primary.label} (${primary.date})` : "- (no hay objetivos definidos)",
+    secondary.length > 0
+      ? `\nOBJETIVOS SECUNDARIOS (dentro de las próximas 4 semanas):\n${secondary.map((g) => `- ${g.label} (${g.date})`).join("\n")}`
+      : "",
+  ].join("\n");
+
   const metricsLines = [];
-  if (metrics?.goal?.current_week) metricsLines.push(`- Semana actual de entrenamiento: #${metrics.goal.current_week}`);
   if (metrics?.running?.current) metricsLines.push(`- Running Z2 (últimas 8 semanas): ${metrics.running.current}`);
   if (metrics?.cycling?.current_power) metricsLines.push(`- Ciclismo (últimas 8 semanas): ${metrics.cycling.current_power}`);
   if (metrics?.swimming?.current_pace) metricsLines.push(`- Natación (últimas 8 semanas): ${metrics.swimming.current_pace}`);
@@ -279,20 +390,44 @@ function buildUserPrompt(comments, weeks, profile, metrics) {
 
   const profileText =
     profile && Object.keys(profile).length > 0
-      ? JSON.stringify(profile, null, 2)
+      ? JSON.stringify(sanitizeProfile(profile), null, 2)
       : "(no hay perfil guardado)";
+
+  const coachInstructions = formatCoachInstructions(profile);
+  const coachText = coachInstructions
+    ? `\nINSTRUCCIONES DEL ENTRENADOR (no forman parte del perfil del atleta; son directrices de comportamiento, filosofía y análisis a aplicar):\n${coachInstructions}\n`
+    : "";
+
+  const equipmentLine =
+    Array.isArray(equipment) && equipment.length > 0
+      ? equipment.join(", ")
+      : equipment && equipment.length === 0
+        ? "sin datos"
+        : (() => {
+            const all = getEquipmentLabels(getTenantId());
+            if (all.length === 0 && Array.isArray(profile?.equipment)) {
+              return profile.equipment.map(String).join(", ");
+            }
+            return all.length > 0 ? all.join(", ") : "sin datos";
+          })();
 
   return `
 CONTEXTO ACTUAL:
 - Hoy es: ${today}
-- Semana actual de entrenamiento: ${weekLabel}
-- El plan empieza HOY: ${targetDate}. Programa las sesiones a partir de hoy (hoy incluido), no en el futuro ni esperando al lunes.
+- Semana actual de entrenamiento: ${weekLabel} (contadas desde el inicio del plan)
+- El plan empieza HOY: ${today}. Programa las sesiones a partir de hoy (hoy incluido), no en el futuro ni esperando al lunes.
 - Sesiones de las últimas 8 semanas (incluye las notas que escribió el atleta tras cada sesión):
 
 ${sessionsText}
 ${metricsText}
+OBJETIVOS:
+${goalsText}
+
 PERFIL DEL ATLETA (JSON):
 ${profileText}
+${coachText}
+EQUIPAMIENTO DISPONIBLE:
+${equipmentLine}
 
 COMENTARIOS DEL ATLETA:
 ${comments}
@@ -354,20 +489,11 @@ function clearPlannedSessions() {
     .run(getTenantId());
 }
 
-export async function generatePlan({ comments = "", weeks = 1, profileVersionId = null, promptId = null, settings, actor }) {
+export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null, promptId = null, equipment = null, settings, actor, planId = null }) {
   const tenantId = getTenantId();
+  if (planId) updatePlanStatus(planId, "generating");
 
-  let profile;
-  if (profileVersionId) {
-    const version = getProfileVersion(profileVersionId);
-    if (version && version.tenant_id === tenantId) {
-      profile = version.data;
-    } else {
-      profile = getAthleteProfile() ?? {};
-    }
-  } else {
-    profile = getAthleteProfile() ?? {};
-  }
+  const profile = getAthleteProfile() ?? {};
 
   const recentSessions = getRecentSessions(8);
   const metrics = deriveProfileMetrics(recentSessions);
@@ -380,19 +506,18 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
     console.error("Error generando títulos de sesión:", err.message);
   }
 
-  let systemPrompt;
-  if (promptId) {
-    const prompt = getPrompt(promptId);
-    if (prompt && prompt.tenant_id === tenantId) {
-      systemPrompt = prompt.content;
-    } else {
-      systemPrompt = loadSystemPrompt();
-    }
-  } else {
-    systemPrompt = loadSystemPrompt();
+  const prompt = promptId ? getPrompt(promptId) : null;
+  const systemPrompt = prompt && prompt.tenant_id === tenantId
+    ? `${prompt.content}\n\n${loadFormatBlock()}`
+    : loadSystemPrompt();
+
+  let equipmentList = null;
+  if (Array.isArray(equipment)) {
+    const owned = new Set(getEquipmentLabels(tenantId));
+    equipmentList = equipment.filter((it) => owned.has(String(it)));
   }
 
-  const userPrompt = buildUserPrompt(comments, weeks, updatedProfile, metrics);
+  const userPrompt = buildUserPrompt(comments, weeks, updatedProfile, metrics, equipmentList);
 
   try {
     const { text: responseText, responseId } = await callAiChat(
@@ -403,22 +528,27 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
 
     const { comments: llmComments, sessions: rawSessions, updated_profile } = parseLLMResponse(responseText);
 
-    const prompt = promptId ? getPrompt(promptId) : null;
-    const planId = savePlan(tenantId, {
-      comments: llmComments,
-      weeks,
-      profileVersionId,
-      promptId,
-      promptName: prompt?.name ?? null,
-      responseId,
-    });
+    let id = planId;
+    if (id) {
+      updatePlanResult(id, { comments: llmComments, responseId });
+    } else {
+      id = savePlan(tenantId, {
+        comments: llmComments,
+        weeks,
+        aiConfigId,
+        promptId,
+        promptName: prompt?.name ?? null,
+        responseId,
+        status: "completed",
+      });
+    }
 
     clearPlannedSessions();
 
     const createdSessions = [];
     for (const rawSession of rawSessions) {
       try {
-        const created = createPlannedSession(rawSession, planId);
+        const created = createPlannedSession(rawSession, id);
         createdSessions.push(created);
       } catch (err) {
         console.error("Error creando sesión planificada:", err.message);
@@ -429,22 +559,27 @@ export async function generatePlan({ comments = "", weeks = 1, profileVersionId 
     if (updated_profile && typeof updated_profile === "object") {
       const normalized = normalizeProfile(updated_profile);
       if (normalized) {
-        const versionId = saveProfileVersion(tenantId, normalized, "ai");
+        const merged = sanitizeProfile(mergeProfilePreserving(getAthleteProfile() ?? {}, normalized));
+        for (const key of ["trainer_behavior", "filosofia", "analisis_requerido"]) {
+          if (profile[key] != null && merged[key] == null) merged[key] = profile[key];
+        }
+        const versionId = saveProfileVersion(tenantId, merged, "ai");
         if (versionId) {
-          saveAthleteProfile(tenantId, normalized);
+          saveAthleteProfile(tenantId, merged);
           profileUpdated = true;
         }
       }
     }
 
     return {
-      planId,
+      planId: id,
       comments: llmComments,
       sessions: createdSessions,
       titlesUpdated,
       profileUpdated,
     };
   } catch (err) {
+    if (planId) updatePlanStatus(planId, "failed", err.message);
     throw new Error(`Error al generar el plan: ${err.message}`);
   }
 }
@@ -475,8 +610,20 @@ function buildChatUserPrompt(planId, message) {
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
-      ? JSON.stringify(profile, null, 2)
+      ? JSON.stringify(sanitizeProfile(profile), null, 2)
       : "(no hay perfil guardado)";
+
+  const coachInstructions = formatCoachInstructions(profile);
+  const coachText = coachInstructions
+    ? `\nINSTRUCCIONES DEL ENTRENADOR (no forman parte del perfil del atleta; son directrices de comportamiento, filosofía y análisis a aplicar):\n${coachInstructions}\n`
+    : "";
+
+  let equipment = getEquipmentLabels(getTenantId());
+  if (equipment.length === 0 && Array.isArray(profile?.equipment)) {
+    equipment = profile.equipment.map(String);
+  }
+  const equipmentLine = equipment.length > 0 ? equipment.join(", ") : "sin datos";
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   return `
@@ -484,6 +631,9 @@ Hoy es: ${today}
 
 PERFIL DEL ATLETA (JSON):
 ${profileText}
+${coachText}
+EQUIPAMIENTO DISPONIBLE:
+${equipmentLine}
 
 PLAN ACTUAL (sesiones planificadas de este plan):
 ${planText}

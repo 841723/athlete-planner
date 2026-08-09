@@ -57,9 +57,9 @@ export function CalendarDay({ date, sessions, goal, primary, onClick, onDayClick
       }}
     >
       <div className="text-[10px] sm:text-xs font-medium text-gray-300 mb-0.5 sm:mb-1 flex items-center justify-between">
-        <span>
+        <span className={`${isToday ? "text-accent-light font-bold" : ""}`}>
           <span className="hidden sm:inline">{format(date, "EEE")}</span>
-          <span className={`${isToday ? "text-accent-light font-bold" : ""} ml-0 sm:ml-1`}>
+          <span className="ml-0 sm:ml-1">
             {format(date, "d")}
           </span>
         </span>

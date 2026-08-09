@@ -34,6 +34,19 @@ export function getDb() {
   ensureColumn("goals", "url", "url TEXT");
   ensureColumn("goals", "is_primary", "is_primary INTEGER NOT NULL DEFAULT 0");
   ensureColumn("ai_provider_settings", "base_url", "base_url TEXT");
+  ensureColumn("ai_provider_settings", "currency", "currency TEXT NOT NULL DEFAULT 'EUR'");
+  ensureColumn("ai_provider_settings", "chat_duration_hours", "chat_duration_hours INTEGER NOT NULL DEFAULT 24");
+  ensureColumn("ai_provider_settings", "pricing", "pricing TEXT");
   ensureColumn("plans", "response_id", "response_id TEXT");
+  ensureColumn("plans", "ai_config_id", "ai_config_id TEXT");
+  ensureColumn("plans", "status", "status TEXT NOT NULL DEFAULT 'completed'");
+  ensureColumn("plans", "error", "error TEXT");
+  ensureColumn("plans", "request_comments", "request_comments TEXT");
+  ensureColumn("plans", "started_at", "started_at TEXT");
+  ensureColumn("plans", "finished_at", "finished_at TEXT");
+  ensureColumn("ai_logs", "input_tokens", "input_tokens INTEGER");
+  ensureColumn("ai_logs", "output_tokens", "output_tokens INTEGER");
+  ensureColumn("ai_logs", "cost", "cost REAL");
+  ensureColumn("ai_logs", "currency", "currency TEXT");
   return db;
 }

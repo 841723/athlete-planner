@@ -1,9 +1,9 @@
 import { HeroStats } from "@/components/home/hero-stats";
 import { TodayTomorrow } from "@/components/home/today-tomorrow";
-import { UpcomingGoals } from "@/components/home/upcoming-goals";
 import { StreakCard } from "@/components/home/streak-card";
 import { RecentActivity } from "@/components/home/recent-activity";
 import { WeeklyVolume } from "@/components/home/weekly-volume";
+import { UpcomingGoals } from "@/components/home/upcoming-goals";
 import { SyncButton } from "@/components/layout/sync-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSessions } from "@/hooks/use-sessions";
@@ -46,9 +46,9 @@ export function HomePage() {
           <RecentActivity />
         </div>
         <div className="space-y-4">
-          <UpcomingGoals />
           <StreakCard />
           <WeeklyVolume />
+          <UpcomingGoals />
         </div>
       </div>
     </div>

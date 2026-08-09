@@ -5,6 +5,7 @@ import { usePlanChat, useSendPlanChat } from "@/hooks/use-plan-chat";
 import { usePermissions } from "@/hooks/use-permissions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Markdown } from "@/components/ui/markdown";
 import type { Plan } from "@/types/session";
 
 interface PlanChatProps {
@@ -18,9 +19,11 @@ export function PlanChat({ plan }: PlanChatProps) {
   const [draft, setDraft] = useState("");
 
   const canChat = perms.canEdit && !!data?.canChat;
-  const expiresAt = data?.planCreatedAt
-    ? new Date(new Date(data.planCreatedAt).getTime() + 24 * 60 * 60 * 1000)
-    : null;
+  const expiresAt = data?.expiresAt
+    ? new Date(data.expiresAt)
+    : data?.planCreatedAt
+      ? new Date(new Date(data.planCreatedAt).getTime() + 24 * 60 * 60 * 1000)
+      : null;
 
   function handleSend() {
     const message = draft.trim();
@@ -67,7 +70,7 @@ export function PlanChat({ plan }: PlanChatProps) {
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                   m.role === "user"
                     ? "bg-accent/20 text-gray-100 rounded-br-sm"
                     : "bg-dark-400/60 text-gray-200 rounded-bl-sm"
@@ -85,7 +88,7 @@ export function PlanChat({ plan }: PlanChatProps) {
                   )}
                   <span>· {format(new Date(m.created_at), "HH:mm")}</span>
                 </div>
-                {m.content}
+                {m.role === "assistant" ? <Markdown text={m.content} /> : <span className="whitespace-pre-wrap">{m.content}</span>}
               </div>
             </div>
           ))}
@@ -136,7 +139,9 @@ export function PlanChat({ plan }: PlanChatProps) {
         <div className="px-3 py-2.5 border-t border-dark-400 text-xs text-gray-500">
           {!perms.canEdit
             ? "Solo los usuarios con permisos de edición pueden chatear."
-            : "El chat caducó a las 24 horas de generar el plan."}
+            : data?.chatDurationLabel
+              ? `El chat caducó (disponible ${data.chatDurationLabel} desde la generación del plan).`
+              : "El chat caducó a las 24 horas de generar el plan."}
         </div>
       )}
     </div>

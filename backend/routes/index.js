@@ -13,6 +13,8 @@ import { register as registerSync } from "./sync.js";
 import { register as registerApiKeys } from "./api-keys.js";
 import { register as registerAiLogs } from "./ai-logs.js";
 import { register as registerPlanChat } from "./plan-chat.js";
+import { register as registerEquipment } from "./equipment.js";
+import { register as registerAiConfigs } from "./ai-configs.js";
 
 export function buildPublicRouter() {
   const router = createRouter();
@@ -41,5 +43,7 @@ export function buildTenantRouter() {
   registerApiKeys(router);
   registerAiLogs(router);
   registerPlanChat(router);
+  registerEquipment(router);
+  registerAiConfigs(router);
   return router;
 }

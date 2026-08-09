@@ -3,6 +3,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 import { upsertSession } from "./sessions.js";
+import { seedDefaultEquipment } from "./equipment.js";
+import { seedDefaultAiConfig } from "./ai-configs.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const SESSIONS_DIR = path.join(ROOT, "sessions");
@@ -129,6 +131,8 @@ export function migrate() {
   const hasProfile = importProfile(tenantId);
   seedGoals(tenantId);
   seedSettings(tenantId);
+  seedDefaultEquipment(tenantId);
+  seedDefaultAiConfig(tenantId);
   const owner = seedOwner(tenantId);
 
   return {

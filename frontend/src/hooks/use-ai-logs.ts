@@ -1,10 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchAiLogs } from "@/services/api";
-import type { AiLog } from "@/types/session";
+import type { AiLogsPage } from "@/types/session";
 
-export function useAiLogs(limit = 50) {
-  return useQuery<AiLog[]>({
-    queryKey: ["ai-logs", limit],
-    queryFn: () => fetchAiLogs(limit),
+export function useAiLogs(options: {
+  limit?: number;
+  offset?: number;
+  ok?: "ok" | "error";
+  provider?: string;
+} = {}) {
+  return useQuery<AiLogsPage>({
+    queryKey: ["ai-logs", options.limit ?? 50, options.offset ?? 0, options.ok ?? null, options.provider ?? null],
+    queryFn: () => fetchAiLogs(options),
   });
 }

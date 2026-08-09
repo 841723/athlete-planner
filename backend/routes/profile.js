@@ -2,6 +2,24 @@ import { getProfileHistory, getProfileVersion, saveProfileVersion } from "../lib
 import { getAthleteProfile, saveAthleteProfile } from "../lib/sessions.js";
 import { sendJson, readBody, canManage } from "../lib/http.js";
 
+function sanitizeProfile(profile) {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) return profile;
+  const out = JSON.parse(JSON.stringify(profile));
+  delete out.nombre;
+  delete out.goal;
+  const d = out.datos_del_atleta;
+  if (d && typeof d === "object") {
+    if (d.datos_personales && typeof d.datos_personales === "object") {
+      delete d.datos_personales.nombre;
+    }
+    delete d.objetivo;
+    if (d.estado_fisico && typeof d.estado_fisico === "object") {
+      delete d.estado_fisico.semanas_consecutivas;
+    }
+  }
+  return out;
+}
+
 export function register(router) {
   router.get("/api/profile", (c) => {
     return sendJson(c.res, 200, getAthleteProfile(c.tenantId) ?? {});
@@ -13,8 +31,12 @@ export function register(router) {
     if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length === 0) {
       return sendJson(c.res, 400, { error: "El perfil no puede estar vacío" });
     }
-    saveAthleteProfile(c.tenantId, body);
-    saveProfileVersion(c.tenantId, body, "user");
+    const clean = sanitizeProfile(body);
+    if (!clean || Object.keys(clean).length === 0) {
+      return sendJson(c.res, 400, { error: "El perfil no puede estar vacío" });
+    }
+    saveAthleteProfile(c.tenantId, clean);
+    saveProfileVersion(c.tenantId, clean, "user");
     return sendJson(c.res, 200, { ok: true });
   });
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchPlans } from "@/services/api";
+import { fetchPlans } from "@/services/trainer";
 
 export function usePlans() {
   return useQuery({

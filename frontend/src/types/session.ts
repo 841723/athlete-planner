@@ -327,11 +327,58 @@ export interface StatsRecordsData {
   };
 }
 
+export interface AiProviderInfo {
+  id: string;
+  name: string;
+  needsApiKey: boolean;
+  defaultModel?: string | null;
+}
+
+export interface AiProviderPricing {
+  input_per_mtok?: number;
+  output_per_mtok?: number;
+}
+
+export interface AiConfig {
+  id: string;
+  name: string;
+  provider: string;
+  model: string | null;
+  base_url?: string | null;
+  currency: string;
+  chat_duration_hours: number;
+  chatDurationLabel?: string;
+  pricing?: Record<string, AiProviderPricing> | null;
+  is_default: boolean;
+}
+
+export interface AiConfigsResponse {
+  items: AiConfig[];
+  providers: AiProviderInfo[];
+  maxConfigs: number;
+}
+
+export interface AiConfigPayload {
+  name: string;
+  provider: string;
+  apiKey: string;
+  model?: string | null;
+  baseUrl?: string | null;
+  currency?: string;
+  chatDurationHours?: number;
+  pricing?: Record<string, AiProviderPricing>;
+  isDefault?: boolean;
+}
+
 export interface AiSettings {
   provider: string;
-  model: string;
+  model: string | null;
   base_url?: string | null;
-  providers?: string[];
+  currency?: string;
+  chat_duration_hours?: number | null;
+  chatDurationLabel?: string;
+  pricing?: Record<string, AiProviderPricing> | null;
+  providers?: AiProviderInfo[];
 }
 
 export interface AiSettingsFull extends AiSettings {
@@ -364,7 +411,18 @@ export interface AiLog {
   status: number | null;
   ok: number;
   duration_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost: number | null;
+  currency: string | null;
   created_at: string;
+}
+
+export interface AiLogsPage {
+  items: AiLog[];
+  total: number;
+  costTotal: number;
+  currency: string;
 }
 
 export interface ProfileVersion {
@@ -385,19 +443,14 @@ export interface AiPrompt {
   is_predefined: number;
 }
 
+export type PlanStatus = "pending" | "generating" | "completed" | "failed";
+
 export interface GeneratePlanRequest {
   comments: string;
   weeks: number;
-  profileVersionId?: string;
+  aiConfigId?: string;
   promptId?: string;
-}
-
-export interface GeneratePlanResponse {
-  comments: string;
-  sessions: PlannedSessionView[];
-  titlesUpdated?: { id: string; title: string }[];
-  profileUpdated?: boolean;
-  planId?: string;
+  equipment?: string[];
 }
 
 export interface Plan {
@@ -405,8 +458,10 @@ export interface Plan {
   createdAt: string;
   comments: string;
   weeks: number;
+  status: PlanStatus;
+  error?: string | null;
   responseId?: string | null;
-  profileVersionId?: string;
+  aiConfigId?: string | null;
   promptId?: string;
   promptName?: string;
 }
@@ -423,6 +478,8 @@ export interface PlanChat {
   planId: string;
   planCreatedAt: string;
   canChat: boolean;
+  chatDurationLabel?: string;
+  expiresAt?: string | null;
   messages: PlanMessage[];
 }
 
@@ -452,4 +509,28 @@ export interface ActivityTrack {
   sport: string;
   points: TrackPoint[];
   samples: TrackSample[];
+}
+
+export interface EquipmentItem {
+  item: string;
+  category: string;
+  quantity: number;
+}
+
+export interface EquipmentCatalogEntry {
+  id: string;
+  label: string;
+  emoji: string;
+}
+
+export interface EquipmentCategory {
+  category: string;
+  label: string;
+  emoji?: string;
+  items: EquipmentCatalogEntry[];
+}
+
+export interface EquipmentResponse {
+  items: EquipmentItem[];
+  catalog: EquipmentCategory[];
 }

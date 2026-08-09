@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchPlanChat, sendPlanChat, deletePlanChat } from "@/services/api";
+import { fetchPlanChat, sendPlanChat, deletePlanChat } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { PlanChat, PlanChatReply } from "@/types/session";

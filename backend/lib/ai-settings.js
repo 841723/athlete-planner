@@ -1,24 +1,42 @@
-import { getDb } from "./db.js";
+import {
+  getDefaultAiConfig,
+  saveAiConfig,
+  chatDurationLabel,
+  getChatWindowMs as getChatWindowMsForConfig,
+} from "./ai-configs.js";
+
+export { chatDurationLabel };
 
 export function getAiSettings(tenantId) {
-  const row = getDb()
-    .prepare("SELECT provider, model, base_url FROM ai_provider_settings WHERE tenant_id = ?")
-    .get(tenantId);
-  return row ?? null;
+  const cfg = getDefaultAiConfig(tenantId);
+  if (!cfg) return null;
+  const { id: _id, is_default: _d, ...rest } = cfg;
+  return rest;
 }
 
 export function getAiSettingsWithKey(tenantId) {
-  const row = getDb()
-    .prepare("SELECT provider, api_key, model, base_url FROM ai_provider_settings WHERE tenant_id = ?")
-    .get(tenantId);
-  return row ?? null;
+  const cfg = getDefaultAiConfig(tenantId, true);
+  if (!cfg) return null;
+  const { id: _id, is_default: _d, ...rest } = cfg;
+  return { ...rest, api_key: cfg.api_key ?? "" };
 }
 
-export function saveAiSettings(tenantId, { provider, apiKey, model, baseUrl }) {
-  getDb()
-    .prepare(
-      `INSERT INTO ai_provider_settings (tenant_id, provider, api_key, model, base_url, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(tenant_id) DO UPDATE SET provider = excluded.provider, api_key = excluded.api_key, model = excluded.model, base_url = excluded.base_url, updated_at = excluded.updated_at`
-    )
-    .run(tenantId, provider, apiKey, model, baseUrl ?? null, new Date().toISOString());
+export function saveAiSettings(tenantId, { provider, apiKey, model, baseUrl, currency, chatDurationHours, pricing }) {
+  const cfg = getDefaultAiConfig(tenantId);
+  return saveAiConfig(tenantId, {
+    id: cfg?.id ?? null,
+    name: cfg?.name ?? "Configuración principal",
+    provider,
+    apiKey: apiKey ?? "",
+    model,
+    baseUrl,
+    currency,
+    chatDurationHours,
+    pricing,
+    isDefault: true,
+  });
+}
+
+export function getChatWindowMs(tenantId) {
+  return getChatWindowMsForConfig(getDefaultAiConfig(tenantId));
 }

@@ -10,3 +10,22 @@ export {
   updatePlanned,
   deletePlanned,
 } from "./api";
+
+export {
+  generatePlan,
+  regeneratePlan,
+  fetchPlans,
+  fetchPlanChat,
+  sendPlanChat,
+  deletePlanChat,
+  fetchProfile,
+  updateProfile,
+  fetchProfileHistory,
+  fetchProfileVersion,
+  setActiveProfileVersion,
+  fetchPrompts,
+  fetchPrompt,
+  savePrompt,
+  updatePrompt,
+  deletePrompt,
+} from "./trainer";

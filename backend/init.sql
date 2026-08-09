@@ -81,6 +81,9 @@ CREATE TABLE IF NOT EXISTS ai_provider_settings (
   api_key TEXT NOT NULL,
   model TEXT DEFAULT 'gemini-2.0-flash',
   base_url TEXT,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  chat_duration_hours INTEGER NOT NULL DEFAULT 24,
+  pricing TEXT,
   updated_at TEXT NOT NULL
 );
 
@@ -112,7 +115,12 @@ CREATE TABLE IF NOT EXISTS plans (
   profile_version_id TEXT,
   prompt_id TEXT,
   prompt_name TEXT,
-  response_id TEXT
+  response_id TEXT,
+  status TEXT NOT NULL DEFAULT 'completed',
+  error TEXT,
+  request_comments TEXT,
+  started_at TEXT,
+  finished_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_plans_tenant ON plans(tenant_id, created_at DESC);
 
@@ -138,6 +146,24 @@ CREATE TABLE IF NOT EXISTS activity_tracks (
 );
 CREATE INDEX IF NOT EXISTS idx_activity_tracks_tenant ON activity_tracks(tenant_id, session_id);
 
+-- Configuraciones de IA por tenant (proveedor + key + modelo + duración chat + precios).
+CREATE TABLE IF NOT EXISTS ai_configs (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  provider TEXT NOT NULL DEFAULT 'gemini',
+  api_key TEXT NOT NULL DEFAULT '',
+  model TEXT,
+  base_url TEXT,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  chat_duration_hours INTEGER NOT NULL DEFAULT 24,
+  pricing TEXT,
+  is_default INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_configs_tenant ON ai_configs(tenant_id);
+
 -- Claves de API por tenant para autenticación sin Google.
 CREATE TABLE IF NOT EXISTS api_keys (
   id TEXT PRIMARY KEY,
@@ -152,6 +178,38 @@ CREATE TABLE IF NOT EXISTS api_keys (
   created_by TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_api_keys_tenant ON api_keys(tenant_id);
+
+-- Equipamiento del atleta por deporte (catálogo + ítems personalizados).
+CREATE TABLE IF NOT EXISTS athlete_equipment (
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  item TEXT NOT NULL,
+  category TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (tenant_id, item)
+);
+CREATE INDEX IF NOT EXISTS idx_equipment_tenant ON athlete_equipment(tenant_id);
+
+-- Catálogo de equipamiento por tenant (categorías + ítems; snapshot editable).
+-- Se siembra desde el catálogo por defecto en el primer acceso.
+CREATE TABLE IF NOT EXISTS equipment_categories (
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  label TEXT NOT NULL,
+  emoji TEXT DEFAULT '',
+  sort INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (tenant_id, category)
+);
+CREATE INDEX IF NOT EXISTS idx_equipment_categories_tenant ON equipment_categories(tenant_id);
+
+CREATE TABLE IF NOT EXISTS equipment_catalog (
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  item TEXT NOT NULL,
+  emoji TEXT DEFAULT '',
+  sort INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (tenant_id, category, item)
+);
+CREATE INDEX IF NOT EXISTS idx_equipment_catalog_tenant ON equipment_catalog(tenant_id);
 
 -- Log de cada solicitud a un proveedor de IA.
 CREATE TABLE IF NOT EXISTS ai_logs (
@@ -170,6 +228,10 @@ CREATE TABLE IF NOT EXISTS ai_logs (
   status INTEGER,
   ok INTEGER NOT NULL DEFAULT 1,
   duration_ms INTEGER,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  cost REAL,
+  currency TEXT,
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_logs_tenant ON ai_logs(tenant_id, created_at DESC);

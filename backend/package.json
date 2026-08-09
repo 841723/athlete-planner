@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.js --port 4000"
+    "start": "node server.js --port 4000",
+    "test": "node --test 'tests/**/*.test.mjs'"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

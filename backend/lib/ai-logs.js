@@ -30,12 +30,16 @@ export function logAiRequest({
   status = null,
   ok = true,
   durationMs = null,
+  inputTokens = null,
+  outputTokens = null,
+  cost = null,
+  currency = null,
 }) {
   if (!tenantId) return;
   getDb()
     .prepare(
-      `INSERT INTO ai_logs (id, tenant_id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO ai_logs (id, tenant_id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       randomUUID(),
@@ -53,15 +57,51 @@ export function logAiRequest({
       status,
       ok ? 1 : 0,
       durationMs,
+      inputTokens,
+      outputTokens,
+      cost,
+      currency,
       new Date().toISOString()
     );
 }
 
-export function listAiLogs(tenantId, limit = 50) {
-  return getDb()
+const LOG_SELECT = `SELECT id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at`;
+
+export function listAiLogs(tenantId, { limit = 50, offset = 0, ok = null, provider = null } = {}) {
+  const clauses = ["tenant_id = ?"];
+  const params = [tenantId];
+  if (ok === "ok") {
+    clauses.push("ok = 1");
+  } else if (ok === "error") {
+    clauses.push("ok = 0");
+  }
+  if (provider) {
+    clauses.push("provider = ?");
+    params.push(provider);
+  }
+  const where = clauses.join(" AND ");
+
+  const total = getDb().prepare(`SELECT COUNT(*) AS n FROM ai_logs WHERE ${where}`).get(...params).n;
+
+  const rows = getDb()
     .prepare(
-      `SELECT id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, created_at
-       FROM ai_logs WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?`
+      `${LOG_SELECT} FROM ai_logs WHERE ${where} ORDER BY created_at DESC, rowid DESC LIMIT ? OFFSET ?`
     )
-    .all(tenantId, limit);
+    .all(...params, limit, offset);
+
+  const sum = getDb().prepare(`SELECT COUNT(*) AS n, SUM(cost) AS cost FROM ai_logs WHERE ${where}`).get(...params);
+
+  return {
+    items: rows,
+    total,
+    costTotal: sum?.cost ?? 0,
+    currency: null,
+  };
+}
+
+export function listAiLogsProviders(tenantId) {
+  return getDb()
+    .prepare("SELECT DISTINCT provider FROM ai_logs WHERE tenant_id = ? AND provider IS NOT NULL ORDER BY provider")
+    .all(tenantId)
+    .map((r) => r.provider);
 }

@@ -32,21 +32,16 @@ Debes responder ÚNICAMENTE con un JSON válido, sin texto adicional antes o des
   ],
   "updated_profile": {
     "datos_del_atleta": {
-      "datos_personales": { "edad": null, "genero": "", "peso_kg": null, "altura_cm": null },
+      "datos_personales": { "genero": "", "edad": null, "peso_kg": null, "altura_cm": null },
       "disponibilidad_horaria": "",
-      "disponibilidad_materiales": "",
-      "objetivo": "",
       "estado_actual": {
-        "running": { "nivel": "", "fc_z2": "", "ritmo": "", "observaciones": "" },
+        "running": { "nivel": "", "fc_z2": "", "observaciones": "" },
         "cycling": { "nivel": "", "potencia_w": "", "observaciones": "" },
         "swimming": { "nivel": "", "ritmo_100m": "", "observaciones": "" },
         "fuerza": { "nivel": "", "observaciones": "" }
       },
-      "estado_fisico": { "carga_actual": "", "fatiga": "", "lesiones": "", "semanas_consecutivas": "" }
-    },
-    "trainer_behavior": "",
-    "filosofia": "",
-    "analisis_requerido": ""
+      "estado_fisico": { "carga_actual": "", "fatiga": "", "lesiones": "" }
+    }
   }
 }
 
@@ -115,31 +110,23 @@ El campo "updated_profile" de tu respuesta DEBE usar SIEMPRE esta estructura exa
 
 {
   "datos_del_atleta": {
-    "datos_personales": { "edad": null, "genero": "", "peso_kg": null, "altura_cm": null },
+    "datos_personales": { "genero": "", "edad": null, "peso_kg": null, "altura_cm": null },
     "disponibilidad_horaria": "",
-    "disponibilidad_materiales": "",
-    "objetivo": "",
     "estado_actual": {
-      "running": { "nivel": "", "fc_z2": "", "ritmo": "", "observaciones": "" },
+      "running": { "nivel": "", "fc_z2": "", "observaciones": "" },
       "cycling": { "nivel": "", "potencia_w": "", "observaciones": "" },
       "swimming": { "nivel": "", "ritmo_100m": "", "observaciones": "" },
       "fuerza": { "nivel": "", "observaciones": "" }
     },
-    "estado_fisico": { "carga_actual": "", "fatiga": "", "lesiones": "", "semanas_consecutivas": "" }
-  },
-  "trainer_behavior": "",
-  "filosofia": "",
-  "analisis_requerido": ""
+    "estado_fisico": { "carga_actual": "", "fatiga": "", "lesiones": "" }
+  }
 }
 
 Reglas:
 - "estado_actual": un sub-objeto por deporte; rellena solo los que conozcas, omitiendo los que no apliquen.
-- "estado_fisico": carga, fatiga, lesiones y semanas consecutivas de entrenamiento.
-- "trainer_behavior": cómo debe comportarse el entrenador contigo (estilo, tono, límites).
-- "filosofia": principios de entrenamiento que debes seguir.
-- "analisis_requerido": qué análisis quieres que haga el entrenador con tus datos.
+- "estado_fisico": carga de trabajo actual, fatiga y lesiones.
 - El perfil del atleta actual se te entrega en el prompt de usuario como JSON bajo "PERFIL DEL ATLETA". Actualízalo respetando esta estructura; si trae "datos_del_atleta", mantén esa clave raíz.
-- No uses claves como strengths/weaknesses ni otros formatos.
+- No uses claves como strengths/weaknesses, nombre, objetivo, filosofia ni trainer_behavior.
 
 CONTEXTO DEL ATLETA
 

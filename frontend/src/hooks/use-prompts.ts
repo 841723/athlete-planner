@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchPrompts, savePrompt, deletePrompt, updatePrompt } from "@/services/api";
+import { fetchPrompts, savePrompt, deletePrompt, updatePrompt } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 
 export function usePrompts() {

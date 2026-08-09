@@ -3,7 +3,7 @@ import {
   fetchProfileHistory,
   fetchProfileVersion,
   setActiveProfileVersion,
-} from "@/services/api";
+} from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 
 export function useProfileHistory() {
