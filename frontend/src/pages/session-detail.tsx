@@ -7,6 +7,8 @@ import { useSession } from "@/hooks/use-session";
 import { useSessions } from "@/hooks/use-sessions";
 import { useUpdateSession } from "@/hooks/use-update-session";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -28,7 +30,8 @@ export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const backTo = (location.state as { from?: string } | null)?.from ?? "/calendar";
+  const { activeTenantId } = useAuth();
+  const backTo = (location.state as { from?: string } | null)?.from ?? tenantPath(activeTenantId, "/calendar");
   const { data: session, isLoading, error } = useSession(id);
   const { data: allSessions } = useSessions();
   const updateMutation = useUpdateSession();
@@ -106,7 +109,7 @@ export function SessionDetailPage() {
         </button>
         <div className="flex-1" />
         <button
-          onClick={() => prevSession && navigate(`/session/${prevSession.id}`, { state: { from: backTo } })}
+          onClick={() => prevSession && navigate(tenantPath(activeTenantId, `/session/${prevSession.id}`), { state: { from: backTo } })}
           disabled={!prevSession}
           className="btn btn-ghost text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           title={prevSession ? prevSession.title ?? prevSession.name : undefined}
@@ -114,7 +117,7 @@ export function SessionDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Anterior
         </button>
         <button
-          onClick={() => nextSession && navigate(`/session/${nextSession.id}`, { state: { from: backTo } })}
+          onClick={() => nextSession && navigate(tenantPath(activeTenantId, `/session/${nextSession.id}`), { state: { from: backTo } })}
           disabled={!nextSession}
           className="btn btn-ghost text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           title={nextSession ? nextSession.title ?? nextSession.name : undefined}

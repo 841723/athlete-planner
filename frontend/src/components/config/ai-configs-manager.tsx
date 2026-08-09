@@ -52,6 +52,11 @@ const EMPTY_FORM: FormState = {
 
 function formFromConfig(c: AiConfig, providers: AiProviderInfo[]): FormState {
   const needsKey = providers.find((p) => p.id === c.provider)?.needsApiKey !== false;
+  const pricing = c.pricing ? { ...c.pricing } : {};
+  if (!pricing[c.provider]) {
+    const def = providers.find((p) => p.id === c.provider)?.defaultPricing;
+    if (def) pricing[c.provider] = { ...def };
+  }
   return {
     name: c.name,
     provider: c.provider,
@@ -60,7 +65,7 @@ function formFromConfig(c: AiConfig, providers: AiProviderInfo[]): FormState {
     baseUrl: c.base_url ?? "",
     currency: c.currency,
     chatDuration: c.chat_duration_hours == null ? "0" : String(c.chat_duration_hours),
-    pricing: c.pricing ?? {},
+    pricing,
   };
 }
 
@@ -90,6 +95,25 @@ export function AiConfigsManager() {
   }
 
   const selectedProvider = providers.find((p) => p.id === form.provider);
+
+  function handleProviderChange(providerId: string) {
+    const p = providers.find((x) => x.id === providerId);
+    setForm((f) => {
+      const pricing = { ...f.pricing };
+      if (p?.defaultPricing && !pricing[providerId]) {
+        pricing[providerId] = { ...p.defaultPricing };
+      }
+      return { ...f, provider: providerId, pricing };
+    });
+  }
+
+  function startNew() {
+    resetForm();
+    const p = providers[0];
+    const pricing: Record<string, AiProviderPricing> = {};
+    if (p?.defaultPricing) pricing[p.id] = { ...p.defaultPricing };
+    setForm({ ...EMPTY_FORM, provider: p?.id ?? "gemini", pricing });
+  }
 
   function handleSave() {
     if (!form.name.trim()) {
@@ -154,10 +178,7 @@ export function AiConfigsManager() {
             <Button
               variant="ghost"
               className="text-xs"
-              onClick={() => {
-                resetForm();
-                setForm({ ...EMPTY_FORM, provider: providers[0]?.id ?? "gemini" });
-              }}
+              onClick={startNew}
             >
               <Plus className="w-3.5 h-3.5" /> Nueva configuración
             </Button>
@@ -265,7 +286,7 @@ export function AiConfigsManager() {
               <select
                 className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
                 value={form.provider}
-                onChange={(e) => patch({ provider: e.target.value })}
+                onChange={(e) => handleProviderChange(e.target.value)}
               >
                 {providers.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -347,12 +368,12 @@ export function AiConfigsManager() {
 
           <div>
             <label className="text-xs text-gray-400 block mb-1">
-              Precio por millón de tokens (entrada/salida)
+              Precio por millón de tokens (entrada/salida) · {selectedProvider?.name}
             </label>
             <div className="space-y-2">
-              {providers.map((p) => (
-                <div key={p.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center">
-                  <span className="text-sm text-gray-300">{p.name}</span>
+              {selectedProvider ? (
+                <div key={selectedProvider.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center">
+                  <span className="text-sm text-gray-300">{selectedProvider.name}</span>
                   <div>
                     <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
                     <input
@@ -360,9 +381,9 @@ export function AiConfigsManager() {
                       step="any"
                       min="0"
                       className="input w-full py-1.5 text-sm"
-                      value={form.pricing[p.id]?.input_per_mtok ?? ""}
-                      placeholder="0.10"
-                      onChange={(e) => patchPricing(p.id, "input_per_mtok", e.target.value)}
+                      value={form.pricing[selectedProvider.id]?.input_per_mtok ?? ""}
+                      placeholder={selectedProvider.defaultPricing?.input_per_mtok != null ? String(selectedProvider.defaultPricing.input_per_mtok) : "0.10"}
+                      onChange={(e) => patchPricing(selectedProvider.id, "input_per_mtok", e.target.value)}
                     />
                   </div>
                   <div>
@@ -372,14 +393,19 @@ export function AiConfigsManager() {
                       step="any"
                       min="0"
                       className="input w-full py-1.5 text-sm"
-                      value={form.pricing[p.id]?.output_per_mtok ?? ""}
-                      placeholder="0.40"
-                      onChange={(e) => patchPricing(p.id, "output_per_mtok", e.target.value)}
+                      value={form.pricing[selectedProvider.id]?.output_per_mtok ?? ""}
+                      placeholder={selectedProvider.defaultPricing?.output_per_mtok != null ? String(selectedProvider.defaultPricing.output_per_mtok) : "0.40"}
+                      onChange={(e) => patchPricing(selectedProvider.id, "output_per_mtok", e.target.value)}
                     />
                   </div>
                 </div>
-              ))}
+              ) : (
+                <p className="text-sm text-gray-500">Selecciona un proveedor para configurar su precio.</p>
+              )}
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Precio fijo precargado para el proveedor; puedes cambiarlo por configuración. El coste se calcula sobre los tokens usados.
+            </p>
           </div>
 
           <div className="flex items-center gap-2">

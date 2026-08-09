@@ -10,6 +10,7 @@ import { register as registerTrainer } from "./trainer.js";
 import { register as registerProfile } from "./profile.js";
 import { register as registerAi } from "./ai.js";
 import { register as registerSync } from "./sync.js";
+import { register as registerSyncSources, registerPublic as registerSyncSourcesPublic } from "./sync-sources.js";
 import { register as registerApiKeys } from "./api-keys.js";
 import { register as registerAiLogs } from "./ai-logs.js";
 import { register as registerPlanChat } from "./plan-chat.js";
@@ -19,6 +20,7 @@ import { register as registerAiConfigs } from "./ai-configs.js";
 export function buildPublicRouter() {
   const router = createRouter();
   registerPublic(router);
+  registerSyncSourcesPublic(router);
   return router;
 }
 
@@ -40,6 +42,7 @@ export function buildTenantRouter() {
   registerProfile(router);
   registerAi(router);
   registerSync(router);
+  registerSyncSources(router);
   registerApiKeys(router);
   registerAiLogs(router);
   registerPlanChat(router);

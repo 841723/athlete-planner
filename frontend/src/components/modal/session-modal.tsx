@@ -6,6 +6,8 @@ import { Save, Loader2, ExternalLink, X } from "lucide-react";
 import type { Session } from "@/types/session";
 import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
 import { useUpdateSession } from "@/hooks/use-update-session";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 
@@ -32,6 +34,7 @@ function intensityBadge(intensity: string): { label: string; className: string }
 export function SessionModal({ session, onClose }: SessionModalProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { activeTenantId } = useAuth();
   const color = getSportColor(session.category);
   const label = getSportLabel(session.category);
   const updateMutation = useUpdateSession();
@@ -206,7 +209,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           <button
             onClick={() => {
               onClose();
-              navigate(`/session/${session.id}`, { state: { from: location.pathname } });
+              navigate(tenantPath(activeTenantId, `/session/${session.id}`), { state: { from: location.pathname } });
             }}
             className="btn btn-ghost text-sm"
           >

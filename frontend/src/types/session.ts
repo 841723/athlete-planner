@@ -299,6 +299,22 @@ export interface SyncResult {
   message?: string;
 }
 
+export interface SyncSource {
+  provider: "garmin" | "strava";
+  name: string;
+  connected: boolean;
+  status: string;
+  account_name?: string | null;
+  error?: string | null;
+  min_date?: string | null;
+  config?: Record<string, unknown>;
+}
+
+export interface SyncSourcesResponse {
+  items: SyncSource[];
+  stravaConfigured: boolean;
+}
+
 export interface StatRecord {
   id: string;
   icon: string;
@@ -333,6 +349,7 @@ export interface AiProviderInfo {
   name: string;
   needsApiKey: boolean;
   defaultModel?: string | null;
+  defaultPricing?: AiProviderPricing | null;
 }
 
 export interface AiProviderPricing {

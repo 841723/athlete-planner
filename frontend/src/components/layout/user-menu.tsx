@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Building2, Check, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
+import { replaceTenantInPath, tenantPath } from "@/lib/tenant";
 
 export function UserMenu() {
-  const { user, tenants, activeTenantId, switchTenant, logout } = useAuth();
+  const { user, tenants, activeTenantId, logout } = useAuth();
   const perms = usePermissions();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -57,7 +60,9 @@ export function UserMenu() {
                       }`}
                       onClick={() => {
                         close();
-                        if (t.id !== activeTenantId) switchTenant(t.id);
+                        if (t.id !== activeTenantId) {
+                          navigate(replaceTenantInPath(location.pathname, t.id));
+                        }
                       }}
                     >
                       <Building2 className="w-3.5 h-3.5 shrink-0" />
@@ -71,7 +76,7 @@ export function UserMenu() {
 
               {perms.canManageUsers && (
                 <Link
-                  to="/config"
+                  to={tenantPath(activeTenantId, "/config")}
                   onClick={close}
                   className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-gray-300 hover:bg-dark-300"
                 >

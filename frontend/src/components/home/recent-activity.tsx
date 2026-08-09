@@ -1,6 +1,8 @@
 import { useSessions } from "@/hooks/use-sessions";
 import { SPORT_COLORS, SPORT_LABELS, type SportCategory } from "@/types/session";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -18,6 +20,7 @@ function formatPace(paceSPerKm: number): string {
 export function RecentActivity() {
   const { data } = useSessions();
   const navigate = useNavigate();
+  const { activeTenantId } = useAuth();
   const completed = data?.completed ?? [];
 
   const recent = [...completed]
@@ -42,7 +45,7 @@ export function RecentActivity() {
           return (
             <button
               key={session.id}
-              onClick={() => navigate(`/session/${session.id}`)}
+              onClick={() => navigate(tenantPath(activeTenantId, `/session/${session.id}`))}
               className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-dark-300/30 hover:bg-dark-300/60 transition-colors text-left"
             >
               <div className="w-2 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />

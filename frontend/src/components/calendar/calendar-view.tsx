@@ -18,6 +18,8 @@ import { useGoals } from "@/hooks/use-goals";
 import { useMeta } from "@/hooks/use-meta";
 import { useDeletePlanned } from "@/hooks/use-planned";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 import { useCalendarStore } from "@/lib/calendar-store";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { WorkoutText } from "@/components/session/workout-text";
@@ -38,6 +40,7 @@ interface CalendarViewProps {
 export function CalendarView({ completed, planned, filters, setSport, setDateFrom, setDateTo, setShowCompleted, setShowPlanned, resetFilters }: CalendarViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { activeTenantId } = useAuth();
   const { currentMonth, showFilters, setCurrentMonth, setShowFilters, goToToday } = useCalendarStore();
   const [selectedSession, setSelectedSession] = useState<SessionWithStatus | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -159,7 +162,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                 primary={goalsByDate.get(dateStr)?.isPrimary}
                 onClick={(s) => {
                   if (s.status === "completed") {
-                    navigate(`/session/${s.id}`, { state: { from: location.pathname } });
+                    navigate(tenantPath(activeTenantId, `/session/${s.id}`), { state: { from: location.pathname } });
                   } else {
                     setSelectedSession(s);
                   }
@@ -201,7 +204,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
                     onClick={() => {
                       setSelectedDay(null);
                       if (isPlanned) setSelectedSession(s);
-                      else navigate(`/session/${s.id}`, { state: { from: location.pathname } });
+                      else navigate(tenantPath(activeTenantId, `/session/${s.id}`), { state: { from: location.pathname } });
                     }}
                   >
                     <div

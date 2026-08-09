@@ -27,7 +27,7 @@ TOKENSTORE = str(Path.home() / ".garminconnect")
 PAGE_SIZE = 50
 
 
-def get_client():
+def get_client(tokens_file: str | None = None):
     try:
         from garminconnect import Garmin
     except ImportError:
@@ -36,7 +36,12 @@ def get_client():
             "Ejecuta con: uv run --with garminconnect==0.3.8 python scripts/garmin-fetch.py ..."
         )
     g = Garmin()
-    g.login(TOKENSTORE)
+    if tokens_file:
+        # Los tokens vienen en un fichero JSON (tokenstore serializado), no en ~/.garminconnect.
+        tokens = Path(tokens_file).read_text(encoding="utf-8")
+        g.login(tokens)
+    else:
+        g.login(TOKENSTORE)
     return g
 
 
@@ -145,13 +150,13 @@ def fetch_activities(g, start: int, limit: int, min_date: str | None) -> list:
 
 
 def cmd_list(args) -> None:
-    g = get_client()
+    g = get_client(args.tokens)
     acts = fetch_activities(g, args.start, args.limit, args.min_date)
     write_json({"data": {"activities": [format_activity(a) for a in acts]}}, args.out)
 
 
 def cmd_ids(args) -> None:
-    g = get_client()
+    g = get_client(args.tokens)
     acts = fetch_activities(g, args.start, args.limit, args.min_date)
     ids = [str(a.get("activityId")) for a in acts if a.get("activityId") is not None]
     if args.json:
@@ -161,7 +166,7 @@ def cmd_ids(args) -> None:
 
 
 def cmd_details(args) -> None:
-    g = get_client()
+    g = get_client(args.tokens)
     activity = g.get_activity(args.activity_id)
     if not activity:
         sys.exit(f"Actividad {args.activity_id} no encontrada.")
@@ -287,7 +292,7 @@ def extract_samples(details: dict) -> list:
 
 
 def cmd_track(args) -> None:
-    g = get_client()
+    g = get_client(args.tokens)
     activity = g.get_activity(args.activity_id)
     if not activity:
         sys.exit(f"Actividad {args.activity_id} no encontrada.")
@@ -318,6 +323,7 @@ def main() -> None:
     p_list.add_argument("--start", type=int, default=0)
     p_list.add_argument("--limit", type=int, default=0, help="0 = sin límite (todas)")
     p_list.add_argument("--min-date", default=None, help="Solo actividades de esta fecha (YYYY-MM-DD) o posteriores")
+    p_list.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_list.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
     p_list.set_defaults(func=cmd_list)
 
@@ -325,17 +331,20 @@ def main() -> None:
     p_ids.add_argument("--start", type=int, default=0)
     p_ids.add_argument("--limit", type=int, default=0, help="0 = sin límite (todas)")
     p_ids.add_argument("--min-date", default=None)
+    p_ids.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_ids.add_argument("--json", action="store_true", help="Salida como JSON array")
     p_ids.set_defaults(func=cmd_ids)
 
     p_det = sub.add_parser("details", help="Detalle completo de una actividad (splits + zonas FC + RPE/feel).")
     p_det.add_argument("activity_id", type=str)
     p_det.add_argument("--list", default=None, help="JSON del listado para enriquecer la actividad (hasIntensityIntervals, lapCount)")
+    p_det.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_det.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
     p_det.set_defaults(func=cmd_details)
 
     p_track = sub.add_parser("track", help="Track GPS + métricas por punto de una actividad.")
     p_track.add_argument("activity_id", type=str)
+    p_track.add_argument("--tokens", default=None, help="Fichero con el tokenstore JSON (en vez de ~/.garminconnect)")
     p_track.add_argument("--out", default=None, help="Fichero de salida; si no, stdout")
     p_track.set_defaults(func=cmd_track)
 

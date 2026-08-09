@@ -1,4 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 import {
   Activity,
   Bike,
@@ -79,12 +81,13 @@ function formatPace100(secPer100m: number): string {
 function RecordCard({ record }: { record: StatRecord }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { activeTenantId } = useAuth();
   const isClickable = !!record.sessionId;
 
   return (
     <div
       className={`card p-5 ${isClickable ? "card-hover cursor-pointer" : ""}`}
-      onClick={isClickable ? () => navigate(`/session/${record.sessionId}`, { state: { from: location.pathname } }) : undefined}
+      onClick={isClickable ? () => navigate(tenantPath(activeTenantId, `/session/${record.sessionId}`), { state: { from: location.pathname } }) : undefined}
     >
       <RecordIcon name={record.icon} />
       <div className="mt-3">
@@ -111,6 +114,7 @@ function BestEffortList({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { activeTenantId } = useAuth();
 
   if (efforts.length === 0) return null;
 
@@ -129,7 +133,7 @@ function BestEffortList({
           <div
             key={`${e.name}-${i}`}
             className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-dark-300/50 cursor-pointer transition-colors"
-            onClick={() => navigate(`/session/${e.sessionId}`, { state: { from: location.pathname } })}
+            onClick={() => navigate(tenantPath(activeTenantId, `/session/${e.sessionId}`), { state: { from: location.pathname } })}
           >
             <div className="flex items-center gap-2">
               <span className="text-gray-500 w-4 text-right">{i + 1}</span>

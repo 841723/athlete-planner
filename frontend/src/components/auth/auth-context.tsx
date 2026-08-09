@@ -13,6 +13,7 @@ interface AuthContextValue {
   login: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
   switchTenant: (tenantId: string) => Promise<void>;
+  activateFromUrl: (tenantId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -90,9 +91,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [qc]
   );
 
+  const activateFromUrl = useCallback(
+    async (tenantId: string) => {
+      setApiTenant(tenantId);
+      setActiveTenantId(tenantId);
+      try {
+        await switchTenant(tenantId);
+      } catch {
+        /* la cookie de tenant no es crítica: el header X-Tenant-Id ya se envía */
+      }
+      qc.invalidateQueries();
+    },
+    [qc]
+  );
+
   return (
     <AuthContext.Provider
-      value={{ status, user, tenants, activeTenantId, login, logout: handleLogout, switchTenant: handleSwitchTenant, refresh: refreshMe }}
+      value={{
+        status,
+        user,
+        tenants,
+        activeTenantId,
+        login,
+        logout: handleLogout,
+        switchTenant: handleSwitchTenant,
+        activateFromUrl,
+        refresh: refreshMe,
+      }}
     >
       {children}
     </AuthContext.Provider>

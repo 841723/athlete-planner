@@ -236,3 +236,17 @@ CREATE TABLE IF NOT EXISTS ai_logs (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_logs_tenant ON ai_logs(tenant_id, created_at DESC);
+
+-- Fuentes de datos externas por tenant (Garmin, Strava, ...) con sus tokens de sesión.
+CREATE TABLE IF NOT EXISTS sync_sources (
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'disconnected',
+  tokens TEXT,
+  config TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (tenant_id, provider)
+);
+CREATE INDEX IF NOT EXISTS idx_sync_sources_tenant ON sync_sources(tenant_id);

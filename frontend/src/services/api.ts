@@ -9,6 +9,8 @@ import type {
   MetaData,
   StatsRecordsData,
   SyncResult,
+  SyncSourcesResponse,
+  SyncSource,
   AiSettings,
   AiConfigsResponse,
   AiConfigPayload,
@@ -115,6 +117,30 @@ export function deletePlanned(id: string): Promise<void> {
 
 export function syncGarmin(): Promise<SyncResult> {
   return send("/sync", "POST");
+}
+
+export function fetchSyncSources(): Promise<SyncSourcesResponse> {
+  return get("/sync-sources");
+}
+
+export function garminConnect(body: { email: string; password: string }): Promise<{ ok: boolean; item?: SyncSource; mfaRequired?: boolean }> {
+  return send("/sync-sources/garmin/connect", "POST", body);
+}
+
+export function garminMfa(body: { email: string; password: string; code: string }): Promise<{ ok: boolean; item?: SyncSource }> {
+  return send("/sync-sources/garmin/mfa", "POST", body);
+}
+
+export function stravaConnect(): Promise<{ url: string; redirectUri: string }> {
+  return send("/sync-sources/strava/connect", "POST");
+}
+
+export function disconnectSyncSource(provider: string): Promise<{ ok: boolean; item: SyncSource }> {
+  return send(`/sync-sources/${encodeURIComponent(provider)}/disconnect`, "POST");
+}
+
+export function updateSyncSourceConfig(provider: string, body: { min_date?: string | null }): Promise<{ ok: boolean; item: SyncSource }> {
+  return send(`/sync-sources/${encodeURIComponent(provider)}/config`, "PUT", body);
 }
 
 export function fetchTrack(sessionId: string): Promise<ActivityTrack> {

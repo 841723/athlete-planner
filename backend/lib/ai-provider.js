@@ -60,8 +60,8 @@ export function getProvider(providerId) {
 }
 
 export const PROVIDER_LIST = [
-  { id: "gemini", name: "Google Gemini", needsApiKey: true, defaultModel: "gemini-2.0-flash" },
-  { id: "mock", name: "Mock (desarrollo)", needsApiKey: false, defaultModel: "mock-1" },
+  { id: "gemini", name: "Google Gemini", needsApiKey: true, defaultModel: "gemini-2.0-flash", defaultPricing: { input_per_mtok: 0.1, output_per_mtok: 0.4 } },
+  { id: "mock", name: "Mock (desarrollo)", needsApiKey: false, defaultModel: "mock-1", defaultPricing: { input_per_mtok: 0, output_per_mtok: 0 } },
 ];
 
 export function getProvidersList() {

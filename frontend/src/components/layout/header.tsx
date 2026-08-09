@@ -2,6 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Calendar, ChartBar, ClipboardList, Home, Menu, X, Trophy } from "lucide-react";
 import { useState } from "react";
 import { UserMenu } from "./user-menu";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 
 const baseNavItems = [
   { path: "/", label: "Inicio", icon: Home },
@@ -14,8 +16,12 @@ const baseNavItems = [
 export function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { activeTenantId } = useAuth();
 
-  const navItems = baseNavItems;
+  const navItems = baseNavItems.map((item) => ({
+    ...item,
+    path: tenantPath(activeTenantId, item.path),
+  }));
 
   return (
     <>
@@ -27,9 +33,9 @@ export function Header() {
           >
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
-          <Link to="/" className="flex items-center gap-2 text-[#C8102E]">
+          <Link to={tenantPath(activeTenantId, "/")} className="flex items-center gap-2 text-[#C8102E]">
             <picture>
-              <img src="/logo-side-text.png" alt="Athlete Planner" className="h-12" />
+              <img src="/edasi-light-long.png" alt="edasi logo" className="h-12" />
             </picture>
           </Link>
         </div>

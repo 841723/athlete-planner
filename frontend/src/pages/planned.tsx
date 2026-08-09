@@ -25,6 +25,8 @@ import { PlanChat } from "@/components/planned/plan-chat";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from "@/components/auth/auth-context";
+import { tenantPath } from "@/lib/tenant";
 import { WorkoutText } from "@/components/session/workout-text";
 import { Markdown } from "@/components/ui/markdown";
 import { getSportColor, getSportLabel, formatDistance } from "@/lib/utils";
@@ -37,6 +39,7 @@ export function PlannedPage() {
   const deletePlanMutation = useDeletePlanChat();
   const retryMutation = useRetryPlan();
   const perms = usePermissions();
+  const { activeTenantId } = useAuth();
   const [formOpen, setFormOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [editing, setEditing] = useState<PlannedSessionView | null>(null);
@@ -275,7 +278,7 @@ export function PlannedPage() {
                             {merged && s.merged_with ? (
                               <div className="mt-3 text-xs">
                                 <Link
-                                  to={`/session/${s.merged_with}`}
+                                  to={tenantPath(activeTenantId, `/session/${s.merged_with}`)}
                                   className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" /> Ver sesión realizada
