@@ -33,6 +33,7 @@ export function getDb() {
   db.exec(loadInitSql());
   ensureColumn("goals", "url", "url TEXT");
   ensureColumn("goals", "is_primary", "is_primary INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("goals", "color", "color TEXT");
   ensureColumn("ai_provider_settings", "base_url", "base_url TEXT");
   ensureColumn("ai_provider_settings", "currency", "currency TEXT NOT NULL DEFAULT 'EUR'");
   ensureColumn("ai_provider_settings", "chat_duration_hours", "chat_duration_hours INTEGER NOT NULL DEFAULT 24");

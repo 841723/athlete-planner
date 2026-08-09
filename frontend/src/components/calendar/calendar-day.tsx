@@ -36,19 +36,30 @@ export function CalendarDay({ date, sessions, goal, primary, onClick, onDayClick
   const isToday = dateStr === format(new Date(), "yyyy-MM-dd");
   const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
   const background = getCellBackground(sessions);
+  const isPrimaryGoal = !!goal?.isPrimary;
+  const goalColor = goal?.color || "#C8102E";
 
   return (
     <div
       className={`min-h-[44px] sm:min-h-[80px] lg:min-h-[100px] p-1 sm:p-2 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
         isToday
-          ? "border-4 border-[#C8102E] ring-2 ring-[#C8102E]/30"
+          ? "border-4 ring-2"
+          : goal && isPrimaryGoal
+          ? "border-2"
           : goal
-          ? "border-2 border-[#C8102E]/60"
+          ? "border-2 border-accent/40"
           : isPast
           ? "border-2 border-dark-400"
           : "border-2 border-dark-400/50 hover:border-dark-400/80"
       } ${dimmed ? "opacity-30" : ""}`}
-      style={background}
+      style={{
+        ...background,
+        ...(isToday
+          ? { borderColor: goalColor, boxShadow: `0 0 0 3px ${goalColor}40` }
+          : goal && isPrimaryGoal
+          ? { borderColor: `${goalColor}99` }
+          : {}),
+      }}
       onClick={() => {
         if (sessions.length > 0) {
           if (sessions.length === 1) onClick(sessions[0]);
@@ -57,7 +68,7 @@ export function CalendarDay({ date, sessions, goal, primary, onClick, onDayClick
       }}
     >
       <div className="text-[10px] sm:text-xs font-medium text-gray-300 mb-0.5 sm:mb-1 flex items-center justify-between">
-        <span className={`${isToday ? "text-accent-light font-bold" : ""}`}>
+        <span className={`${isToday ? "font-bold" : ""}`}>
           <span className="hidden sm:inline">{format(date, "EEE")}</span>
           <span className="ml-0 sm:ml-1">
             {format(date, "d")}
@@ -65,7 +76,10 @@ export function CalendarDay({ date, sessions, goal, primary, onClick, onDayClick
         </span>
       </div>
       {goal && (
-        <div className="hidden sm:flex items-center gap-1 mb-1 px-1 py-0.5 rounded-md bg-[#C8102E] text-white text-[10px] font-semibold">
+        <div
+          className="hidden sm:flex items-center gap-1 mb-1 px-1 py-0.5 rounded-md text-white text-[10px] font-semibold"
+          style={{ backgroundColor: isPrimaryGoal ? goalColor : "#64748b" }}
+        >
           {primary ? <Star className="w-3 h-3 flex-shrink-0" /> : <Trophy className="w-3 h-3 flex-shrink-0" />}
           <span className="truncate">{goal.label}</span>
         </div>

@@ -51,6 +51,7 @@ const config: Config = {
         "scale-in": "scaleIn 0.2s ease-out",
         "pulse-slow": "pulse 3s ease-in-out infinite",
         "shimmer": "shimmer 2s infinite",
+        "flame": "flame 1.2s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -68,6 +69,10 @@ const config: Config = {
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        flame: {
+          "0%, 100%": { transform: "scale(1)", filter: "brightness(1)" },
+          "50%": { transform: "scale(1.12)", filter: "brightness(1.25)" },
         },
       },
     },

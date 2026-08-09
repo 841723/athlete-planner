@@ -178,6 +178,7 @@ export interface RaceGoal {
   date: string;
   targetPace?: string;
   url?: string;
+  color?: string;
   isPrimary?: boolean;
 }
 

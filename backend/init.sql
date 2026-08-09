@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS goals (
   date TEXT,
   target_pace TEXT,
   url TEXT,
+  color TEXT,
   is_primary INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_goals_tenant ON goals(tenant_id);
