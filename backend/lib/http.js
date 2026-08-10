@@ -136,3 +136,12 @@ export function requireRole(membership, roles) {
 
 export const canWrite = (m) => !!m && m.role !== "visitor";
 export const canManage = (m) => !!m && (m.role === "admin" || m.role === "athlete");
+
+export function requireSuperAdmin(user) {
+  if (!user?.is_superadmin) {
+    const err = new Error("No tienes permisos de administración");
+    err.status = 403;
+    throw err;
+  }
+  return user;
+}

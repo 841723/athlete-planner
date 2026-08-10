@@ -6,6 +6,32 @@ export const AUTH_COOKIE = "endurance_tok";
 export const TENANT_COOKIE = "endurance_tid";
 const SESSION_TTL_MS = 30 * 24 * 3600 * 1000;
 
+export function getAdminEmails() {
+  return (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function applyAdminFlag(user) {
+  if (user && getAdminEmails().includes(String(user.email).toLowerCase()) && !user.is_superadmin) {
+    getDb().prepare("UPDATE users SET is_superadmin = 1 WHERE id = ?").run(user.id);
+    user.is_superadmin = 1;
+  }
+  return user;
+}
+
+// Marca como superadmin a todos los usuarios cuyo email esté en ADMIN_EMAILS.
+// Se ejecuta al arrancar (migrate) para usuarios ya existentes.
+export function syncSuperAdmins() {
+  const emails = getAdminEmails();
+  if (emails.length === 0) return;
+  const update = getDb().prepare(
+    "UPDATE users SET is_superadmin = 1 WHERE email = ? AND is_superadmin = 0"
+  );
+  for (const email of emails) update.run(email);
+}
+
 export function getGoogleClientId() {
   return process.env.GOOGLE_CLIENT_ID ?? null;
 }
@@ -50,11 +76,11 @@ export function findOrCreateUser({ sub, email, name, picture }) {
   if (!user) {
     const id = randomUUID();
     db.prepare(
-      "INSERT INTO users (id, google_sub, email, name, picture, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (id, google_sub, email, name, picture, is_superadmin, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)"
     ).run(id, sub, email, name ?? null, picture ?? null, new Date().toISOString());
     user = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
   }
-  return user;
+  return applyAdminFlag(user);
 }
 
 export function createSessionToken(userId) {
@@ -78,7 +104,7 @@ export function getUserByToken(token) {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT s.user_id AS user_id, u.email, u.name, u.picture, u.google_sub
+      `SELECT s.user_id AS user_id, u.email, u.name, u.picture, u.google_sub, u.is_superadmin
        FROM auth_sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`
     )
@@ -95,6 +121,7 @@ export function getUserByToken(token) {
     name: row.name,
     picture: row.picture,
     google_sub: row.google_sub,
+    is_superadmin: Boolean(row.is_superadmin),
   };
 }
 
@@ -129,5 +156,6 @@ export function publicUser(user) {
     email: user.email,
     name: user.name,
     picture: user.picture,
+    isSuperAdmin: Boolean(user.is_superadmin),
   };
 }

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   name TEXT,
   picture TEXT,
+  is_superadmin INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 
@@ -252,3 +253,22 @@ CREATE TABLE IF NOT EXISTS sync_sources (
   PRIMARY KEY (tenant_id, provider)
 );
 CREATE INDEX IF NOT EXISTS idx_sync_sources_tenant ON sync_sources(tenant_id);
+
+-- Configuración global del sistema (una fila por clave).
+CREATE TABLE IF NOT EXISTS global_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- Catálogo global de modelos de opencode gestionado por el administrador.
+-- El precio guardado (si existe) sobreescribe el que expone la instancia.
+CREATE TABLE IF NOT EXISTS opencode_models (
+  model_id TEXT PRIMARY KEY,
+  name TEXT,
+  provider_id TEXT,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  input_price REAL,
+  output_price REAL,
+  updated_at TEXT NOT NULL
+);

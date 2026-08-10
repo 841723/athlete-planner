@@ -1,4 +1,7 @@
-import { getProvidersList, callAi } from "../lib/ai-provider.js";
+import { getProvidersList, getProviderById, callAi } from "../lib/ai-provider.js";
+import { listModels } from "../lib/opencode.js";
+import { mergeModelsWithCatalog } from "../lib/opencode-catalog.js";
+import { getOpencodeBaseUrl } from "../lib/global-settings.js";
 import {
   listAiConfigs,
   getAiConfigWithKey,
@@ -8,6 +11,51 @@ import {
   MAX_AI_CONFIGS,
 } from "../lib/ai-configs.js";
 import { sendJson, readBody } from "../lib/http.js";
+
+// Normaliza el payload de una config de IA. Para opencode la URL, el precio,
+// la moneda, la ventana y la API key son del sistema (no editables por el
+// tenant): se fuerzan los valores globales.
+function normalizeConfigBody(body, existing = null) {
+  const providerInfo = getProviderById(body?.provider);
+  if (!providerInfo) return { error: `Proveedor de IA no soportado: ${body?.provider}` };
+  const enabled = getProvidersList().find((p) => p.id === providerInfo.id);
+  if (!enabled) return { error: `El proveedor de IA "${providerInfo.id}" está deshabilitado por el administrador` };
+
+  if (providerInfo.id === "opencode") {
+    const model = body?.model;
+    if (!model || typeof model !== "string") return { error: "Selecciona un modelo de opencode" };
+    return {
+      payload: {
+        name: body.name.trim(),
+        provider: "opencode",
+        apiKey: "",
+        model,
+        baseUrl: getOpencodeBaseUrl(),
+        currency: "EUR",
+        chatDurationHours: 24,
+        pricing: null,
+        isDefault: !!body.isDefault,
+      },
+    };
+  }
+
+  if (providerInfo.needsApiKey && !body?.apiKey && !existing?.api_key) {
+    return { error: "Falta la API key para este proveedor" };
+  }
+  return {
+    payload: {
+      name: body.name.trim(),
+      provider: providerInfo.id,
+      apiKey: body?.apiKey ?? "",
+      model: body?.model ?? null,
+      baseUrl: body?.baseUrl ?? null,
+      currency: body?.currency,
+      chatDurationHours: body?.chatDurationHours,
+      pricing: body?.pricing ?? null,
+      isDefault: !!body?.isDefault,
+    },
+  };
+}
 
 export function register(router) {
   router.get("/api/ai-configs", (c) => {
@@ -21,6 +69,20 @@ export function register(router) {
     });
   });
 
+  router.get("/api/ai-configs/models", async (c) => {
+    if (c.membership?.role !== "athlete") {
+      return sendJson(c.res, 403, { error: "Solo el atleta puede configurar la IA" });
+    }
+    try {
+      const baseUrl = getOpencodeBaseUrl();
+      const models = await listModels(baseUrl);
+      const merged = mergeModelsWithCatalog(models);
+      return sendJson(c.res, 200, { provider: "opencode", models: merged });
+    } catch (err) {
+      return sendJson(c.res, 200, { provider: "opencode", models: [], error: err.message });
+    }
+  });
+
   router.post("/api/ai-configs", async (c) => {
     if (c.membership?.role !== "athlete") {
       return sendJson(c.res, 403, { error: "Solo el atleta puede configurar la IA" });
@@ -29,24 +91,11 @@ export function register(router) {
     if (!body?.provider) return sendJson(c.res, 400, { error: "Falta provider" });
     if (!body?.name?.trim()) return sendJson(c.res, 400, { error: "Falta name" });
 
-    const providerInfo = getProvidersList().find((p) => p.id === body.provider);
-    if (!providerInfo) return sendJson(c.res, 400, { error: `Proveedor de IA no soportado: ${body.provider}` });
-    if (providerInfo.needsApiKey && !body?.apiKey) {
-      return sendJson(c.res, 400, { error: "Falta la API key para este proveedor" });
-    }
+    const { payload, error } = normalizeConfigBody(body);
+    if (error) return sendJson(c.res, 400, { error });
 
     try {
-      const id = saveAiConfig(c.tenantId, {
-        name: body.name.trim(),
-        provider: body.provider,
-        apiKey: body.apiKey ?? "",
-        model: body.model ?? null,
-        baseUrl: body.baseUrl ?? null,
-        currency: body.currency,
-        chatDurationHours: body.chatDurationHours,
-        pricing: body.pricing,
-        isDefault: !!body.isDefault,
-      });
+      const id = saveAiConfig(c.tenantId, payload);
       return sendJson(c.res, 201, { id });
     } catch (err) {
       return sendJson(c.res, 400, { error: err.message });
@@ -61,27 +110,14 @@ export function register(router) {
     if (!body?.provider) return sendJson(c.res, 400, { error: "Falta provider" });
     if (!body?.name?.trim()) return sendJson(c.res, 400, { error: "Falta name" });
 
-    const providerInfo = getProvidersList().find((p) => p.id === body.provider);
-    if (!providerInfo) return sendJson(c.res, 400, { error: `Proveedor de IA no soportado: ${body.provider}` });
     const existing = getAiConfigWithKey(c.tenantId, c.params.id);
     if (!existing) return sendJson(c.res, 404, { error: "Configuración de IA no encontrada" });
-    if (providerInfo.needsApiKey && !body?.apiKey && !existing.api_key) {
-      return sendJson(c.res, 400, { error: "Falta la API key para este proveedor" });
-    }
+
+    const { payload, error } = normalizeConfigBody(body, existing);
+    if (error) return sendJson(c.res, 400, { error });
 
     try {
-      saveAiConfig(c.tenantId, {
-        id: c.params.id,
-        name: body.name.trim(),
-        provider: body.provider,
-        apiKey: body.apiKey ?? "",
-        model: body.model ?? null,
-        baseUrl: body.baseUrl ?? null,
-        currency: body.currency,
-        chatDurationHours: body.chatDurationHours,
-        pricing: body.pricing,
-        isDefault: !!body.isDefault,
-      });
+      saveAiConfig(c.tenantId, { id: c.params.id, ...payload });
       return sendJson(c.res, 200, { ok: true });
     } catch (err) {
       return sendJson(c.res, 400, { error: err.message });

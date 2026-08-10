@@ -14,13 +14,9 @@ ENV PATH="/root/.local/bin:${PATH}"
 ENV UV_CACHE_DIR="/root/.cache/uv"
 
 # Backend dependencies (plain Node, no build)
+COPY backend/package.json backend/package-lock.json backend/
+RUN --mount=type=cache,target=/root/.npm npm ci --prefix backend
 COPY backend/ backend/
-
-# Frontend: install and build
-COPY frontend/package.json frontend/package-lock.json* frontend/
-RUN --mount=type=cache,target=/root/.npm npm install --prefix frontend
-
-COPY frontend/ frontend/
 
 # Scripts (needed by sync commands)
 COPY scripts/ scripts/
@@ -31,7 +27,6 @@ COPY data/trainer-system-prompt.txt data/athlete-profile.example.json data/
 # Sessions data (legacy, used by the one-time migration to the DB)
 COPY sessions/ sessions/
 
-EXPOSE 3000
+EXPOSE 4000
 
-# Run backend (--watch auto-restarts on file changes) + frontend dev server (HMR)
-CMD ["sh", "-c", "node --watch backend/server.js --port 4000 & npm --prefix frontend run dev -- --host 0.0.0.0"]
+CMD ["node", "backend/server.js", "--port", "4000"]

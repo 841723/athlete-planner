@@ -371,6 +371,11 @@ export interface AiProviderPricing {
   output_per_mtok?: number;
 }
 
+// Para la mayoría de proveedores pricing[providerId] es {input/output}. Para
+// opencode es pricing.opencode[modelId] = {input/output} (override por modelo;
+// los precios del API se mantienen salvo que se sobreescriban aquí).
+export type AiPricingValue = AiProviderPricing | Record<string, AiProviderPricing>;
+
 export interface AiConfig {
   id: string;
   name: string;
@@ -380,7 +385,7 @@ export interface AiConfig {
   currency: string;
   chat_duration_hours: number;
   chatDurationLabel?: string;
-  pricing?: Record<string, AiProviderPricing> | null;
+  pricing?: Record<string, AiPricingValue> | null;
   is_default: boolean;
 }
 
@@ -393,12 +398,12 @@ export interface AiConfigsResponse {
 export interface AiConfigPayload {
   name: string;
   provider: string;
-  apiKey: string;
+  apiKey?: string;
   model?: string | null;
   baseUrl?: string | null;
   currency?: string;
   chatDurationHours?: number;
-  pricing?: Record<string, AiProviderPricing>;
+  pricing?: Record<string, AiPricingValue>;
   isDefault?: boolean;
 }
 
@@ -409,12 +414,58 @@ export interface AiSettings {
   currency?: string;
   chat_duration_hours?: number | null;
   chatDurationLabel?: string;
-  pricing?: Record<string, AiProviderPricing> | null;
+  pricing?: Record<string, AiPricingValue> | null;
   providers?: AiProviderInfo[];
 }
 
 export interface AiSettingsFull extends AiSettings {
   apiKey: string;
+}
+
+export interface OpencodeModelInfo {
+  id: string;
+  providerID: string;
+  name: string;
+  enabled: boolean;
+  input_per_mtok?: number | null;
+  output_per_mtok?: number | null;
+  overridden?: boolean;
+}
+
+export interface AdminProviderInfo extends AiProviderInfo {
+  enabled: boolean;
+}
+
+export interface AdminSettings {
+  enabledProviders: string[];
+  opencodeBaseUrl: string;
+  providers: AdminProviderInfo[];
+}
+
+export interface AdminOpencodeModelsResponse {
+  baseUrl: string;
+  models: OpencodeModelInfo[];
+  error?: string;
+}
+
+export interface AdminTenant {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  ownerEmail: string | null;
+  ownerName: string | null;
+  membersCount: number;
+  completedCount: number;
+  plannedCount: number;
+}
+
+export interface AdminTenantPayload {
+  name: string;
+  ownerEmail: string;
+  slug?: string;
+  minDate?: string;
+  profile?: Record<string, unknown>;
 }
 
 export interface ApiKey {

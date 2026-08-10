@@ -2,6 +2,15 @@ import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 
 const ASSIGNABLE_ROLES = new Set(["admin", "visitor"]);
+const ALL_ROLES = new Set(["athlete", "admin", "visitor"]);
+
+function validateRole(role, allowed = ASSIGNABLE_ROLES) {
+  if (!allowed.has(role)) {
+    const err = new Error(`Rol inválido (${[...allowed].join(", ")})`);
+    err.status = 400;
+    throw err;
+  }
+}
 
 export function listMembers(tenantId) {
   return getDb()
@@ -19,17 +28,13 @@ export function listMembers(tenantId) {
     }));
 }
 
-export function addMember(tenantId, { email, role }) {
+export function addMember(tenantId, { email, role }, allowedRoles = ASSIGNABLE_ROLES) {
   if (!email || typeof email !== "string" || !email.includes("@")) {
     const err = new Error("Email inválido");
     err.status = 400;
     throw err;
   }
-  if (!ASSIGNABLE_ROLES.has(role)) {
-    const err = new Error("Rol inválido (solo admin o visitor)");
-    err.status = 400;
-    throw err;
-  }
+  validateRole(role, allowedRoles);
   const db = getDb();
   let user = db.prepare("SELECT * FROM users WHERE email = ?").get(email.toLowerCase());
   if (!user) {
@@ -67,12 +72,8 @@ export function renameTenant(tenantId, name) {
   return db.prepare("SELECT id, name, slug FROM tenants WHERE id = ?").get(tenantId);
 }
 
-export function updateMemberRole(tenantId, userId, role) {
-  if (!ASSIGNABLE_ROLES.has(role)) {
-    const err = new Error("Rol inválido (solo admin o visitor)");
-    err.status = 400;
-    throw err;
-  }
+export function updateMemberRole(tenantId, userId, role, allowedRoles = ASSIGNABLE_ROLES) {
+  validateRole(role, allowedRoles);
   const db = getDb();
   const member = db
     .prepare("SELECT * FROM tenant_members WHERE tenant_id = ? AND user_id = ?")

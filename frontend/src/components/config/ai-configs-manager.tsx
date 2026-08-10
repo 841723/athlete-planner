@@ -12,11 +12,11 @@ import {
   Pencil,
   TestTube2,
 } from "lucide-react";
-import { useAiConfigs, useAiConfigsMutations } from "@/hooks/use-ai-configs";
+import { useAiConfigs, useAiConfigsMutations, useOpencodeModels } from "@/hooks/use-ai-configs";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AiConfig, AiProviderInfo, AiProviderPricing } from "@/types/session";
+import type { AiConfig, AiProviderInfo, AiProviderPricing, AiPricingValue, OpencodeModelInfo } from "@/types/session";
 
 const FALLBACK_PROVIDERS: AiProviderInfo[] = [{ id: "gemini", name: "Google Gemini", needsApiKey: true }];
 
@@ -36,7 +36,7 @@ type FormState = {
   baseUrl: string;
   currency: string;
   chatDuration: string;
-  pricing: Record<string, AiProviderPricing>;
+  pricing: Record<string, AiPricingValue>;
 };
 
 const EMPTY_FORM: FormState = {
@@ -79,6 +79,7 @@ export function AiConfigsManager() {
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   function patch(p: Partial<FormState>) {
     setForm((f) => ({ ...f, ...p }));
@@ -95,6 +96,17 @@ export function AiConfigsManager() {
   }
 
   const selectedProvider = providers.find((p) => p.id === form.provider);
+  const isOpencode = form.provider === "opencode";
+
+  const modelsQuery = useOpencodeModels({ enabled: isOpencode });
+  const opencodeModels: OpencodeModelInfo[] = (modelsQuery.data?.models ?? []).filter(
+    (m) => m.enabled !== false
+  );
+  const modelsError = modelsQuery.data?.error;
+  const selectedOpencodeModel = opencodeModels.find((m) => m.id === form.model) ?? null;
+  const genericPricing = !isOpencode
+    ? (form.pricing[selectedProvider?.id ?? ""] as AiProviderPricing | undefined)
+    : undefined;
 
   function handleProviderChange(providerId: string) {
     const p = providers.find((x) => x.id === providerId);
@@ -103,14 +115,19 @@ export function AiConfigsManager() {
       if (p?.defaultPricing && !pricing[providerId]) {
         pricing[providerId] = { ...p.defaultPricing };
       }
-      return { ...f, provider: providerId, pricing };
+      return {
+        ...f,
+        provider: providerId,
+        pricing,
+        model: f.model && f.provider === providerId ? f.model : "",
+      };
     });
   }
 
   function startNew() {
     resetForm();
     const p = providers[0];
-    const pricing: Record<string, AiProviderPricing> = {};
+    const pricing: Record<string, AiPricingValue> = {};
     if (p?.defaultPricing) pricing[p.id] = { ...p.defaultPricing };
     setForm({ ...EMPTY_FORM, provider: p?.id ?? "gemini", pricing });
   }
@@ -120,16 +137,26 @@ export function AiConfigsManager() {
       toast({ type: "error", title: "Introduce un nombre para la configuración" });
       return;
     }
-    const payload = {
-      name: form.name.trim(),
-      provider: form.provider,
-      apiKey: form.apiKey,
-      model: form.model || null,
-      baseUrl: form.baseUrl || null,
-      currency: form.currency.trim() || "EUR",
-      chatDurationHours: form.chatDuration === "0" ? 0 : Number(form.chatDuration),
-      pricing: form.pricing,
-    };
+    if (isOpencode && !form.model.trim()) {
+      toast({ type: "error", title: "Selecciona un modelo de opencode" });
+      return;
+    }
+    const payload = isOpencode
+      ? {
+          name: form.name.trim(),
+          provider: "opencode",
+          model: form.model,
+        }
+      : {
+          name: form.name.trim(),
+          provider: form.provider,
+          apiKey: form.apiKey,
+          model: form.model || null,
+          baseUrl: form.baseUrl || null,
+          currency: form.currency.trim() || "EUR",
+          chatDurationHours: form.chatDuration === "0" ? 0 : Number(form.chatDuration),
+          pricing: form.pricing,
+        };
     const options = {
       onSuccess: () => {
         toast({ type: "success", title: editingId ? "Configuración actualizada" : "Configuración creada" });
@@ -146,7 +173,9 @@ export function AiConfigsManager() {
   }
 
   function handleTest(c: AiConfig) {
+    setTestingId(c.id);
     mutations.test.mutate(c.id, {
+      onSettled: () => setTestingId(null),
       onSuccess: () => toast({ type: "success", title: "Conexión correcta" }),
       onError: (err: Error) =>
         toast({ type: "error", title: "Error de conexión", description: err.message }),
@@ -155,17 +184,16 @@ export function AiConfigsManager() {
 
   function patchPricing(providerId: string, field: "input_per_mtok" | "output_per_mtok", value: string) {
     const num = value === "" ? undefined : Number(value);
-    setForm((f) => ({
-      ...f,
-      pricing: {
-        ...f.pricing,
-        [providerId]: { ...(f.pricing[providerId] ?? {}), [field]: num },
-      },
-    }));
+    setForm((f) => {
+      const current = (f.pricing[providerId] ?? {}) as AiProviderPricing;
+      return {
+        ...f,
+        pricing: { ...f.pricing, [providerId]: { ...current, [field]: num } },
+      };
+    });
   }
 
-  const saveDisabled =
-    mutations.create.isPending || mutations.update.isPending || !form.name.trim();
+  const saveDisabled = mutations.create.isPending || mutations.update.isPending;
 
   return (
     <div className="space-y-4">
@@ -174,7 +202,7 @@ export function AiConfigsManager() {
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
             <Brain className="w-4 h-4" /> Configuraciones de IA
           </h2>
-          {!editingId && (
+          {/* {!editingId && (
             <Button
               variant="ghost"
               className="text-xs"
@@ -182,7 +210,7 @@ export function AiConfigsManager() {
             >
               <Plus className="w-3.5 h-3.5" /> Nueva configuración
             </Button>
-          )}
+          )} */}
         </div>
         <p className="text-xs text-gray-500 mb-3">
           Define una o varias configuraciones (proveedor, modelo y costes) y elige cuál es la
@@ -220,7 +248,7 @@ export function AiConfigsManager() {
                       onClick={() => handleTest(c)}
                       disabled={mutations.test.isPending}
                     >
-                      {mutations.test.isPending ? (
+                      {testingId === c.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <TestTube2 className="w-3.5 h-3.5" />
@@ -297,15 +325,50 @@ export function AiConfigsManager() {
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1">Modelo</label>
-              <input
-                type="text"
-                className="input w-full"
-                value={form.model}
-                onChange={(e) => patch({ model: e.target.value })}
-                placeholder={selectedProvider?.defaultModel ?? "Modelo del proveedor"}
-              />
+              {isOpencode ? (
+                <select
+                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                  value={form.model}
+                  onChange={(e) => patch({ model: e.target.value })}
+                  disabled={modelsQuery.isLoading}
+                >
+                  <option value="">
+                    {modelsQuery.isLoading ? "Cargando modelos…" : "Selecciona un modelo…"}
+                  </option>
+                  {opencodeModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  className="input w-full"
+                  value={form.model}
+                  onChange={(e) => patch({ model: e.target.value })}
+                  placeholder={selectedProvider?.defaultModel ?? "Modelo del proveedor"}
+                />
+              )}
             </div>
           </div>
+          {isOpencode && (
+            <div>
+              {modelsError ? (
+                <p className="text-xs text-red-400">
+                  No se pudieron cargar los modelos desde opencode: {modelsError}
+                </p>
+              ) : !modelsQuery.isLoading && opencodeModels.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  La instancia de opencode no expone modelos habilitados.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500">
+                  Modelos servidos por la instancia de opencode (solo se listan los habilitados).
+                </p>
+              )}
+            </div>
+          )}
           {selectedProvider?.needsApiKey !== false && (
             <div>
               <label className="text-xs text-gray-400 block mb-1">API Key</label>
@@ -320,92 +383,138 @@ export function AiConfigsManager() {
           )}
           {selectedProvider?.needsApiKey === false && (
             <p className="text-xs text-gray-500">
-              El proveedor mock no necesita API key: genera respuestas simuladas para probar sin coste.
+              {isOpencode
+                ? "OpenCode se conecta a la instancia local del sistema. No necesita API key y el modelo, la URL y el precio los gestiona el administrador."
+                : "El proveedor mock no necesita API key: genera respuestas simuladas para probar sin coste."}
             </p>
           )}
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Base URL (opcional)</label>
-            <input
-              type="text"
-              className="input w-full"
-              value={form.baseUrl}
-              onChange={(e) => patch({ baseUrl: e.target.value })}
-              placeholder="https://… (endpoint base del proveedor)"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {!isOpencode && (
             <div>
-              <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Ventana de chat
-              </label>
-              <select
-                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
-                value={form.chatDuration}
-                onChange={(e) => patch({ chatDuration: e.target.value })}
-              >
-                {CHAT_DURATION_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
-                <Wallet className="w-3 h-3" /> Moneda
-              </label>
+              <label className="text-xs text-gray-400 block mb-1">Base URL (opcional)</label>
               <input
                 type="text"
-                className="input w-full uppercase"
-                value={form.currency}
-                onChange={(e) => patch({ currency: e.target.value })}
-                placeholder="EUR"
-                maxLength={3}
+                className="input w-full"
+                value={form.baseUrl}
+                onChange={(e) => patch({ baseUrl: e.target.value })}
+                placeholder="https://… (endpoint base del proveedor)"
               />
             </div>
-          </div>
+          )}
+
+          {!isOpencode && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Ventana de chat
+                </label>
+                <select
+                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
+                  value={form.chatDuration}
+                  onChange={(e) => patch({ chatDuration: e.target.value })}
+                >
+                  {CHAT_DURATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                  <Wallet className="w-3 h-3" /> Moneda
+                </label>
+                <input
+                  type="text"
+                  className="input w-full uppercase"
+                  value={form.currency}
+                  onChange={(e) => patch({ currency: e.target.value })}
+                  placeholder="EUR"
+                  maxLength={3}
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-xs text-gray-400 block mb-1">
               Precio por millón de tokens (entrada/salida) · {selectedProvider?.name}
             </label>
-            <div className="space-y-2">
-              {selectedProvider ? (
-                <div key={selectedProvider.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center">
-                  <span className="text-sm text-gray-300">{selectedProvider.name}</span>
-                  <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
-                    <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      className="input w-full py-1.5 text-sm"
-                      value={form.pricing[selectedProvider.id]?.input_per_mtok ?? ""}
-                      placeholder={selectedProvider.defaultPricing?.input_per_mtok != null ? String(selectedProvider.defaultPricing.input_per_mtok) : "0.10"}
-                      onChange={(e) => patchPricing(selectedProvider.id, "input_per_mtok", e.target.value)}
-                    />
+            {isOpencode ? (
+              <div className="space-y-2">
+                {selectedOpencodeModel ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center rounded-xl bg-dark-300/40 border border-dark-400 px-3 py-2">
+                    <span className="text-sm text-gray-300">
+                      {selectedOpencodeModel.name}{" "}
+                      <span className="text-gray-500">· {selectedOpencodeModel.providerID}</span>
+                    </span>
+                    <div>
+                      <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
+                      <div className="text-sm font-medium text-gray-200">
+                        {selectedOpencodeModel.input_per_mtok != null
+                          ? `${selectedOpencodeModel.input_per_mtok.toLocaleString("es")}`
+                          : "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 block mb-0.5">Salida / Mtok</label>
+                      <div className="text-sm font-medium text-gray-200">
+                        {selectedOpencodeModel.output_per_mtok != null
+                          ? `${selectedOpencodeModel.output_per_mtok.toLocaleString("es")}`
+                          : "—"}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] text-gray-500 block mb-0.5">Salida / Mtok</label>
-                    <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      className="input w-full py-1.5 text-sm"
-                      value={form.pricing[selectedProvider.id]?.output_per_mtok ?? ""}
-                      placeholder={selectedProvider.defaultPricing?.output_per_mtok != null ? String(selectedProvider.defaultPricing.output_per_mtok) : "0.40"}
-                      onChange={(e) => patchPricing(selectedProvider.id, "output_per_mtok", e.target.value)}
-                    />
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    {modelsQuery.isLoading
+                      ? "Cargando modelos…"
+                      : modelsError
+                        ? `No se pudieron cargar los modelos: ${modelsError}`
+                        : "Selecciona un modelo para ver su precio."}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  El precio lo fija el administrador del sistema y no se puede modificar aquí.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedProvider ? (
+                  <div key={selectedProvider.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center">
+                    <span className="text-sm text-gray-300">{selectedProvider.name}</span>
+                    <div>
+                      <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        className="input w-full py-1.5 text-sm"
+                        value={genericPricing?.input_per_mtok ?? ""}
+                        placeholder={selectedProvider.defaultPricing?.input_per_mtok != null ? String(selectedProvider.defaultPricing.input_per_mtok) : "0.10"}
+                        onChange={(e) => patchPricing(selectedProvider.id, "input_per_mtok", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 block mb-0.5">Salida / Mtok</label>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        className="input w-full py-1.5 text-sm"
+                        value={genericPricing?.output_per_mtok ?? ""}
+                        placeholder={selectedProvider.defaultPricing?.output_per_mtok != null ? String(selectedProvider.defaultPricing.output_per_mtok) : "0.40"}
+                        onChange={(e) => patchPricing(selectedProvider.id, "output_per_mtok", e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Selecciona un proveedor para configurar su precio.</p>
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Precio fijo precargado para el proveedor; puedes cambiarlo por configuración. El coste se calcula sobre los tokens usados.
-            </p>
+                ) : (
+                  <p className="text-sm text-gray-500">Selecciona un proveedor para configurar su precio.</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Precio fijo precargado para el proveedor; puedes cambiarlo por configuración. El coste se calcula sobre los tokens usados.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

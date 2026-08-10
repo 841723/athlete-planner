@@ -31,6 +31,7 @@ export function getDb() {
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(loadInitSql());
+  ensureColumn("users", "is_superadmin", "is_superadmin INTEGER NOT NULL DEFAULT 0");
   ensureColumn("goals", "url", "url TEXT");
   ensureColumn("goals", "is_primary", "is_primary INTEGER NOT NULL DEFAULT 0");
   ensureColumn("goals", "color", "color TEXT");

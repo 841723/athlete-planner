@@ -15,6 +15,10 @@ import { PromptsTab } from "@/components/config/prompts-tab";
 import { EquipmentTab } from "@/components/config/equipment-tab";
 import { AccessTab } from "@/components/config/access-tab";
 import { SyncTab } from "@/components/config/sync-tab";
+import { AdminLayout } from "@/components/admin/admin-layout";
+import { AdminProviders } from "@/components/admin/admin-providers";
+import { AdminModels } from "@/components/admin/admin-models";
+import { AdminTenants } from "@/components/admin/admin-tenants";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
 import { usePlanGenerationWatcher } from "@/hooks/use-plan-generation-watcher";
@@ -47,6 +51,12 @@ function App() {
             <Route path="access" element={<AccessTab />} />
             <Route path="sync" element={<SyncTab />} />
           </Route>
+        </Route>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="providers" replace />} />
+          <Route path="providers" element={<AdminProviders />} />
+          <Route path="models" element={<AdminModels />} />
+          <Route path="tenants" element={<AdminTenants />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

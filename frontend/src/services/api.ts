@@ -15,6 +15,11 @@ import type {
   AiSettings,
   AiConfigsResponse,
   AiConfigPayload,
+  OpencodeModelInfo,
+  AdminSettings,
+  AdminOpencodeModelsResponse,
+  AdminTenant,
+  AdminTenantPayload,
   ActivityTrack,
   ApiKey,
   AiLogsPage,
@@ -216,6 +221,78 @@ export function removeMember(tenantId: string, userId: string): Promise<void> {
   return send(`/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(userId)}`, "DELETE");
 }
 
+// --- Administración global (superadmin) ---
+
+export function fetchAdminSettings(): Promise<AdminSettings> {
+  return get("/admin/settings");
+}
+
+export function updateAdminSettings(payload: {
+  enabledProviders?: string[];
+  opencodeBaseUrl?: string;
+}): Promise<AdminSettings> {
+  return send("/admin/settings", "PUT", payload);
+}
+
+export function fetchAdminOpencodeModels(): Promise<AdminOpencodeModelsResponse> {
+  return get("/admin/opencode/models");
+}
+
+export function updateAdminOpencodeModel(
+  modelId: string,
+  payload: {
+    name?: string;
+    providerId?: string;
+    enabled: boolean;
+    inputPrice?: number | null;
+    outputPrice?: number | null;
+  }
+): Promise<{ ok: boolean }> {
+  return send(`/admin/opencode/models/${encodeURIComponent(modelId)}`, "PUT", payload);
+}
+
+export function fetchAdminTenants(): Promise<AdminTenant[]> {
+  return get("/admin/tenants");
+}
+
+export function createAdminTenant(payload: AdminTenantPayload): Promise<AdminTenant> {
+  return send("/admin/tenants", "POST", payload);
+}
+
+export function adminRenameTenant(tenantId: string, name: string): Promise<{ name: string }> {
+  return send(`/admin/tenants/${encodeURIComponent(tenantId)}/name`, "PUT", { name });
+}
+
+export function fetchAdminTenantMembers(tenantId: string): Promise<Member[]> {
+  return get(`/admin/tenants/${encodeURIComponent(tenantId)}/members`);
+}
+
+export function adminAddMember(
+  tenantId: string,
+  payload: { email: string; role: TenantRole }
+): Promise<Member> {
+  return send(`/admin/tenants/${encodeURIComponent(tenantId)}/members`, "POST", payload);
+}
+
+export function adminUpdateMemberRole(
+  tenantId: string,
+  userId: string,
+  role: TenantRole
+): Promise<{ ok: boolean }> {
+  return send(
+    `/admin/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(userId)}`,
+    "PUT",
+    { role }
+  );
+}
+
+export function adminRemoveMember(tenantId: string, userId: string): Promise<void> {
+  return send(
+    `/admin/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(userId)}`,
+    "DELETE"
+  );
+}
+
 export function fetchAiSettings(): Promise<AiSettings> {
   return get("/ai-settings");
 }
@@ -261,6 +338,20 @@ export function setDefaultAiConfig(configId: string): Promise<{ ok: boolean }> {
 
 export function testAiConfig(configId: string): Promise<{ ok: boolean }> {
   return send(`/ai-configs/${encodeURIComponent(configId)}/test`, "POST");
+}
+
+export interface OpencodeModelsResponse {
+  provider: string;
+  models: OpencodeModelInfo[];
+  error?: string;
+}
+
+export function fetchOpencodeModels(opts?: { configId?: string; baseUrl?: string }): Promise<OpencodeModelsResponse> {
+  const params = new URLSearchParams();
+  if (opts?.configId) params.set("configId", opts.configId);
+  if (opts?.baseUrl) params.set("baseUrl", opts.baseUrl);
+  const qs = params.toString();
+  return get(`/ai-configs/models${qs ? `?${qs}` : ""}`);
 }
 
 export function fetchApiKeys(): Promise<ApiKey[]> {

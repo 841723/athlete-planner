@@ -27,6 +27,7 @@ con Google OAuth y roles.
    ```sh
    GOOGLE_CLIENT_ID=<tu-oauth-client-id>
    DEFAULT_OWNER_EMAIL=<tu-email-de-google>
+   ADMIN_EMAILS=<email-superadmin>          # opcional
    PORT=4000
    MIN_DATE=2026-05-12
    ```
@@ -34,6 +35,10 @@ con Google OAuth y roles.
    `DEFAULT_OWNER_EMAIL` es quien se convierte en `athlete` (owner) del tenant
    migrado `default`. **Sin él, el tenant default queda sin miembros y nadie
    puede acceder a los datos migrados.**
+
+   `ADMIN_EMAILS` (opcional, lista separada por comas) marca a esos usuarios
+   como **superadministradores** del sistema (panel `/admin`): al arrancar el
+   backend se sincroniza el flag `is_superadmin` de la tabla `users`.
 
 3. Autentica con Garmin (te pedirá email, contraseña y código MFA si lo tienes
    activado; guarda los tokens en `~/.garminconnect`):
@@ -73,6 +78,23 @@ con Google OAuth y roles.
 - Los miembros se gestionan desde la página **Configuración** (`admin`/`athlete`),
   que además permite renombrar el tenant, editar el perfil del atleta en JSON y
   los próximos objetivos.
+
+### Panel de administración (`/admin`)
+
+Solo visible para usuarios con `is_superadmin` (env `ADMIN_EMAILS`; el backend
+recomprueba el flag de la BD en cada petición, nunca confía en el cliente).
+Permite, de forma global:
+
+- **Proveedores**: habilitar/deshabilitar proveedores de IA (gemini, opencode,
+  mock) y fijar la URL base de la instancia de opencode. Un proveedor
+  deshabilitado se rechaza en `callAi`/`callAiChat` y no aparece en la UI.
+- **Modelos opencode**: catálogo global (nombre, proveedor, precio input/output
+  y habilitado). Es la **única fuente** de precios y disponibilidad para todos
+  los tenants; los modelos no incluidos quedan deshabilitados. El tenant ya no
+  edita precios de opencode.
+- **Tenants**: listar/crear tenants (nombre, owner y slug opcionales), renombrar
+  y gestionar miembros (añadir, cambiar rol, eliminar), con las mismas reglas
+  que en el tenant (el owner es intocable).
 
 ### Crear un nuevo atleta
 
@@ -117,47 +139,47 @@ El cambio de tenant y el acceso a Configuración están en el menú del usuario
 
 ## Docker
 
+Se levantan **4 contenedores separados**: `database` (propietario del directorio
+SQLite), `opencode` (instancia local de IA, `opencode serve`), `backend`
+(Node 24 + uv) y `frontend` (Vite en dev; nginx + estático en producción).
+
 ### Desarrollo
 
 ```sh
 docker compose up --build
 ```
 
-Arranca backend (Node 24 + uv) y frontend (Vite HMR). Requiere el `.env`
-configurado. Los tokens de Garmin se guardan en el volumen `garmin_tokens`
-(la primera vez hay que autenticarse dentro del contenedor):
+- `frontend` en `http://localhost:3000` (Vite HMR; proxya `/api` al backend).
+- `backend` en `http://localhost:4000`.
+- `opencode` expuesto en `http://localhost:4096` (el backend usa
+  `OPENCODE_BASE_URL=http://opencode:4096` dentro de la red de compose).
+- `database` monta `./data` del host, así que la BD (`data/endurance.db`) es la
+  misma que usan los scripts locales (`uv run ...`, `node --input-type=module`).
 
-```sh
-docker compose exec app uvx garmin-connect-mcp auth
-```
+Requiere el `.env` configurado (ver arriba).
 
 ### Producción
 
-El despliegue usa un único contenedor que sirve el frontend compilado y la API
-desde el mismo puerto (`Dockerfile.prod` + `docker-compose.prod.yml`). El
-frontend usa URLs relativas (`/api`), así que todo funciona bajo un único
-dominio sin configurar ninguna URL de endpoint.
+El despliegue usa un contenedor `frontend` con nginx que sirve el compilado y
+proxya `/api` al backend (mismo origen, URLs relativas) y un volumen `db_data`
+para la BD.
 
 ```sh
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Mapea el puerto `13799` (host) al `4000` (contenedor). Pasos para exponerlo a
-internet tras levantar el contenedor:
+Mapea el puerto `13799` (host) al `80` (nginx). Pasos para exponerlo a internet
+tras levantar el contenedor:
 
 1. **`.env` en el servidor**: copia el fichero `.env` (está en `.gitignore`).
-   Revisa `GOOGLE_CLIENT_ID`, `DEFAULT_OWNER_EMAIL` y `MIN_DATE`.
+   Revisa `GOOGLE_CLIENT_ID`, `DEFAULT_OWNER_EMAIL`, `ADMIN_EMAILS` y `MIN_DATE`.
 2. **Google OAuth**: en Google Cloud Console → Credenciales → tu OAuth Client,
    añade `https://<tu-subdominio>` en **Authorized JavaScript origins** (el
    login usa el flujo de `credential`, no hace falta redirect URI).
 3. **Túnel de Cloudflare**: apunta un túnel (cloudflared) al puerto
    `http://localhost:13799`. El backend no gestiona TLS; la termina Cloudflare.
-4. **Garmin (opcional)**: si reactivas el botón de sincronizar, autentica
-   dentro del contenedor para guardar los tokens en el volumen:
-
-   ```sh
-   docker compose -f docker-compose.prod.yml exec app uvx garmin-connect-mcp auth
-   ```
+4. **Garmin (opcional)**: la conexión se gestiona desde Configuración →
+   Sincronización (los tokens se guardan en la BD del tenant, no en ficheros).
 
 ## Estructura
 

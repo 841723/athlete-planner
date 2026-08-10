@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, ChartBar, ClipboardList, Home, Menu, X, Trophy } from "lucide-react";
+import { Calendar, ChartBar, ClipboardList, Home, Menu, Settings2, X, Trophy } from "lucide-react";
 import { useState } from "react";
 import { UserMenu } from "./user-menu";
 import { useAuth } from "@/components/auth/auth-context";
@@ -16,12 +16,13 @@ const baseNavItems = [
 export function Header() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { activeTenantId } = useAuth();
+  const { activeTenantId, user } = useAuth();
 
   const navItems = baseNavItems.map((item) => ({
     ...item,
     path: tenantPath(activeTenantId, item.path),
   }));
+  const showAdmin = !!user?.isSuperAdmin;
 
   return (
     <>
@@ -59,6 +60,19 @@ export function Header() {
                 </Link>
               );
             })}
+            {showAdmin && (
+              <Link
+                to="/admin"
+                className={`btn px-3 py-1.5 text-sm ${
+                  location.pathname.startsWith("/admin")
+                    ? "bg-accent/20 text-accent-light"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-dark-300"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+                <span className="hidden lg:inline">Admin</span>
+              </Link>
+            )}
           </nav>
           <UserMenu />
         </div>
@@ -89,6 +103,20 @@ export function Header() {
                 </Link>
               );
             })}
+            {showAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
+                  location.pathname.startsWith("/admin")
+                    ? "bg-accent/20 text-accent-light"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-dark-300"
+                }`}
+              >
+                <Settings2 className="w-5 h-5" />
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
       )}

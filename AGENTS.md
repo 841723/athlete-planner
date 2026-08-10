@@ -213,10 +213,14 @@ que las completadas, con campos opcionales adicionales:
   (`createRouter` con `get/post/put/delete` y parámetros `:id`).
 - **Proveedores de IA**: `backend/lib/ai-provider.js` abstrae gemini/openai/
   anthropic/openai_compatible (endpoint, header de auth, body y extracción por
-  proveedor). `callAi(settings, {systemPrompt, userPrompt}, actor)` usa
-  `ai_provider_settings.base_url` si existe; **no se hardcodea endpoint ni header
-  con la key en el código de negocio**. `backend/lib/trainer.js` llama a `callAi`
-  para títulos y plan.
+  proveedor) y **opencode** (instancia local `opencode serve`, por defecto
+  `http://localhost:4096`, sin API key; se lista en `GET /api/ai-configs/models`
+  con `configId` o `baseUrl`). `callAi(settings, {systemPrompt, userPrompt}, actor)`
+  usa `ai_provider_settings.base_url` si existe; **no se hardcodea endpoint ni
+  header con la key en el código de negocio**. En opencode los precios son por
+  modelo: `pricing.opencode[modelId] = { input_per_mtok, output_per_mtok }`
+  sobreescribe el coste que expone la instancia (`backend/lib/opencode.js`).
+  `backend/lib/trainer.js` llama a `callAi` para títulos y plan.
 - **Log de IA**: cada llamada a un proveedor se registra en `ai_logs` con actor
   (quién la generó), input, endpoint real, key enmascarada y respuesta/error
   (`backend/lib/ai-logs.js`, `listAiLogs`, `logAiRequest`). La key **siempre

@@ -5,6 +5,8 @@ import { getDb } from "./db.js";
 import { upsertSession } from "./sessions.js";
 import { seedDefaultEquipment } from "./equipment.js";
 import { seedDefaultAiConfig } from "./ai-configs.js";
+import { seedDefaultGlobalSettings } from "./global-settings.js";
+import { syncSuperAdmins } from "./auth.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const SESSIONS_DIR = path.join(ROOT, "sessions");
@@ -115,6 +117,9 @@ function seedOwner(tenantId) {
 
 export function migrate() {
   const db = getDb();
+  seedDefaultGlobalSettings();
+  syncSuperAdmins();
+
   const hasTenants = db.prepare("SELECT COUNT(*) AS c FROM tenants").get().c > 0;
   if (hasTenants) {
     return { migrated: false, reason: "ya-migrado", tenant: null };

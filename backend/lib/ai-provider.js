@@ -1,138 +1,21 @@
 import { logAiRequest } from "./ai-logs.js";
+import { listModels, runConversation } from "./opencode.js";
+import { getProvider, getProviderById, getProviderName, PROVIDER_LIST, CHAT_PROVIDERS, DEFAULT_PRICING } from "./providers.js";
+import { getEnabledProviders, isProviderEnabled, getOpencodeBaseUrl } from "./global-settings.js";
+import { getCatalogModel, effectivePrice } from "./opencode-catalog.js";
 
-const PROVIDERS = {
-  gemini: {
-    name: "Google Gemini",
-    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    defaultModel: "gemini-2.0-flash",
-    needsApiKey: true,
-    buildEndpoint(baseUrl, model) {
-      return `${baseUrl.replace(/\/+$/, "")}/models/${encodeURIComponent(model)}:generateContent`;
-    },
-    authHeaders(apiKey) {
-      return { "X-goog-api-key": apiKey };
-    },
-    buildBody({ systemPrompt, userPrompt, model }) {
-      return {
-        contents: [{ parts: [{ text: `${systemPrompt}\n\n---\n\n${userPrompt}` }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 8192,
-        },
-      };
-    },
-    extractText(data) {
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-    },
-    extractUsage(data) {
-      return data?.usageMetadata ?? null;
-    },
-  },
-  mock: {
-    name: "Mock (desarrollo)",
-    defaultBaseUrl: "",
-    defaultModel: "mock-1",
-    needsApiKey: false,
-    buildEndpoint() {
-      return "mock://generateContent";
-    },
-    authHeaders() {
-      return {};
-    },
-    buildBody() {
-      return {};
-    },
-    extractText(data) {
-      return data?.text ?? null;
-    },
-    extractUsage(data) {
-      return data?.usage ?? null;
-    },
-  },
-};
+export { getProvider, getProviderById, getProviderName, DEFAULT_PRICING };
 
-export function getAiProviderNames() {
-  return Object.keys(PROVIDERS);
-}
-
-export function getProvider(providerId) {
-  return PROVIDERS[providerId] ?? null;
-}
-
-export const PROVIDER_LIST = [
-  { id: "gemini", name: "Google Gemini", needsApiKey: true, defaultModel: "gemini-2.0-flash", defaultPricing: { input_per_mtok: 0.1, output_per_mtok: 0.4 } },
-  { id: "mock", name: "Mock (desarrollo)", needsApiKey: false, defaultModel: "mock-1", defaultPricing: { input_per_mtok: 0, output_per_mtok: 0 } },
-];
-
+// Lista de proveedores disponibles para los tenants: solo los habilitados
+// por el administrador global (global_settings.enabled_providers).
 export function getProvidersList() {
-  return PROVIDER_LIST.map((p) => ({ ...p }));
+  const enabled = getEnabledProviders();
+  return PROVIDER_LIST.filter((p) => enabled.has(p.id)).map((p) => ({ ...p }));
 }
 
-export function getProviderById(id) {
-  return PROVIDER_LIST.find((p) => p.id === id) ?? null;
+export function getProviderEnabled(id) {
+  return isProviderEnabled(id);
 }
-
-export function getProviderName(id) {
-  return PROVIDER_LIST.find((p) => p.id === id)?.name ?? id;
-}
-
-const CHAT_PROVIDERS = {
-  gemini: {
-    buildEndpoint(baseUrl) {
-      return `${baseUrl.replace(/\/+$/, "")}/interactions`;
-    },
-    extraHeaders() {
-      return { "Api-Revision": "2026-05-20" };
-    },
-    buildBody({ systemPrompt, input, model, previousResponseId }) {
-      const body = {
-        model,
-        input,
-        system_instruction: systemPrompt,
-      };
-      if (previousResponseId) body.previous_interaction_id = previousResponseId;
-      return body;
-    },
-    extractText(data) {
-      const text = (data?.steps ?? [])
-        .filter((s) => s.type === "model_output")
-        .map((s) => (s.content ?? []).filter((c) => c.type === "text").map((c) => c.text).join(""))
-        .join("\n");
-      return text || null;
-    },
-    extractResponseId(data) {
-      return data?.id ?? null;
-    },
-    extractUsage(data) {
-      return data?.usageMetadata ?? null;
-    },
-  },
-  mock: {
-    buildEndpoint() {
-      return "mock://interactions";
-    },
-    buildBody() {
-      return {};
-    },
-    extractText(data) {
-      return data?.text ?? null;
-    },
-    extractResponseId(data) {
-      return data?.responseId ?? null;
-    },
-    extractUsage(data) {
-      return data?.usage ?? null;
-    },
-  },
-};
-
-export const DEFAULT_PRICING = {
-  gemini: { input_per_mtok: 0.1, output_per_mtok: 0.4 },
-  openai: { input_per_mtok: 2.5, output_per_mtok: 10 },
-  anthropic: { input_per_mtok: 3, output_per_mtok: 15 },
-  openai_compatible: { input_per_mtok: 0.5, output_per_mtok: 1.5 },
-  mock: { input_per_mtok: 0, output_per_mtok: 0 },
-};
 
 function tokensFromUsage(usage) {
   if (!usage || typeof usage !== "object") return null;
@@ -228,10 +111,88 @@ function logFields(actor) {
   };
 }
 
+// opencode no es un endpoint de chat simple: se crea una sesión, se envía el
+// prompt y se espera a que el agente quede idle. La instancia es local y no
+// necesita API key (el auth básico opcional va en la userinfo de base_url).
+async function callOpencode(settings, { systemPrompt, input, sessionId = null }, actor) {
+  const providerId = "opencode";
+  const baseUrl = getOpencodeBaseUrl();
+  const model = settings?.model;
+  if (!model) throw new Error("No hay modelo configurado para el proveedor opencode");
+  if (!getCatalogModel(model)?.enabled) {
+    throw new Error(`El modelo "${model}" no está disponible para este tenant`);
+  }
+
+  const started = Date.now();
+  let text = null;
+  let ok = true;
+  let status = null;
+  let errorMessage = null;
+  let responseId = null;
+  let inputTokens = null;
+  let outputTokens = null;
+  let cost = null;
+
+  try {
+    const models = await listModels(baseUrl);
+    const info = models.find((m) => m.id === model) ?? null;
+    if (!info) {
+      throw new Error(`El modelo "${model}" no está disponible en la instancia de opencode`);
+    }
+    // El precio efectivo lo define el catálogo global del administrador
+    // (precio del catálogo si existe; si no, el que expone la instancia).
+    const price = effectivePrice(model, {
+      input_per_mtok: info.input_per_mtok,
+      output_per_mtok: info.output_per_mtok,
+    });
+
+    const result = await runConversation({
+      baseUrl,
+      modelId: model,
+      modelProviderId: info.providerID,
+      systemPrompt,
+      input,
+      sessionId,
+    });
+    text = result.text;
+    responseId = result.responseId;
+    ({ inputTokens, outputTokens, cost } = computeCost(providerId, result.usage, price ? { opencode: price } : null));
+    return { text, responseId };
+  } catch (err) {
+    ok = false;
+    errorMessage = err.message;
+    throw err;
+  } finally {
+    await logAiRequest({
+      ...logFields(actor),
+      provider: providerId,
+      model,
+      endpoint: baseUrl,
+      apiKey: "",
+      input: `${systemPrompt}\n\n---\n\n${input}`,
+      response: ok ? text : errorMessage,
+      status,
+      ok,
+      durationMs: Date.now() - started,
+      inputTokens,
+      outputTokens,
+      cost,
+      currency: settings?.currency ?? null,
+    });
+  }
+}
+
 export async function callAiChat(settings, { systemPrompt, input, previousResponseId = null }, actor = null) {
   const providerId = settings?.provider ?? "gemini";
+  if (!isProviderEnabled(providerId)) {
+    throw new Error(`El proveedor de IA "${providerId}" no está habilitado por el administrador`);
+  }
   const base = getProvider(providerId);
   if (!base) throw new Error(`Proveedor de IA desconocido: ${providerId}`);
+
+  if (providerId === "opencode") {
+    return callOpencode(settings, { systemPrompt, input, sessionId: previousResponseId ?? null }, actor);
+  }
 
   const isMock = providerId === "mock";
 
@@ -337,8 +298,16 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
 
 export async function callAi(settings, { systemPrompt, userPrompt }, actor = null) {
   const providerId = settings?.provider ?? "gemini";
+  if (!isProviderEnabled(providerId)) {
+    throw new Error(`El proveedor de IA "${providerId}" no está habilitado por el administrador`);
+  }
   const provider = getProvider(providerId);
   if (!provider) throw new Error(`Proveedor de IA desconocido: ${providerId}`);
+
+  if (providerId === "opencode") {
+    const result = await callOpencode(settings, { systemPrompt, input: userPrompt, sessionId: null }, actor);
+    return result.text;
+  }
 
   const isMock = providerId === "mock";
 

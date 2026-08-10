@@ -1,5 +1,6 @@
 import { createRouter } from "../lib/router.js";
 import { registerPublic, registerUser } from "./auth.js";
+import { registerAdmin } from "./admin.js";
 import { register as registerTenants } from "./tenants.js";
 import { register as registerSessions } from "./sessions.js";
 import { register as registerWeekly } from "./weekly.js";
@@ -27,6 +28,7 @@ export function buildPublicRouter() {
 export function buildUserRouter() {
   const router = createRouter();
   registerUser(router);
+  registerAdmin(router);
   return router;
 }
 

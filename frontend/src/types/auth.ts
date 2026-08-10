@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string | null;
   picture: string | null;
+  isSuperAdmin?: boolean;
 }
 
 export interface TenantInfo {

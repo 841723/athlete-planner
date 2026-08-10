@@ -1,20 +1,49 @@
 services:
-  app:
+  # Servicio de datos: propietario del volumen SQLite (persistente).
+  database:
+    image: alpine:3.20
+    command: ["sh", "-c", "mkdir -p /data && sleep infinity"]
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+
+  # Instancia local de opencode (proveedor de IA), solo red interna.
+  opencode:
+    build:
+      context: .
+      dockerfile: docker/opencode.Dockerfile
+    restart: unless-stopped
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - "13799:4000"
+    depends_on:
+      - database
+      - opencode
     volumes:
-      # Base de datos SQLite (persiste en el host, fuera del repo)
-      - ./data:/app/data
+      # Base de datos SQLite (compartida con el servicio database)
+      - db_data:/app/data
       # Garmin OAuth tokens (persisten fuera del repo)
       - garmin_tokens:/root/.garminconnect
     env_file:
       - .env
     environment:
       - NODE_ENV=production
+      - OPENCODE_BASE_URL=http://opencode:4096
+    restart: unless-stopped
+
+  # Sirve el frontend compilado y proxya /api al backend (mismo origen).
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend-prod.Dockerfile
+    ports:
+      - "13799:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
+  db_data:
   garmin_tokens:

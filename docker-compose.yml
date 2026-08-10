@@ -1,21 +1,37 @@
 services:
-  app:
-    build: .
+  # Servicio de datos: propietario del directorio SQLite (persiste en el host).
+  database:
+    image: alpine:3.20
+    command: ["sh", "-c", "mkdir -p /data && sleep infinity"]
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+
+  # Instancia local de opencode (proveedor de IA) expuesta en 127.0.0.1:4096.
+  opencode:
+    build:
+      context: .
+      dockerfile: docker/opencode.Dockerfile
     ports:
-      - "3000:3000"
+      - "4096:4096"
+    command: ["opencode", "serve", "--port", "4096", "--hostname", "0.0.0.0", "--print-logs"]
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    depends_on:
+      - database
+      - opencode
     volumes:
       # Hot reload: mount source code into container
       - ./backend:/app/backend
-      - ./frontend/src:/app/frontend/src
-      - ./frontend/index.html:/app/frontend/index.html
-      - ./frontend/public:/app/frontend/public
-      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
-      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
-      - ./frontend/tailwind.config.ts:/app/frontend/tailwind.config.ts
-      - ./frontend/postcss.config.js:/app/frontend/postcss.config.js
-      - ./sessions:/app/sessions
       - ./scripts:/app/scripts
-      # Base de datos SQLite (persiste en el host, fuera del repo)
+      - ./sessions:/app/sessions
+      # Base de datos SQLite (compartida con el servicio database y el host)
       - ./data:/app/data
       # Garmin OAuth tokens (persisten fuera del repo)
       - garmin_tokens:/root/.garminconnect
@@ -23,6 +39,29 @@ services:
       - .env
     environment:
       - NODE_ENV=development
+      - OPENCODE_BASE_URL=http://opencode:4096
+    command: ["node", "--watch", "backend/server.js", "--port", "4000"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend-dev.Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      # Hot reload: mount source code into container
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/index.html:/app/frontend/index.html
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
+      - ./frontend/tailwind.config.ts:/app/frontend/tailwind.config.ts
+      - ./frontend/postcss.config.js:/app/frontend/postcss.config.js
+    environment:
+      # Vite proxya /api al backend dentro de la red de compose.
+      - VITE_PROXY_TARGET=http://backend:4000
 
 volumes:
   garmin_tokens:
