@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchPlanChat, sendPlanChat, deletePlanChat } from "@/services/trainer";
+import { fetchPlanChat, sendPlanChat, deletePlanChat, cancelPlanChat } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { PlanChat, PlanChatReply, PlanMessage } from "@/types/session";
@@ -65,6 +65,22 @@ export function useSendPlanChat() {
         void qc.invalidateQueries({ queryKey: planChatKey(vars.planId) });
       }
       toast({ type: "error", title: "Error al enviar el mensaje", description: err.message });
+    },
+  });
+}
+
+export function useCancelPlanChat() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation<void, Error, { planId: string }>({
+    mutationFn: ({ planId }) => cancelPlanChat(planId).then(() => undefined),
+    onSuccess: (_data, vars) => {
+      // La cancelación deja chat_pending en false; el componente reacciona al
+      // cambio y refresca el hilo con el toast correspondiente.
+      void qc.invalidateQueries({ queryKey: planChatKey(vars.planId) });
+    },
+    onError: (err) => {
+      toast({ type: "error", title: "Error al cancelar la respuesta", description: err.message });
     },
   });
 }

@@ -6,6 +6,23 @@ import { getCatalogModel, effectivePrice } from "./opencode-catalog.js";
 
 export { getProvider, getProviderById, getProviderName, DEFAULT_PRICING };
 
+// Tiempo máximo de espera de las llamadas HTTP directas a los proveedores de
+// chat/plan (gemini y compatibles con OpenAI). opencode gestiona su propio
+// timeout de espera. Si el proveedor no responde, abortamos para no dejar el
+// chat del plan atascado en "escribiendo" indefinidamente.
+const CHAT_TIMEOUT_MS = 5 * 60 * 1000;
+const PLAN_TIMEOUT_MS = 10 * 60 * 1000;
+
+async function fetchWithTimeout(endpoint, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(endpoint, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Lista de proveedores disponibles para los tenants: solo los habilitados
 // por el administrador global (global_settings.enabled_providers).
 export function getProvidersList() {
@@ -261,7 +278,11 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
   let cost = null;
 
   try {
-    response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    response = await fetchWithTimeout(
+      endpoint,
+      { method: "POST", headers, body: JSON.stringify(body) },
+      CHAT_TIMEOUT_MS
+    );
     status = response.status;
     if (!response.ok) {
       const errText = await response.text();
@@ -277,8 +298,11 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
     return { text, responseId };
   } catch (err) {
     ok = false;
-    errorMessage = err.message;
-    throw err;
+    errorMessage =
+      err.name === "AbortError"
+        ? `Tiempo de espera agotado: ${base.name} no respondió en ${Math.round(CHAT_TIMEOUT_MS / 1000)}s`
+        : err.message;
+    throw new Error(errorMessage);
   } finally {
     logAiRequest({
       ...logFields(actor),
@@ -366,7 +390,11 @@ export async function callAi(settings, { systemPrompt, userPrompt }, actor = nul
   let cost = null;
 
   try {
-    response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    response = await fetchWithTimeout(
+      endpoint,
+      { method: "POST", headers, body: JSON.stringify(body) },
+      PLAN_TIMEOUT_MS
+    );
     status = response.status;
     if (!response.ok) {
       const errText = await response.text();
@@ -381,8 +409,11 @@ export async function callAi(settings, { systemPrompt, userPrompt }, actor = nul
     return text;
   } catch (err) {
     ok = false;
-    errorMessage = err.message;
-    throw err;
+    errorMessage =
+      err.name === "AbortError"
+        ? `Tiempo de espera agotado: ${provider.name} no respondió en ${Math.round(PLAN_TIMEOUT_MS / 1000)}s`
+        : err.message;
+    throw new Error(errorMessage);
   } finally {
     logAiRequest({
       ...logFields(actor),

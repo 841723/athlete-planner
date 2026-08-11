@@ -98,6 +98,32 @@ export function recoverStalePlans(tenantId) {
   return recovered;
 }
 
+// Libera chats que quedaron atascados en "escribiendo" (chat_pending = 1): el
+// servidor pudo reiniciarse a mitad de la llamada IA o el proveedor no
+// respondió. Se considera atascado si el último mensaje del atleta es antiguo.
+export function recoverStaleChat(tenantId) {
+  const rows = getDb()
+    .prepare("SELECT id FROM plans WHERE tenant_id = ? AND chat_pending = 1")
+    .all(tenantId);
+  if (!rows.length) return 0;
+  const cutoff = new Date(Date.now() - STALE_MS).toISOString();
+  let recovered = 0;
+  for (const row of rows) {
+    const last = getDb()
+      .prepare(
+        "SELECT created_at FROM plan_messages WHERE plan_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 1"
+      )
+      .get(row.id);
+    const lastAt = last?.created_at;
+    if (!lastAt || lastAt < cutoff) {
+      setChatPending(row.id, false);
+      updatePlanResponseId(row.id, null);
+      recovered++;
+    }
+  }
+  return recovered;
+}
+
 export function hasActiveGeneration(tenantId) {
   recoverStalePlans(tenantId);
   return !!getDb()
@@ -130,6 +156,7 @@ export function getPlanProgress(tenantId, planId) {
 
 export function listPlans(tenantId) {
   recoverStalePlans(tenantId);
+  recoverStaleChat(tenantId);
   return getDb()
     .prepare(
       `SELECT ${PLAN_COLUMNS}
@@ -140,6 +167,7 @@ export function listPlans(tenantId) {
 }
 
 export function getPlan(tenantId, planId) {
+  recoverStaleChat(tenantId);
   return (
     getDb()
       .prepare(

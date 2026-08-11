@@ -7,11 +7,12 @@ import {
   MessageCircle,
   Send,
   User,
+  X,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { format } from "@/lib/date-format";
-import { usePlanChat, useSendPlanChat, planChatKey, CHAT_INVALIDATE } from "@/hooks/use-plan-chat";
+import { usePlanChat, useSendPlanChat, useCancelPlanChat, planChatKey, CHAT_INVALIDATE } from "@/hooks/use-plan-chat";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
@@ -26,6 +27,7 @@ export function PlanChat({ plan }: { plan: Plan }) {
   const { toast } = useToast();
   const { data, isLoading } = usePlanChat(plan.id, true);
   const sendMutation = useSendPlanChat();
+  const cancelMutation = useCancelPlanChat();
   const [draft, setDraft] = useState("");
   const [expanded, setExpanded] = useState(true);
   const [showLatest, setShowLatest] = useState(false);
@@ -35,6 +37,7 @@ export function PlanChat({ plan }: { plan: Plan }) {
   const previousMessageCount = useRef(0);
   const wasPending = useRef(false);
   const completionHandled = useRef(false);
+  const cancelRequested = useRef(false);
 
   const canChat = permissions.canEdit && Boolean(data?.canChat);
   const coachWriting = sendMutation.isPending || Boolean(data?.chatPending);
@@ -81,10 +84,17 @@ export function PlanChat({ plan }: { plan: Plan }) {
     if (wasPending.current && !completionHandled.current) {
       completionHandled.current = true;
       wasPending.current = false;
-      toast({ type: "success", title: "El entrenador ha respondido" });
+      if (cancelRequested.current) {
+        cancelRequested.current = false;
+        toast({ type: "success", title: "Respuesta cancelada" });
+      } else {
+        toast({ type: "success", title: "El entrenador ha respondido" });
+      }
       void queryClient.invalidateQueries({ queryKey: planChatKey(plan.id) });
       invalidateMany(queryClient, CHAT_INVALIDATE);
       void queryClient.invalidateQueries({ queryKey: ["plan-detail"] });
+    } else if (!pending && !wasPending.current) {
+      cancelRequested.current = false;
     }
   }, [data?.chatPending, data?.messages.length, plan.id, queryClient, toast]);
 
@@ -106,6 +116,12 @@ export function PlanChat({ plan }: { plan: Plan }) {
     shouldStickToBottom.current = true;
     sendMutation.mutate({ planId: plan.id, message });
     setDraft("");
+  }
+
+  function handleCancel() {
+    if (cancelMutation.isPending) return;
+    cancelRequested.current = true;
+    cancelMutation.mutate({ planId: plan.id });
   }
 
   return (
@@ -188,11 +204,27 @@ export function PlanChat({ plan }: { plan: Plan }) {
             ))}
 
             {coachWriting && (
-              <div className="flex justify-start">
+              <div className="flex items-center gap-2">
                 <div className="rounded-2xl rounded-bl-sm bg-dark-400/60 px-4 py-3 text-sm text-gray-400">
                   <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                   El entrenador está escribiendo...
                 </div>
+                {data?.chatPending && canChat && (
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={cancelMutation.isPending}
+                    className="shrink-0 rounded-lg px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-dark-300 hover:text-red-300"
+                    title="Cancelar la respuesta del entrenador"
+                  >
+                    {cancelMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    Cancelar
+                  </button>
+                )}
               </div>
             )}
 

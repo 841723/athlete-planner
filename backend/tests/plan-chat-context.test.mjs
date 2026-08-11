@@ -10,7 +10,7 @@ const { listPlanned } = await import("../lib/planned.js");
 const { buildChatUserPrompt, getRecentSessions, computeContextHash } = await import("../lib/trainer.js");
 const { getRolePrompt } = await import("../lib/ai-prompts.js");
 const { replacePlanSessions } = await import("../lib/plan-chat.js");
-const { getPlanProgress } = await import("../lib/plans.js");
+const { getPlanProgress, setChatPending, recoverStaleChat, getPlan } = await import("../lib/plans.js");
 
 const tenantId = randomUUID();
 const planId = randomUUID();
@@ -216,4 +216,24 @@ test("la ventana de sesiones recientes para generar planes es configurable y per
   const recent = withTenant(tenantId, () => getRecentSessions(4));
   assert.ok(recent.some((session) => session.id === completedId));
   assert.ok(!recent.some((session) => session.id === "older-completed-1"));
+});
+
+test("recoverStaleChat libera un chat atascado con mensaje antiguo", () => {
+  withTenant(tenantId, () => setChatPending(planId, true));
+  getDb()
+    .prepare("INSERT INTO plan_messages (id, plan_id, role, content, created_at) VALUES (?, ?, 'user', ?, ?)")
+    .run(randomUUID(), planId, "mensaje antiguo", new Date(Date.now() - 11 * 60 * 1000).toISOString());
+  const recovered = withTenant(tenantId, () => recoverStaleChat(tenantId));
+  assert.equal(recovered, 1);
+  assert.equal(withTenant(tenantId, () => getPlan(tenantId, planId).chatPending), 0);
+});
+
+test("recoverStaleChat no libera un chat con mensaje reciente", () => {
+  withTenant(tenantId, () => setChatPending(planId, true));
+  getDb()
+    .prepare("INSERT INTO plan_messages (id, plan_id, role, content, created_at) VALUES (?, ?, 'user', ?, ?)")
+    .run(randomUUID(), planId, "mensaje reciente", new Date().toISOString());
+  const recovered = withTenant(tenantId, () => recoverStaleChat(tenantId));
+  assert.equal(recovered, 0);
+  assert.equal(withTenant(tenantId, () => getPlan(tenantId, planId).chatPending), 1);
 });

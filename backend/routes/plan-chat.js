@@ -112,6 +112,26 @@ export function register(router) {
     return sendJson(c.res, 200, { pending: true });
   });
 
+  router.post("/api/plans/:id/chat/cancel", (c) => {
+    if (!canWrite(c.membership)) {
+      return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    }
+    const plan = getPlanOr404(c, c.params.id);
+    if (!plan) return;
+    if (isGenerating(plan)) {
+      return sendJson(c.res, 409, {
+        error: "El plan aún se está generando. No se puede cancelar la respuesta.",
+      });
+    }
+    // Libera el bloqueo del chat y descarta el hilo anterior para que el
+    // próximo mensaje arranque con contexto completo (sin quedar colgado del
+    // hilo que no respondió). El propio entrenador, si la llamada IA aún sigue
+    // en vuelo, añadirá su respuesta al final sin volver a bloquear.
+    setChatPending(plan.id, false);
+    updatePlanResponseId(plan.id, null);
+    return sendJson(c.res, 200, { cancelled: true });
+  });
+
   router.delete("/api/plans/:id/chat", (c) => {
     if (!canWrite(c.membership)) {
       return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
