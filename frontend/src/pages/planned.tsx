@@ -23,16 +23,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { Plan, PlannedSessionView } from "@/types/session";
 
-function statusLabel(status: Plan["status"]) {
-  if (status === "completed") return "Completado";
-  if (status === "failed") return "Error";
-  if (status === "generating") return "Generando";
-  return "Pendiente";
+function statusLabel(plan: Plan) {
+  if (plan.status === "failed") return "Error";
+  if (plan.status === "generating") return "Generando";
+  if (plan.status === "pending") return "Pendiente";
+  if (plan.trainingCompleted) return "Completado";
+  return "En curso";
 }
 
-function statusClass(status: Plan["status"]) {
-  if (status === "completed") return "badge-completed";
-  if (status === "failed") return "bg-red-500/15 text-red-400";
+function statusClass(plan: Plan) {
+  if (plan.status === "failed") return "bg-red-500/15 text-red-400";
+  if (plan.status === "completed" && plan.trainingCompleted) return "badge-completed";
   return "bg-amber-500/15 text-amber-400";
 }
 
@@ -69,9 +70,11 @@ function PlanCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-semibold">Plan de {format(parseISO(plan.createdAt), "d MMM yyyy")}</h2>
-          <span className={`badge ${statusClass(plan.status)}`}>{statusLabel(plan.status)}</span>
+          <span className={`badge ${statusClass(plan)}`}>{statusLabel(plan)}</span>
         </div>
-        <p className="mt-1 text-xs text-gray-500">{range} · {sessions.length} entrenamientos</p>
+        <p className="mt-1 text-xs text-gray-500">
+          {range} · {sessions.length} entrenamientos · {plan.completedSessions ?? 0}/{sessions.length} realizados
+        </p>
 
         {plan.status === "failed" && (
           <p className="mt-2 text-xs text-red-400">{plan.error ?? "La generación falló."}</p>

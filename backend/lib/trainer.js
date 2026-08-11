@@ -5,7 +5,6 @@ import {
   getSportCategory,
   getTenantId,
   getTenantSettings,
-  getMergedCompletedSession,
   loadCompletedSessions,
   loadPlannedSessions,
   enrich,
@@ -70,7 +69,7 @@ function sanitizeProfile(profile) {
   return out;
 }
 
-function getRecentSessions(weeks = 8) {
+export function getRecentSessions(weeks = 8) {
   const allSessions = loadCompletedSessions();
   const now = new Date();
   const cutoffDate = subWeeks(now, weeks);
@@ -330,7 +329,7 @@ function formatCoachInstructions(profile) {
 }
 
 function buildUserPrompt(comments, weeks, profile, metrics, equipment = null) {
-  const sessions = getRecentSessions(8);
+  const sessions = getRecentSessions(4);
 
   const sessionsText = sessions.map(formatSessionForPrompt).join("\n");
 
@@ -471,7 +470,7 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
 
   const profile = getAthleteProfile() ?? {};
 
-  const recentSessions = getRecentSessions(8);
+  const recentSessions = getRecentSessions(4);
   const metrics = deriveProfileMetrics(recentSessions);
   const updatedProfile = mergeProfileMetrics(profile, metrics);
 
@@ -589,9 +588,7 @@ export function buildChatUserPrompt(planId, message, options = {}) {
     planned.length > 0
       ? planned.map(formatPlannedSessionForPrompt).join("\n")
       : "(no hay sesiones planificadas para este plan)";
-  const completed = planned
-    .map((session) => getMergedCompletedSession(session))
-    .filter(Boolean);
+  const completed = loadCompletedSessions();
   const completedText = completed.length > 0
     ? completed.map(formatCompletedSessionForPrompt).join("\n")
     : "(ninguna sesión de este plan se ha realizado todavía)";

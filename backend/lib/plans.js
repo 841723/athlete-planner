@@ -98,7 +98,8 @@ export function listPlans(tenantId) {
       `SELECT ${PLAN_COLUMNS}
        FROM plans WHERE tenant_id = ? ORDER BY created_at DESC`
     )
-    .all(tenantId);
+    .all(tenantId)
+    .map((plan) => ({ ...plan, ...getPlanProgress(tenantId, plan.id) }));
 }
 
 export function getPlan(tenantId, planId) {

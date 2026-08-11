@@ -23,14 +23,17 @@ export function deletePlanMessages(planId) {
   getDb().prepare("DELETE FROM plan_messages WHERE plan_id = ?").run(planId);
 }
 
-export function deletePlanSessions(planId) {
+export function deletePlanSessions(planId, { preserveCompleted = true } = {}) {
   const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
-  for (const s of planned) deleteSession(s.id);
+  for (const s of planned) {
+    if (preserveCompleted && s.merged_with) continue;
+    deleteSession(s.id);
+  }
 }
 
 export function deletePlanAndSessions(tenantId, planId) {
   deletePlanMessages(planId);
-  deletePlanSessions(planId);
+  deletePlanSessions(planId, { preserveCompleted: false });
   getDb().prepare("DELETE FROM plans WHERE tenant_id = ? AND id = ?").run(tenantId, planId);
 }
 

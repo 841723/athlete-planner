@@ -546,6 +546,9 @@ export interface Plan {
   aiConfigId?: string | null;
   promptId?: string;
   promptName?: string;
+  totalSessions?: number;
+  completedSessions?: number;
+  trainingCompleted?: boolean;
 }
 
 export interface PlanMessage {

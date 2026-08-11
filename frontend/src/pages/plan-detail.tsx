@@ -73,13 +73,21 @@ export function PlanDetailPage() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 className="h-3.5 w-3.5" />
-                {sessions.length} entrenamientos
+                {plan.completedSessions ?? 0}/{sessions.length} realizados
               </span>
             </div>
           </div>
 
-          <span className="badge bg-accent/15 text-accent-light">
-            {plan.status === "completed" ? "Completado" : plan.status}
+          <span className={`badge ${plan.status === "failed" ? "bg-red-500/15 text-red-400" : plan.trainingCompleted ? "badge-completed" : "bg-amber-500/15 text-amber-400"}`}>
+            {plan.status === "failed"
+              ? "Error"
+              : plan.status === "generating"
+              ? "Generando"
+              : plan.status === "pending"
+              ? "Pendiente"
+              : plan.trainingCompleted
+              ? "Completado"
+              : "En curso"}
           </span>
         </div>
       </header>

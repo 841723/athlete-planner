@@ -17,6 +17,9 @@ function toPlanDto(p) {
     aiConfigId: p.aiConfigId ?? null,
     promptId: p.promptId ?? null,
     promptName: p.promptName ?? null,
+    totalSessions: p.totalSessions ?? 0,
+    completedSessions: p.completedSessions ?? 0,
+    trainingCompleted: p.trainingCompleted ?? false,
   };
 }
 
