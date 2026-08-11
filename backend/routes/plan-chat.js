@@ -58,6 +58,10 @@ export function register(router) {
       });
     }
 
+    // Persist the athlete's message before the provider call so it remains in
+    // the thread even if the model times out or returns an invalid response.
+    addPlanMessage(plan.id, "user", message);
+
     const result = await chatWithPlan({
       planId: plan.id,
       message,

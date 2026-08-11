@@ -142,7 +142,11 @@ export function PlanChat({ plan }: { plan: Plan }) {
                         <User className="h-3 w-3" /> Tú
                       </>
                     )}
-                    <span>· {format(new Date(message.created_at), "HH:mm")}</span>
+                    <span>
+                      · {format(new Date(message.created_at), "HH:mm")}
+                      {message.localStatus === "sending" && " · Enviando"}
+                      {message.localStatus === "failed" && " · No se pudo completar"}
+                    </span>
                   </div>
 
                   {message.role === "assistant" ? (

@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { parseISO } from "date-fns";
-import { format } from "@/lib/date-format";
 import type { WeeklySummary } from "@/types/session";
 import { SportDistribution } from "./sport-distribution";
 import { WeekChart } from "./week-chart";
@@ -50,11 +48,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
                   }
                 >
                   <td className="py-2 px-3 font-medium whitespace-nowrap">
-                    <span className="text-accent-light font-semibold">W{w.weekNumber}</span>{" "}
-                    <span className="text-gray-400">
-                      {format(parseISO(w.weekStart), "d MMM")} –{" "}
-                      {format(parseISO(w.weekEnd), "d MMM")}
-                    </span>
+                    <span className="text-accent-light font-semibold">Semana #{w.weekNumber}</span>
                   </td>
                   <td className="text-right py-2 px-3">{w.sessions}</td>
                   <td className="text-right py-2 px-3">{w.hours}h</td>
@@ -77,12 +71,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
               onClick={() => setSelectedWeek(selectedWeek === w ? null : w)}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-medium">
-                  <span className="text-accent-light font-semibold">W{w.weekNumber}</span>{" "}
-                  <span className="text-gray-400 text-sm">
-                    {format(parseISO(w.weekStart), "d MMM")} – {format(parseISO(w.weekEnd), "d MMM")}
-                  </span>
-                </span>
+                  <span className="font-medium text-accent-light">Semana #{w.weekNumber}</span>
                 <span className="text-xs text-gray-400">{w.hours}h</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -105,8 +94,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
         {selectedWeek && (
           <div className="mt-4 p-4 rounded-xl bg-dark-300/50">
             <h3 className="font-semibold mb-2">
-              Semana {selectedWeek.weekNumber}: {format(parseISO(selectedWeek.weekStart), "d MMM")} –{" "}
-              {format(parseISO(selectedWeek.weekEnd), "d MMM")}
+              Semana #{selectedWeek.weekNumber}
             </h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
               {Object.entries(selectedWeek.bySport).map(([sport, count]) => (

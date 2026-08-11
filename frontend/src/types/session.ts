@@ -557,6 +557,7 @@ export interface PlanMessage {
   role: "user" | "assistant";
   content: string;
   created_at: string;
+  localStatus?: "sending" | "failed";
 }
 
 export interface PlanChat {

@@ -6,6 +6,7 @@ import {
   endOfWeek,
   isWithinInterval,
 } from "date-fns";
+import { es } from "date-fns/locale";
 import { SportCategory, SPORT_COLORS, SPORT_LABELS } from "@/types/session";
 
 export function safeExternalUrl(value?: string | null): string | null {
@@ -73,6 +74,26 @@ export function formatDate(dateStr: string): string {
 
 export function formatDateShort(dateStr: string): string {
   return format(parseISO(dateStr), "EEE d");
+}
+
+export function formatTrainingDay(
+  dateStr: string,
+  weekNumber?: number | null,
+  trainingWeekOneStart = "2026-05-11"
+): string {
+  const date = parseISO(dateStr);
+  const week = weekNumber ?? getWeekNumber(date, trainingWeekOneStart);
+  return `${format(date, "EEEE", { locale: es })} #${week}`;
+}
+
+export function formatGoalDay(
+  dateStr: string,
+  weekNumber?: number | null,
+  trainingWeekOneStart = "2026-05-11"
+): string {
+  const date = parseISO(dateStr);
+  const week = weekNumber ?? getWeekNumber(date, trainingWeekOneStart);
+  return `${format(date, "EEEE", { locale: es })} semana #${week}`;
 }
 
 export function formatWeekLabel(dateStr: string): string {

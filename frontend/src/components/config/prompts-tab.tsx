@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Brain, Loader2, Plus, Save, Trash2, XCircle } from "lucide-react";
+import { Brain, ChevronDown, ChevronRight, Loader2, Plus, Save, Trash2, XCircle } from "lucide-react";
 import { usePrompts, useSavePrompt, useUpdatePrompt, useDeletePrompt } from "@/hooks/use-prompts";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import type { AiPrompt } from "@/types/session";
@@ -14,6 +15,11 @@ export function PromptsTab() {
   const [edits, setEdits] = useState<Record<string, { name: string; content: string }>>({});
   const [newPrompts, setNewPrompts] = useState<{ id: string; name: string; content: string }[]>([]);
   const [newCounter, setNewCounter] = useState(0);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  function toggleExpanded(id: string) {
+    setExpanded((e) => ({ ...e, [id]: !e[id] }));
+  }
 
   useEffect(() => {
     if (!prompts) return;
@@ -62,48 +68,67 @@ export function PromptsTab() {
             return (
               <div key={p.id} className="p-3 rounded-xl bg-dark-300/50 space-y-2">
                 <div className="flex items-center gap-2">
+                  <button
+                    className="flex items-center gap-1.5 text-left shrink-0"
+                    onClick={() => toggleExpanded(p.id)}
+                    title={expanded[p.id] ? "Ocultar contenido" : "Ver contenido"}
+                  >
+                    {expanded[p.id] ? (
+                      <ChevronDown className="w-4 h-4 shrink-0 text-gray-500" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 shrink-0 text-gray-500" />
+                    )}
+                  </button>
                   {predefined ? (
-                    <span className="text-sm font-medium text-gray-300 truncate">{p.name}</span>
+                    <span className="text-sm font-medium text-gray-300 truncate min-w-0">{p.name}</span>
                   ) : (
                     <input
-                      className="input flex-1 py-1.5 text-sm"
+                      className="input flex-1 py-1.5 text-sm min-w-0"
                       value={val.name}
                       onChange={(e) => patchEdit(p.id, { name: e.target.value })}
                     />
                   )}
                   {predefined && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-dark-400/50 text-gray-400">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-dark-400/50 text-gray-400 shrink-0">
                       Predefinido
                     </span>
                   )}
+                  <span className="text-xs text-gray-500 truncate max-w-[12rem] hidden sm:block">
+                    {!expanded[p.id] && val.content.trim()}
+                  </span>
+                  <CopyButton text={val.content} title="Copiar contenido del prompt" className="shrink-0 ml-auto" />
                 </div>
-                <AutoTextarea
-                  className="input w-full font-mono text-xs"
-                  minRows={7}
-                  value={val.content}
-                  onChange={(e) => !predefined && patchEdit(p.id, { content: e.target.value })}
-                  spellCheck={false}
-                  readOnly={predefined}
-                />
-                {!predefined && (
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
-                      onClick={() => deleteMutation.mutate(p.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      className="text-xs px-2 py-1"
-                      onClick={() => updateMutation.mutate({ promptId: p.id, payload: { name: val.name, content: val.content } })}
-                      disabled={!dirty || updateMutation.isPending}
-                    >
-                      {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                      Guardar
-                    </Button>
-                  </div>
+                {expanded[p.id] && (
+                  <>
+                    <AutoTextarea
+                      className="input w-full font-mono text-xs"
+                      minRows={7}
+                      value={val.content}
+                      onChange={(e) => !predefined && patchEdit(p.id, { content: e.target.value })}
+                      spellCheck={false}
+                      readOnly={predefined}
+                    />
+                    {!predefined && (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
+                          onClick={() => deleteMutation.mutate(p.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          className="text-xs px-2 py-1"
+                          onClick={() => updateMutation.mutate({ promptId: p.id, payload: { name: val.name, content: val.content } })}
+                          disabled={!dirty || updateMutation.isPending}
+                        >
+                          {updateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                          Guardar
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );

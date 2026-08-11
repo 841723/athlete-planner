@@ -7,10 +7,9 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 
-import { format } from "@/lib/date-format";
+import { formatTrainingDay } from "@/lib/utils";
 import { tenantPath } from "@/lib/tenant";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePlanned } from "@/hooks/use-planned";
@@ -50,12 +49,10 @@ function PlanCard({
   canEdit: boolean;
   onRetry: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
-  const dates = sessions
-    .map((session) => parseISO(session.start_date_local))
-    .sort((a, b) => a.getTime() - b.getTime());
+  const orderedSessions = [...sessions].sort((a, b) => a.start_date_local.localeCompare(b.start_date_local));
 
-  const range = dates.length > 0
-    ? `${format(dates[0], "d MMM")} – ${format(dates[dates.length - 1], "d MMM yyyy")}`
+  const range = orderedSessions.length > 0
+    ? `${formatTrainingDay(orderedSessions[0].start_date_local, orderedSessions[0].weekNumber)} - ${formatTrainingDay(orderedSessions[orderedSessions.length - 1].start_date_local, orderedSessions[orderedSessions.length - 1].weekNumber)}`
     : `${plan.weeks} semanas`;
 
   return (
@@ -69,7 +66,7 @@ function PlanCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-semibold">Plan de {format(parseISO(plan.createdAt), "d MMM yyyy")}</h2>
+          <h2 className="font-semibold">Plan de entrenamiento</h2>
           <span className={`badge ${statusClass(plan)}`}>{statusLabel(plan)}</span>
         </div>
         <p className="mt-1 text-xs text-gray-500">
@@ -116,7 +113,7 @@ function ManualSessions({ sessions }: { sessions: PlannedSessionView[] }) {
           <div key={session.id} className="rounded-lg bg-dark-300/40 p-3 text-sm">
             <p className="truncate font-medium">{session.title ?? session.name}</p>
             <p className="mt-1 text-xs text-gray-500">
-              {format(parseISO(session.start_date_local), "d MMM yyyy · HH:mm")}
+              {formatTrainingDay(session.start_date_local, session.weekNumber)}
             </p>
           </div>
         ))}

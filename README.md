@@ -1,211 +1,147 @@
-# Training
+# Athlete Planner
 
-Seguimiento personal de entrenamientos para Ironman 70.3 con frontend, backend
-y sincronización directa con la API de Garmin Connect. Multi-atleta: cada
-atleta tiene su propio tenant (datos, objetivos, perfil) y el acceso se controla
-con Google OAuth y roles.
+Athlete Planner es una aplicación personal para organizar y revisar la
+preparación de un Ironman 70.3. Reúne tus actividades reales, tus sesiones
+planificadas, tus objetivos y el asesoramiento de una IA en un mismo lugar.
 
-## Requisitos
+## Inicio de sesión
 
-- Node.js **24+** (backend usa `node:sqlite`)
-- [uv](https://docs.astral.sh/uv/) (para ejecutar el script de Python)
-- Cuenta de Garmin Connect
-- Cuenta de Google y un **OAuth Client ID** de tipo "Web application" (creado en
-  Google Cloud Console → Credenciales). Configura como redirect URI
-  `http://localhost:3000` (dev) o tu dominio en producción.
+Entra con tu cuenta de Google. Si tienes acceso a más de un atleta, puedes
+cambiar de tenant desde el selector situado junto a tu perfil.
 
-## Setup inicial (una sola vez)
+Cada atleta tiene sus propios entrenamientos, objetivos, perfil, planes,
+configuración y conversación con el entrenador.
 
-1. Instala dependencias de Node:
+## Inicio
 
-   ```sh
-   npm install
-   ```
+La pantalla de Inicio muestra:
 
-2. Crea el fichero `.env` (copia de `.env.example`) y rellena:
+- El objetivo principal y los hitos próximos.
+- El progreso general y los días restantes.
+- La racha de entrenamiento.
+- El volumen semanal.
+- Las sesiones de hoy y mañana.
+- Las actividades realizadas más recientes.
 
-   ```sh
-   GOOGLE_CLIENT_ID=<tu-oauth-client-id>
-   DEFAULT_OWNER_EMAIL=<tu-email-de-google>
-   ADMIN_EMAILS=<email-superadmin>          # opcional
-   PORT=4000
-   MIN_DATE=2026-05-12
-   ```
+El botón **Sincronizar** actualiza las actividades de Garmin Connect cuando tú
+lo solicitas. La aplicación no sincroniza datos automáticamente.
 
-   `DEFAULT_OWNER_EMAIL` es quien se convierte en `athlete` (owner) del tenant
-   migrado `default`. **Sin él, el tenant default queda sin miembros y nadie
-   puede acceder a los datos migrados.**
+## Calendario
 
-   `ADMIN_EMAILS` (opcional, lista separada por comas) marca a esos usuarios
-   como **superadministradores** del sistema (panel `/admin`): al arrancar el
-   backend se sincroniza el flag `is_superadmin` de la tabla `users`.
+El calendario reúne en una sola vista:
 
-3. Autentica con Garmin (te pedirá email, contraseña y código MFA si lo tienes
-   activado; guarda los tokens en `~/.garminconnect`):
+- Actividades realizadas.
+- Sesiones que todavía están planificadas.
+- Filtros por deporte y rango de fechas.
+- El detalle de cada día y de cada sesión.
 
-   ```sh
-   uvx garmin-connect-mcp auth
-   ```
+El calendario es la única vista general que utiliza días del mes para orientarse
+visualmente. En móvil presenta una versión compacta y permite abrir las sesiones
+del día en una vista inferior.
 
-4. Arranca el backend en dev (al primer arranque migra `sessions/*.json` y el
-   perfil de `data/athlete-profile.json` a la base de datos SQLite):
+## Actividades realizadas
 
-   ```sh
-   node backend/server.js --port 4000
-   ```
+Cada actividad sincronizada conserva sus datos disponibles, como:
 
-5. Arranca el frontend con Vite (puerto 3000, con proxy a `/api`):
+- Deporte, duración y distancia.
+- Ritmo, velocidad, frecuencia cardiaca y potencia.
+- Desnivel, calorías, efecto del entrenamiento y temperatura.
+- Vueltas, segmentos, mejores esfuerzos y zonas de frecuencia cardiaca.
+- RPE, sensación y notas personales.
 
-   ```sh
-   cd frontend && npm run dev
-   ```
+Puedes editar el título y las notas de una actividad. El detalle de una sesión
+muestra su fecha completa y permite navegar a la actividad anterior o siguiente.
 
-6. Entra en `http://localhost:3000` e inicia sesión con Google usando la cuenta
-   de `DEFAULT_OWNER_EMAIL`.
+## Planificadas
 
-## Multi-atleta y roles
+En **Planificadas** puedes:
 
-- Login con Google. Cada atleta es un **tenant** con sus propios datos
-  (sesiones, planificadas, objetivos, perfil, ajustes).
-- Al entrar, el selector de tenant (menú del usuario, esquina superior derecha)
-  cambia entre los tenants a los que perteneces.
-- Roles por tenant:
-  - `athlete` — owner; acceso total. No puede ser eliminado ni cambiado de rol
-    por otros.
-  - `admin` — acceso total salvo tocar al owner.
-  - `visitor` — solo lectura; los botones de crear/editar/eliminar quedan
-    ocultos.
-- Los miembros se gestionan desde la página **Configuración** (`admin`/`athlete`),
-  que además permite renombrar el tenant, editar el perfil del atleta en JSON y
-  los próximos objetivos.
+- Crear sesiones manuales.
+- Generar planes con IA.
+- Abrir cada plan y revisar sus sesiones.
+- Ver el progreso de sesiones realizadas frente al total del plan.
+- Reintentar una generación que haya fallado.
 
-### Panel de administración (`/admin`)
+Las fechas de planificación se muestran como `martes #14`. Los rangos de un
+plan se muestran como `jueves #15 - miércoles #17`.
 
-Solo visible para usuarios con `is_superadmin` (env `ADMIN_EMAILS`; el backend
-recomprueba el flag de la BD en cada petición, nunca confía en el cliente).
-Permite, de forma global:
+Cuando una actividad real coincide con una sesión planificada, la aplicación las
+fusiona automáticamente. La sesión planificada no desaparece: queda marcada como
+realizada y ofrece el enlace **Ver actividad realizada**.
 
-- **Proveedores**: habilitar/deshabilitar proveedores de IA (gemini, opencode,
-  mock) y fijar la URL base de la instancia de opencode. Un proveedor
-  deshabilitado se rechaza en `callAi`/`callAiChat` y no aparece en la UI.
-- **Modelos opencode**: catálogo global (nombre, proveedor, precio input/output
-  y habilitado). Es la **única fuente** de precios y disponibilidad para todos
-  los tenants; los modelos no incluidos quedan deshabilitados. El tenant ya no
-  edita precios de opencode.
-- **Tenants**: listar/crear tenants (nombre, owner y slug opcionales), renombrar
-  y gestionar miembros (añadir, cambiar rol, eliminar), con las mismas reglas
-  que en el tenant (el owner es intocable).
+Un plan solo aparece como **Completado** cuando se han realizado todas sus
+sesiones. Mientras queden sesiones pendientes aparece como **En curso**.
 
-### Crear un nuevo atleta
+## Chat con el entrenador
 
-```sh
-node scripts/create-athlete.mjs --name "Sara" --owner-email sara@example.com \
-  --profile data/athlete-profile.example.json
-```
+Cada plan tiene una conversación con la IA. El entrenador recibe:
 
-Crea el tenant, el owner (`athlete`) y el perfil. Flags opcionales: `--slug`,
-`--min-date`, `--plan-start`, `--goal-date`, `--training-week-one-start`.
-Idempotente: falla si el `slug` ya existe. La persona debe iniciar sesión con la
-misma cuenta de Google y seleccionar el tenant nuevo.
+- El perfil y los deportes de enfoque.
+- Las sesiones del plan.
+- Todas las actividades reales anteriores del atleta.
+- Las métricas y notas escritas en esas actividades.
+- El historial de la conversación.
 
-## Sincronización con Garmin
+Al enviar un mensaje, aparece inmediatamente en el hilo aunque la IA todavía
+esté pensando o termine dando un error. Si la IA propone cambios, las sesiones
+ya realizadas no se borran.
 
-Invoca `/sync-all` (o `/sync`, su alias) para sincronizar todas las sesiones
-pendientes. También desde la web con el botón **Sincronizar** de la página de
-Inicio (solo visible con permiso de edición). Los resultados se guardan en la BD
-del tenant activo.
+Al generar un plan nuevo, la IA utiliza el detalle de las actividades reales de
+las últimas cuatro semanas.
 
-## Frontend
+## Semanal y Estadísticas
 
-Vite + React + Tailwind, responsive (móvil/tablet/desktop). Páginas:
+**Semanal** resume las sesiones realizadas por semana de entrenamiento, deporte,
+horas, distancia y desnivel.
 
-- **Inicio** (`/`) — resumen del plan, hoy/mañana y botón **Sincronizar**.
-- **Calendario** (`/calendar`) — sesiones por día; en móvil muestra celdas
-  compactas con puntos y una hoja inferior con las sesiones del día.
-- **Semanal** (`/weekly`) — horas por semana, distribución por deporte y detalle
-  semanal (tabla en desktop, tarjetas en móvil).
-- **Estadísticas** (`/stats`) — totales, récords y gráficas.
-- **Planificadas** (`/planned`) — CRUD de sesiones planificadas y **Generar Plan
-  con IA** (`POST /api/generate-plan`), que antes de generar actualiza el perfil
-  del atleta con los datos de las últimas 8 semanas (Z2 running, potencia en
-  bici, ritmo en natación y semana actual).
-- **Configuración** (`/config`) — nombre del tenant, perfil del atleta en JSON,
-  próximos objetivos y permisos (miembros). Solo `admin`/`athlete`.
-- **Detalle de sesión** (`/session/:id`) — navegación Anterior/Siguiente entre
-  sesiones; "Volver" lleva al calendario.
+**Estadísticas** muestra totales, evolución del volumen, distribución por
+deporte, ritmos, velocidades y récords personales.
 
-El cambio de tenant y el acceso a Configuración están en el menú del usuario
-(esquina superior derecha).
+Las sesiones planificadas no cuentan como entrenamiento realizado hasta que se
+fusionan con una actividad real.
 
-## Docker
+## Objetivos
 
-Se levantan **4 contenedores separados**: `database` (propietario del directorio
-SQLite), `opencode` (instancia local de IA, `opencode serve`), `backend`
-(Node 24 + uv) y `frontend` (Vite en dev; nginx + estático en producción).
+En Configuración puedes definir el objetivo principal y los hitos intermedios,
+con fecha, deporte, ritmo objetivo, color y enlace opcional.
 
-### Desarrollo
+Los objetivos se muestran con el formato `domingo semana #24`.
 
-```sh
-docker compose up --build
-```
+## Configuración
 
-- `frontend` en `http://localhost:3000` (Vite HMR; proxya `/api` al backend).
-- `backend` en `http://localhost:4000`.
-- `opencode` expuesto en `http://localhost:4096` (el backend usa
-  `OPENCODE_BASE_URL=http://opencode:4096` dentro de la red de compose).
-- `database` monta `./data` del host, así que la BD (`data/endurance.db`) es la
-  misma que usan los scripts locales (`uv run ...`, `node --input-type=module`).
+La configuración permite gestionar:
 
-Requiere el `.env` configurado (ver arriba).
+- Nombre del atleta o tenant.
+- Fecha de inicio y semana de entrenamiento.
+- Deportes principales.
+- Perfil deportivo usado por la IA.
+- Objetivos y hitos.
+- Proveedor, modelo y precios de IA.
+- Prompts personalizados.
+- Equipamiento disponible.
+- Miembros, roles y claves de acceso.
+- Conexión y rango de fechas de Garmin Connect.
 
-### Producción
+La interfaz solo muestra Garmin Connect como fuente de sincronización activa.
 
-El despliegue usa un contenedor `frontend` con nginx que sirve el compilado y
-proxya `/api` al backend (mismo origen, URLs relativas) y el directorio `./data`
-del host (bind mount) para la BD SQLite, igual que el desarrollo.
+## Notificaciones
 
-```sh
-docker compose -f docker-compose.prod.yml up -d --build
-```
+Las confirmaciones y errores importantes aparecen como avisos breves y también
+se guardan en el **Buzón de notificaciones**, accesible desde el icono de la
+campana.
 
-Mapea el puerto `43520` (host) al `80` (nginx). Pasos para exponerlo a internet
-tras levantar el contenedor:
+El buzón conserva avisos como:
 
-1. **`.env` en el servidor**: copia el fichero `.env` (está en `.gitignore`).
-   Revisa `GOOGLE_CLIENT_ID`, `DEFAULT_OWNER_EMAIL`, `ADMIN_EMAILS` y `MIN_DATE`.
-2. **Google OAuth**: en Google Cloud Console → Credenciales → tu OAuth Client,
-   añade `https://<tu-subdominio>` en **Authorized JavaScript origins** (el
-   login usa el flujo de `credential`, no hace falta redirect URI).
-3. **Túnel de Cloudflare**: apunta un túnel (cloudflared) al puerto
-   `http://localhost:43520`. El backend no gestiona TLS; la termina Cloudflare.
-4. **Garmin (opcional)**: la conexión se gestiona desde Configuración →
-   Sincronización (los tokens se guardan en la BD del tenant, no en ficheros).
+- Respuestas del entrenador.
+- Pruebas de conexión o de modelos de IA.
+- Formularios guardados correctamente.
+- Errores de sincronización o configuración.
 
-## Estructura
+Puedes consultar avisos anteriores o vaciar el buzón cuando quieras.
 
-- `scripts/garmin-fetch.py` — descarga datos de Garmin Connect (sin MCP).
-- `scripts/sync-sessions.mjs` — normaliza y escribe sesiones en la BD.
-- `scripts/migrate-to-db.mjs` — migra los JSON legados de `sessions/` a la BD.
-- `scripts/create-athlete.mjs` — crea un nuevo atleta/tenant.
-- `backend/init.sql` — esquema SQLite (se aplica desde `backend/lib/db.js`).
-- `backend/lib/db.js` — acceso a SQLite (`data/endurance.db`) y migraciones.
-- `backend/lib/auth.js` — verificación del token de Google y sesiones.
-- `backend/lib/api-keys.js` — API keys por tenant para autenticación sin Google.
-- `backend/lib/sessions.js` — capa de datos multi-tenant (sesiones, perfil,
-  ajustes).
-- `backend/lib/trainer.js` — genera el plan con IA y actualiza el perfil del
-  atleta con los últimos datos de las sesiones.
-- `backend/lib/ai-provider.js` — proveedores de IA (gemini/openai/anthropic/…)
-  y `callAi` con logging de cada solicitud (`backend/lib/ai-logs.js`).
-- `backend/server.js` — arranque HTTP: dispatch estático/API, auth (cookie o
-  API key) y montaje de las rutas de `backend/routes/` (divididas por dominio).
-- `frontend/` — interfaz web (Vite + React).
-- `sessions/` — legado en JSON (migrado a BD al primer arranque).
-- `AGENTS.md` — esquema JSON de sesión, endpoints y workflow de sync.
-- `opencode.json` — config de opencode.
+## Roles
 
-## Nota
-
-Garmin no publica una API oficial; `garmin-fetch.py` usa la librería no oficial
-`python-garminconnect`. Si Garmin cambia sus endpoints internos, algún dato
-podría dejar de estar disponible temporalmente. Es de solo lectura.
+- **Athlete**: propietario y acceso completo.
+- **Admin**: puede gestionar el tenant y sus miembros, salvo al propietario.
+- **Visitor**: puede consultar la información, pero no modificarla ni iniciar
+  acciones de escritura.

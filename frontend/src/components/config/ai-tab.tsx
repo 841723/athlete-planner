@@ -4,6 +4,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useAiSettings } from "@/hooks/use-ai-settings";
 import { useAiLogs } from "@/hooks/use-ai-logs";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AiConfigsManager } from "@/components/config/ai-configs-manager";
 
@@ -137,8 +138,11 @@ function AiLogsCard() {
                 <div className="mt-2 space-y-2">
                   {l.input && (
                     <div>
-                      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        Input
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                          Input
+                        </span>
+                        <CopyButton text={l.input} label="" copiedLabel="✓" title="Copiar input" />
                       </div>
                       <pre className="max-h-60 overflow-y-auto rounded-lg bg-dark-400/40 p-2 text-gray-300 whitespace-pre-wrap break-words font-mono text-[11px]">
                         {l.input}
@@ -147,8 +151,11 @@ function AiLogsCard() {
                   )}
                   {l.response && (
                     <div>
-                      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        Respuesta
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                          Respuesta
+                        </span>
+                        <CopyButton text={l.response} label="" copiedLabel="✓" title="Copiar respuesta" />
                       </div>
                       <pre className="max-h-60 overflow-y-auto rounded-lg bg-dark-400/40 p-2 text-gray-300 whitespace-pre-wrap break-words font-mono text-[11px]">
                         {l.response}

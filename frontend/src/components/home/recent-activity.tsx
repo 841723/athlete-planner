@@ -3,6 +3,7 @@ import { SPORT_COLORS, SPORT_LABELS, type SportCategory } from "@/types/session"
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
+import { formatTrainingDay } from "@/lib/utils";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -37,10 +38,7 @@ export function RecentActivity() {
           const cat = (session.category ?? "other") as SportCategory;
           const color = SPORT_COLORS[cat] ?? "#6b7280";
           const date = session.start_date_local
-            ? new Date(session.start_date_local).toLocaleDateString("es-ES", {
-                weekday: "short",
-                day: "numeric",
-              })
+            ? formatTrainingDay(session.start_date_local, session.weekNumber)
             : "";
           return (
             <button

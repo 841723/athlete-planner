@@ -5,6 +5,7 @@ import { UserMenu } from "./user-menu";
 import { TenantSwitcher } from "./tenant-switcher";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
+import { NotificationsBell } from "@/components/ui/toast";
 
 const baseNavItems = [
   { path: "/", label: "Inicio", icon: Home },
@@ -76,6 +77,7 @@ export function Header() {
               </Link>
             )}
           </nav>
+          <NotificationsBell />
           <UserMenu />
         </div>
       </header>

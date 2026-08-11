@@ -2,7 +2,7 @@ import { parseISO, differenceInDays } from "date-fns";
 import { Star, Target } from "lucide-react";
 import { useGoals } from "@/hooks/use-goals";
 import { useMeta } from "@/hooks/use-meta";
-import { safeExternalUrl } from "@/lib/utils";
+import { formatGoalDay, safeExternalUrl } from "@/lib/utils";
 
 function faviconUrl(url?: string): string | null {
   if (!url) return null;
@@ -78,7 +78,7 @@ export function UpcomingGoals() {
               )}
             </div>
             <span className="text-xs text-gray-400 shrink-0">
-              Semana {primary.week} · {formatDate(primary.date)}
+              {formatGoalDay(primary.date, primary.week)}
             </span>
           </div>
           <div className="mt-3">
@@ -145,7 +145,7 @@ export function UpcomingGoals() {
                       </>
                     )}
                   </span>
-                  <span className="text-xs text-gray-500 shrink-0">Semana {goal.week}</span>
+                  <span className="text-xs text-gray-500 shrink-0">{formatGoalDay(goal.date, goal.week)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">
@@ -173,9 +173,4 @@ export function UpcomingGoals() {
       )}
     </div>
   );
-}
-
-function formatDate(iso: string): string {
-  const d = parseISO(iso);
-  return `${d.getDate()} ${["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][d.getMonth()]}`;
 }

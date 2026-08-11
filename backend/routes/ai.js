@@ -1,7 +1,7 @@
 import { getAiSettings, getAiSettingsWithKey, saveAiSettings, chatDurationLabel } from "../lib/ai-settings.js";
 import { callAi, getProvidersList } from "../lib/ai-provider.js";
 import { getPrompts, savePrompt, deletePrompt, updatePrompt, duplicatePrompt } from "../lib/ai-prompts.js";
-import { sendJson, readBody, canWrite } from "../lib/http.js";
+import { sendJson, readBody, canWrite, canManage } from "../lib/http.js";
 
 export function register(router) {
   router.get("/api/ai-settings", (c) => {

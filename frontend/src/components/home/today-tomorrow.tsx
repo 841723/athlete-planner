@@ -1,8 +1,8 @@
-import { parseISO, addDays } from "date-fns";
+import { addDays } from "date-fns";
 import { format } from "@/lib/date-format";
 import type { Session } from "@/types/session";
 import { WorkoutText } from "@/components/session/workout-text";
-import { getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
+import { formatTrainingDay, getSportColor, getSportLabel, formatDistance, formatDuration } from "@/lib/utils";
 
 interface TodayTomorrowProps {
   completed: Session[];
@@ -28,7 +28,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-medium text-gray-400 mb-2">
-            {format(today, "EEEE d 'de' MMMM")}
+             {formatTrainingDay(today.toISOString(), todaySessions[0]?.weekNumber)}
           </h3>
           {todaySessions.length === 0 ? (
             <p className="text-sm text-gray-500">Sin entrenamiento hoy</p>
@@ -42,7 +42,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-400 mb-2">
-            {format(addDays(today, 1), "EEEE d 'de' MMMM")}
+             {formatTrainingDay(addDays(today, 1).toISOString(), tomorrowSessions[0]?.weekNumber)}
           </h3>
           {tomorrowSessions.length === 0 ? (
             <p className="text-sm text-gray-500">Sin entrenamiento mañana</p>
@@ -77,7 +77,7 @@ function SessionCard({ session, isPlanned }: { session: Session; isPlanned: bool
           <div className="text-xs text-gray-500">
             <span>{label}</span>
             <span className="mx-1">·</span>
-            <span>{format(parseISO(session.start_date_local), "d MMM")}</span>
+             <span>{formatTrainingDay(session.start_date_local, session.weekNumber)}</span>
           </div>
           {isPlanned && session.workout_text ? (
             <div className="mt-2">

@@ -1,5 +1,5 @@
 import { parseISO, differenceInDays } from "date-fns";
-import { format } from "@/lib/date-format";
+import { formatTrainingDay } from "@/lib/utils";
 import { useSessions } from "@/hooks/use-sessions";
 import { useMeta } from "@/hooks/use-meta";
 
@@ -28,7 +28,7 @@ export function HeroStats() {
     { label: "Días restantes", value: daysRemaining, icon: "calendar" },
     { label: "Progreso", value: `${progressPercent}%`, icon: "trending" },
     { label: "Sesiones", value: data.totals.totalSessions, icon: "activity" },
-    { label: "Próximo objetivo", value: nextGoal ? format(parseISO(nextGoal.start_date_local), "d MMM") : "—", icon: "flag" },
+    { label: "Próximo objetivo", value: nextGoal ? formatTrainingDay(nextGoal.start_date_local, nextGoal.weekNumber, meta.trainingWeekOneStart) : "—", icon: "flag" },
   ];
 
   return (
@@ -49,7 +49,7 @@ export function HeroStats() {
         </div>
         <div className="flex justify-between mt-2 text-xs text-gray-500">
           <span>Semana {currentWeek} de {TOTAL_WEEKS}</span>
-          <span>{format(today, "d MMM yyyy")}</span>
+          <span>{formatTrainingDay(today.toISOString(), undefined, meta.trainingWeekOneStart)}</span>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { getDb } from "./db.js";
 import {
   getAthleteProfile,
   getSportCategory,
+  getWeekNumber,
   getTenantId,
   getTenantSettings,
   loadCompletedSessions,
@@ -22,6 +23,7 @@ import { getEquipmentLabels } from "./equipment.js";
 import { getGoals } from "./goals.js";
 import { getFocusSports } from "./meta.js";
 import { subWeeks, format, parseISO, differenceInCalendarDays, startOfWeek } from "date-fns";
+import { es } from "date-fns/locale";
 
 function requireRolePrompt(role) {
   const prompt = getRolePrompt(getTenantId(), role);
@@ -83,10 +85,14 @@ export function getRecentSessions(weeks = 8) {
     .sort((a, b) => (a.start_date_local ?? "").localeCompare(b.start_date_local ?? ""));
 }
 
+function formatTrainingDayForPrompt(value) {
+  const date = parseISO(value);
+  const week = getWeekNumber(date, getTenantSettings()?.training_week_one_start);
+  return `${format(date, "EEEE", { locale: es })} #${week}`;
+}
+
 function formatSessionForPrompt(session) {
-  const date = session.start_date_local
-    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
-    : "sin fecha";
+  const date = session.start_date_local ? formatTrainingDayForPrompt(session.start_date_local) : "sin fecha";
   const pace = session.avg_pace_s_per_km
     ? `${Math.floor(session.avg_pace_s_per_km / 60)}:${String(Math.floor(session.avg_pace_s_per_km % 60)).padStart(2, "0")}/km`
     : "sin ritmo";
@@ -104,9 +110,7 @@ function formatSessionForPrompt(session) {
 }
 
 function formatSessionForTitles(session) {
-  const date = session.start_date_local
-    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
-    : "sin fecha";
+  const date = session.start_date_local ? formatTrainingDayForPrompt(session.start_date_local) : "sin fecha";
   const distance = session.distance_m
     ? `${(session.distance_m / 1000).toFixed(2)} km`
     : "sin distancia";
@@ -558,16 +562,12 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
 }
 
 function formatPlannedSessionForPrompt(session) {
-  const date = session.start_date_local
-    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
-    : "sin fecha";
+  const date = session.start_date_local ? formatTrainingDayForPrompt(session.start_date_local) : "sin fecha";
   return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
 }
 
 function formatCompletedSessionForPrompt(session) {
-  const date = session.start_date_local
-    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
-    : "sin fecha";
+  const date = session.start_date_local ? formatTrainingDayForPrompt(session.start_date_local) : "sin fecha";
   const metrics = [
     session.distance_m != null ? `distancia=${Math.round(session.distance_m)}m` : null,
     session.time_s != null ? `tiempo=${Math.round(session.time_s)}s` : null,
@@ -591,7 +591,7 @@ export function buildChatUserPrompt(planId, message, options = {}) {
   const completed = loadCompletedSessions();
   const completedText = completed.length > 0
     ? completed.map(formatCompletedSessionForPrompt).join("\n")
-    : "(ninguna sesión de este plan se ha realizado todavía)";
+    : "(no hay actividades realizadas todavía)";
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
@@ -612,7 +612,7 @@ export function buildChatUserPrompt(planId, message, options = {}) {
   const focusSports = getFocusSports(getTenantId());
   const focusText = focusSports.length > 0 ? focusSports.join(", ") : "running, cycling, swimming";
 
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = formatTrainingDayForPrompt(new Date().toISOString());
 
   let historyText = "";
   if (options.includeHistory) {
@@ -698,7 +698,6 @@ export async function chatWithPlan({ planId, message, previousResponseId, settin
   const parsed = parseChatResponse(text);
   const reply = parsed.reply || text;
 
-  addPlanMessage(planId, "user", message);
   addPlanMessage(planId, "assistant", reply);
 
   let sessionsUpdated = [];

@@ -1,8 +1,6 @@
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MessageCircle, Sparkles } from "lucide-react";
-import { parseISO } from "date-fns";
 import { Link, useParams } from "react-router-dom";
 
-import { format } from "@/lib/date-format";
 import { tenantPath } from "@/lib/tenant";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
@@ -10,7 +8,7 @@ import { PlanChat } from "@/components/planned/plan-chat";
 import { WorkoutText } from "@/components/session/workout-text";
 import { Markdown } from "@/components/ui/markdown";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getSportColor, getSportLabel } from "@/lib/utils";
+import { formatTrainingDay, getSportColor, getSportLabel } from "@/lib/utils";
 
 export function PlanDetailPage() {
   const { planId } = useParams<{ planId: string }>();
@@ -40,9 +38,7 @@ export function PlanDetailPage() {
   }
 
   const sessions = plan.plannedSessions ?? [];
-  const dates = sessions
-    .map((session) => parseISO(session.start_date_local))
-    .sort((a, b) => a.getTime() - b.getTime());
+  const orderedSessions = [...sessions].sort((a, b) => a.start_date_local.localeCompare(b.start_date_local));
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 animate-fade-in">
@@ -62,13 +58,13 @@ export function PlanDetailPage() {
               Plan de entrenamiento
             </div>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
-              Plan de {format(parseISO(plan.createdAt), "d MMM yyyy")}
+              Plan de entrenamiento
             </h1>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400">
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {dates.length > 0
-                  ? `${format(dates[0], "d MMM")} – ${format(dates[dates.length - 1], "d MMM yyyy")}`
+                  {orderedSessions.length > 0
+                   ? `${formatTrainingDay(orderedSessions[0].start_date_local, orderedSessions[0].weekNumber)} - ${formatTrainingDay(orderedSessions[orderedSessions.length - 1].start_date_local, orderedSessions[orderedSessions.length - 1].weekNumber)}`
                   : `${plan.weeks} semanas`}
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -121,7 +117,7 @@ export function PlanDetailPage() {
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold">{session.title ?? session.name}</h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    {getSportLabel(session.category)} · {format(parseISO(session.start_date_local), "d MMM yyyy · HH:mm")}
+                     {getSportLabel(session.category)} · {formatTrainingDay(session.start_date_local, session.weekNumber)}
                   </p>
                 </div>
                 {session.merged_with && <CheckCircle2 className="h-4 w-4 text-green-400" />}

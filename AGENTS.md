@@ -30,6 +30,8 @@
 - Las sesiones completadas y planificadas viven en `sessions.data` como JSON; las planificadas usan `kind = 'planned'` y `plan_id`.
 - Una nueva generación de plan no debe borrar planificaciones anteriores; solo las operaciones explícitas de borrar/reemplazar un plan pueden hacerlo.
 - El frontend es React + Vite + Tailwind; React Query debe incluir el tenant activo en las claves de caché de datos tenant-scoped.
+- Fuera del calendario y del detalle de sesión, las fechas usan `día #semana` (objetivos: `día semana #N`); mantén este formato también en prompts IA.
+- Las notificaciones frontend pasan por `ToastProvider` y se conservan en `localStorage`; no implementes otro buzón paralelo.
 
 ## Auth Y Tenants
 
