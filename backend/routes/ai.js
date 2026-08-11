@@ -61,6 +61,7 @@ export function register(router) {
   });
 
   router.get("/api/prompts", (c) => {
+    if (!canManage(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
     return sendJson(c.res, 200, getPrompts(c.tenantId));
   });
 

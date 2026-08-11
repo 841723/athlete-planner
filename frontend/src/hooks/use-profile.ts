@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProfile, updateProfile } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useProfile() {
+  const { activeTenantId } = useAuth();
   return useQuery<Record<string, unknown>>({
-    queryKey: ["profile"],
+    queryKey: ["profile", activeTenantId],
     queryFn: fetchProfile,
     staleTime: 1000 * 60 * 60,
   });

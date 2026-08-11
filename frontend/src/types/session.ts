@@ -568,28 +568,6 @@ export interface PlanChatReply {
   responseId: string | null;
 }
 
-export interface TrackPoint {
-  lat: number;
-  lng: number;
-  elevation_m?: number;
-}
-
-export interface TrackSample {
-  distance_m: number;
-  heartrate?: number;
-  watts?: number;
-  speed_ms?: number;
-  pace_s_per_km?: number;
-  elevation_m?: number;
-}
-
-export interface ActivityTrack {
-  sessionId: string;
-  sport: string;
-  points: TrackPoint[];
-  samples: TrackSample[];
-}
-
 export interface EquipmentItem {
   item: string;
   category: string;

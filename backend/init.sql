@@ -138,18 +138,6 @@ CREATE TABLE IF NOT EXISTS plan_messages (
 );
 CREATE INDEX IF NOT EXISTS idx_plan_messages_plan ON plan_messages(plan_id, created_at);
 
-CREATE TABLE IF NOT EXISTS activity_tracks (
-  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  session_id TEXT NOT NULL,
-  sport TEXT,
-  polyline TEXT NOT NULL,
-  samples TEXT NOT NULL,
-  point_count INTEGER,
-  updated_at TEXT NOT NULL,
-  PRIMARY KEY (tenant_id, session_id)
-);
-CREATE INDEX IF NOT EXISTS idx_activity_tracks_tenant ON activity_tracks(tenant_id, session_id);
-
 -- Configuraciones de IA por tenant (proveedor + key + modelo + duración chat + precios).
 CREATE TABLE IF NOT EXISTS ai_configs (
   id TEXT PRIMARY KEY,

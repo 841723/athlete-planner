@@ -12,6 +12,7 @@ import { withTenant } from "./lib/sessions.js";
 import { migrate } from "./lib/migrate.js";
 import { serveStatic, parseCookies, sendJson, sendError } from "./lib/http.js";
 import { buildPublicRouter, buildUserRouter, buildTenantRouter } from "./routes/index.js";
+import { pruneAiLogContent } from "./lib/ai-logs.js";
 
 const args = process.argv.slice(2);
 const portArg = Number(process.env.PORT ?? 4000);
@@ -122,6 +123,9 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
   const migrated = migrate();
+  pruneAiLogContent();
+  const logCleanup = setInterval(pruneAiLogContent, 24 * 60 * 60 * 1000);
+  logCleanup.unref?.();
   if (migrated.migrated) {
     console.log(
       `Migración de datos completada: ${migrated.completed} sesiones, ${migrated.planned} planificadas.`

@@ -5,10 +5,12 @@ import {
   testAiSettings,
 } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useAiSettings() {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["ai-settings"],
+    queryKey: ["ai-settings", activeTenantId],
     queryFn: fetchAiSettings,
     staleTime: 5 * 60 * 1000,
   });

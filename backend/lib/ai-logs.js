@@ -3,6 +3,17 @@ import { getDb } from "./db.js";
 
 export const MAX_LOG_CHARS = 100_000;
 
+export function pruneAiLogContent() {
+  return getDb()
+    .prepare(
+      `UPDATE ai_logs
+       SET input = NULL, response = NULL
+       WHERE datetime(replace(created_at, 'T', ' ')) < datetime('now', '-1 month')
+         AND (input IS NOT NULL OR response IS NOT NULL)`
+    )
+    .run().changes;
+}
+
 export function maskApiKey(key) {
   if (!key || typeof key !== "string") return null;
   if (key.length <= 8) return "****";
@@ -68,6 +79,7 @@ export function logAiRequest({
 const LOG_SELECT = `SELECT id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at`;
 
 export function listAiLogs(tenantId, { limit = 50, offset = 0, ok = null, provider = null } = {}) {
+  pruneAiLogContent();
   const clauses = ["tenant_id = ?"];
   const params = [tenantId];
   if (ok === "ok") {

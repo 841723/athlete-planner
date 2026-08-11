@@ -4,6 +4,12 @@ import path from "node:path";
 
 const args = process.argv.slice(2);
 const force = args.includes("--force");
+const optionValue = (name) => {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : null;
+};
+const minDate = optionValue("--min-date") ?? "2026-05-12";
+const minDateIndex = args.indexOf("--min-date");
 const idsOnly = new Set();
 for (const a of args) {
   if (a.startsWith("--ids=")) {
@@ -12,10 +18,9 @@ for (const a of args) {
     }
   }
 }
-const rest = args.filter((a) => a !== "--force" && !a.startsWith("--ids="));
-
-// Solo se sincronizan entrenamientos desde esta fecha (inclusive).
-const MIN_DATE = "2026-05-12";
+const rest = args.filter((a, index) =>
+  a !== "--force" && !a.startsWith("--ids=") && a !== "--min-date" && !(minDateIndex >= 0 && index === minDateIndex + 1)
+);
 
 const [listPath, detailsDir, sessionsDir = "sessions"] = rest;
 if (!listPath || !detailsDir) {
@@ -196,7 +201,7 @@ let filtered = 0;
 for (const a of activities) {
   const id = String(a.activityId);
   const startDate = (a.startTimeLocal?.datetime ?? "").slice(0, 10);
-  if (startDate < MIN_DATE) {
+  if (startDate < minDate) {
     filtered++;
     continue;
   }

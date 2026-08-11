@@ -20,7 +20,6 @@ import type {
   AdminOpencodeModelsResponse,
   AdminTenant,
   AdminTenantPayload,
-  ActivityTrack,
   ApiKey,
   AiLogsPage,
   EquipmentResponse,
@@ -53,7 +52,8 @@ export async function get<T>(path: string): Promise<T> {
   });
   if (!res.ok) {
     if (res.status === 401) handleUnauthorized();
-    throw new Error(`API ${res.status}: ${path}`);
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error ?? `API ${res.status}: ${path}`);
   }
   return res.json() as Promise<T>;
 }
@@ -154,10 +154,6 @@ export function disconnectSyncSource(provider: string): Promise<{ ok: boolean; i
 
 export function updateSyncSourceConfig(provider: string, body: { min_date?: string | null; max_date?: string | null }): Promise<{ ok: boolean; item: SyncSource }> {
   return send(`/sync-sources/${encodeURIComponent(provider)}/config`, "PUT", body);
-}
-
-export function fetchTrack(sessionId: string): Promise<ActivityTrack> {
-  return get(`/sessions/${encodeURIComponent(sessionId)}/track`);
 }
 
 export function updateSession(id: string, payload: Partial<Session>): Promise<Session> {

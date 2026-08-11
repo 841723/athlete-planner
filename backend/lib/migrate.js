@@ -127,25 +127,32 @@ export function migrate() {
 
   const tenantId = randomUUID();
   const now = new Date().toISOString();
-  db.prepare(
-    "INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, ?)"
-  ).run(tenantId, "Atleta principal", "default", now);
+  db.exec("BEGIN");
+  try {
+    db.prepare(
+      "INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, ?)"
+    ).run(tenantId, "Atleta principal", "default", now);
 
-  const completed = importCompletedSessions(tenantId);
-  const planned = importPlannedSessions(tenantId);
-  const hasProfile = importProfile(tenantId);
-  seedGoals(tenantId);
-  seedSettings(tenantId);
-  seedDefaultEquipment(tenantId);
-  seedDefaultAiConfig(tenantId);
-  const owner = seedOwner(tenantId);
+    const completed = importCompletedSessions(tenantId);
+    const planned = importPlannedSessions(tenantId);
+    const hasProfile = importProfile(tenantId);
+    seedGoals(tenantId);
+    seedSettings(tenantId);
+    seedDefaultEquipment(tenantId);
+    seedDefaultAiConfig(tenantId);
+    const owner = seedOwner(tenantId);
+    db.exec("COMMIT");
 
-  return {
-    migrated: true,
-    tenant: { id: tenantId, name: "Atleta principal", slug: "default" },
-    completed,
-    planned,
-    hasProfile,
-    ownerEmail: owner?.email ?? null,
-  };
+    return {
+      migrated: true,
+      tenant: { id: tenantId, name: "Atleta principal", slug: "default" },
+      completed,
+      planned,
+      hasProfile,
+      ownerEmail: owner?.email ?? null,
+    };
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }

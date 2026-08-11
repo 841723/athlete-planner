@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { parseISO, differenceInDays } from "date-fns";
-import { getWeekNumber } from "@/lib/utils";
+import { getWeekNumber, safeExternalUrl } from "@/lib/utils";
 import { CalendarCheck, Loader2, Plus, Save, Star, Trash } from "lucide-react";
 import { useGoals, useUpdateGoals } from "@/hooks/use-goals";
 import { useMeta } from "@/hooks/use-meta";
@@ -31,6 +31,7 @@ function GoalCard({ goal, planStart, today }: { goal: RaceGoal; planStart: strin
   const elapsedDays = Math.max(0, differenceInDays(today, parseISO(planStart)));
   const goalProgress = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
   const favicon = faviconUrl(goal.url);
+  const externalUrl = safeExternalUrl(goal.url);
   const color = goal.isPrimary ? goal.color || "#3b82f6" : undefined;
 
   return (
@@ -47,9 +48,9 @@ function GoalCard({ goal, planStart, today }: { goal: RaceGoal; planStart: strin
       <div className="flex items-center justify-between mb-1">
         <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
           {color ? <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} /> : null}
-          {goal.url ? (
+          {externalUrl ? (
             <a
-              href={goal.url}
+              href={externalUrl}
               target="_blank"
               rel="noopener noreferrer"
               title={goal.label}

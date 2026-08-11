@@ -63,10 +63,19 @@ export function register(router) {
     }
     const comments = String(body?.comments ?? "");
     const weeks = Number(body?.weeks ?? 1);
+    if (!Number.isInteger(weeks) || weeks < 1 || weeks > 52) {
+      return sendJson(c.res, 400, { error: "weeks debe ser un entero entre 1 y 52" });
+    }
+    if (comments.length > 10_000) {
+      return sendJson(c.res, 400, { error: "Los comentarios no pueden superar 10.000 caracteres" });
+    }
     const promptId = body?.promptId ?? null;
     const equipment = Array.isArray(body?.equipment) ? body.equipment.map(String) : null;
 
     const prompt = promptId ? getPrompt(promptId) : null;
+    if (promptId && (!prompt || prompt.tenant_id !== c.tenantId)) {
+      return sendJson(c.res, 404, { error: "Prompt no encontrado" });
+    }
     const planId = savePlan(c.tenantId, {
       comments: "",
       weeks,

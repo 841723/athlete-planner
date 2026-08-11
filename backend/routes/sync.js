@@ -7,7 +7,6 @@ export function register(router) {
     const body = await readBody(c.req);
     const result = await runSync({
       force: body?.force === true,
-      backfillTracks: body?.backfillTracks === true,
     });
     return sendJson(c.res, 200, result);
   });

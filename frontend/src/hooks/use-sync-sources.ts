@@ -4,15 +4,16 @@ import {
   garminConnect,
   garminMfa,
   garminTokens,
-  stravaConnect,
   disconnectSyncSource,
   updateSyncSourceConfig,
 } from "@/services/api";
 import type { SyncSource } from "@/types/session";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useSyncSources() {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["sync-sources"],
+    queryKey: ["sync-sources", activeTenantId],
     queryFn: fetchSyncSources,
   });
 }
@@ -33,9 +34,6 @@ export function useSyncSourceMutations() {
     garminTokens: useMutation({
       mutationFn: (body: { tokens: string }) => garminTokens(body),
       onSuccess: invalidate,
-    }),
-    stravaConnect: useMutation({
-      mutationFn: () => stravaConnect(),
     }),
     disconnect: useMutation({
       mutationFn: (provider: string) => disconnectSyncSource(provider),

@@ -4,7 +4,6 @@ import {
   getSession,
   updateSession,
 } from "../lib/sessions.js";
-import { getTrack } from "../lib/track.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 export function register(router) {
@@ -28,14 +27,6 @@ export function register(router) {
       { totalDistance: 0, totalHours: 0 }
     );
     return sendJson(c.res, 200, { completed, planned, totals, totalsCompleted });
-  });
-
-  router.get("/api/sessions/:id/track", (c) => {
-    const session = getSession(c.params.id);
-    if (!session) return sendJson(c.res, 404, { error: "Sesión no encontrada" });
-    const track = getTrack(c.tenantId, c.params.id);
-    if (!track) return sendJson(c.res, 404, { error: "Track no disponible" });
-    return sendJson(c.res, 200, track);
   });
 
   router.get("/api/sessions/:id", (c) => {

@@ -2,6 +2,7 @@ import { parseISO, differenceInDays } from "date-fns";
 import { Star, Target } from "lucide-react";
 import { useGoals } from "@/hooks/use-goals";
 import { useMeta } from "@/hooks/use-meta";
+import { safeExternalUrl } from "@/lib/utils";
 
 function faviconUrl(url?: string): string | null {
   if (!url) return null;
@@ -59,9 +60,9 @@ export function UpcomingGoals() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: primaryColor }} />
-              {primary.url ? (
+              {safeExternalUrl(primary.url) ? (
                 <a
-                  href={primary.url}
+                  href={safeExternalUrl(primary.url)!}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={primary.label}
@@ -107,6 +108,7 @@ export function UpcomingGoals() {
             const totalDaysGoal = Math.max(1, differenceInDays(goalDate, planStart));
             const goalProgressGoal = Math.min(Math.round((elapsedDays / totalDaysGoal) * 100), 100);
             const favicon = faviconUrl(goal.url);
+            const externalUrl = safeExternalUrl(goal.url);
 
             return (
               <div
@@ -121,9 +123,9 @@ export function UpcomingGoals() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
-                    {goal.url ? (
+                    {externalUrl ? (
                       <a
-                        href={goal.url}
+                        href={externalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         title={goal.label}

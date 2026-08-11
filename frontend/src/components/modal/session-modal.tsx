@@ -223,14 +223,6 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
           >
             Garmin
           </a>
-          <a
-            href={`https://www.strava.com/activities/${session.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-ghost text-sm"
-          >
-            Strava
-          </a>
         </div>
       </div>
     </div>

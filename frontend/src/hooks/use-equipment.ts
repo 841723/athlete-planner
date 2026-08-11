@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchEquipment, saveEquipment } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
 import type { EquipmentItem, EquipmentCategory, EquipmentResponse } from "@/types/session";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useEquipment() {
+  const { activeTenantId } = useAuth();
   return useQuery<EquipmentResponse>({
-    queryKey: ["equipment"],
+    queryKey: ["equipment", activeTenantId],
     queryFn: fetchEquipment,
     staleTime: 1000 * 60 * 60,
   });

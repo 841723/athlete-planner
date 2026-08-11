@@ -1,7 +1,7 @@
 import { getDb } from "./db.js";
 import { upsertSession, getTenantId } from "./sessions.js";
-import { saveTrack } from "./track.js";
 import { mergePlannedWithCompleted } from "./merge.js";
+import { setSyncSource } from "./sync-sources.js";
 
 const API = "https://www.strava.com/api/v3";
 const OAUTH = "https://www.strava.com/oauth/token";
@@ -180,31 +180,6 @@ export function normalizeStravaActivity(a) {
   return session;
 }
 
-function decodePolyline(str) {
-  const factor = 1e5;
-  const points = [];
-  let index = 0;
-  let lat = 0;
-  let lng = 0;
-  const read = () => {
-    let result = 0;
-    let shift = 0;
-    let byte;
-    do {
-      byte = str.charCodeAt(index++) - 63;
-      result |= (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20);
-    return result & 1 ? ~(result >> 1) : result >> 1;
-  };
-  while (index < str.length) {
-    lat += read();
-    lng += read();
-    points.push([lat / factor, lng / factor, null]);
-  }
-  return points;
-}
-
 async function fetchDetail(tokens, id) {
   return stravaFetch(tokens, `/activities/${id}`);
 }
@@ -217,13 +192,16 @@ export async function syncStrava(tenantId, source) {
     const refreshed = await stravaRefreshAccessToken(tokens.refresh_token);
     tokens = { ...tokens, ...refreshed };
     source.tokens = tokens;
+    setSyncSource(tenantId, "strava", { tokens: JSON.stringify(tokens) });
   }
 
   const config = source.config ?? {};
   const minDate = config.min_date ?? process.env.MIN_DATE ?? "2026-05-12";
   const maxDate = config.max_date ?? null;
   const after = Math.floor(new Date(`${minDate}T00:00:00`).getTime() / 1000);
-  const before = maxDate ? Math.floor(new Date(`${maxDate}T00:00:00`).getTime() / 1000) : null;
+  const before = maxDate
+    ? Math.floor((new Date(`${maxDate}T00:00:00Z`).getTime() + 86400 * 1000) / 1000)
+    : null;
 
   const existing = new Set(
     getDb()
@@ -247,17 +225,11 @@ export async function syncStrava(tenantId, source) {
   }
 
   let imported = 0;
-  let tracks = 0;
   for (const id of newIds) {
     const detail = await fetchDetail(tokens, id);
     const session = normalizeStravaActivity(detail);
     upsertSession(tenantId, "completed", session);
     imported++;
-    const polyline = detail?.map?.summary_polyline;
-    if (typeof polyline === "string" && polyline.length > 0) {
-      saveTrack(tenantId, id, { sport: session.sport, polyline: decodePolyline(polyline), samples: [] });
-      tracks++;
-    }
   }
 
   const merged = imported > 0 ? mergePlannedWithCompleted() : undefined;
@@ -268,7 +240,6 @@ export async function syncStrava(tenantId, source) {
     filtered: 0,
     missing: newIds.length,
     ids: newIds,
-    tracks,
     merged,
   };
 }

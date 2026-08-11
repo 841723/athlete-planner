@@ -29,8 +29,10 @@ export function getDb() {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   db = new DatabaseSync(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL;");
+  db.exec("PRAGMA busy_timeout = 5000;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(loadInitSql());
+  db.exec("DROP TABLE IF EXISTS activity_tracks;");
   ensureColumn("users", "is_superadmin", "is_superadmin INTEGER NOT NULL DEFAULT 0");
   ensureColumn("goals", "url", "url TEXT");
   ensureColumn("goals", "is_primary", "is_primary INTEGER NOT NULL DEFAULT 0");

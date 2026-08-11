@@ -3,10 +3,12 @@ import { fetchGoals, updateGoals } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { RaceGoal } from "@/types/session";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useGoals() {
+  const { activeTenantId } = useAuth();
   return useQuery<RaceGoal[]>({
-    queryKey: ["goals"],
+    queryKey: ["goals", activeTenantId],
     queryFn: fetchGoals,
     staleTime: 1000 * 60 * 60,
   });

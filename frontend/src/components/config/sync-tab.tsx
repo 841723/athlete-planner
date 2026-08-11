@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Activity, CheckCircle2, ClipboardPaste, Loader2, RefreshCw, Save, ShieldAlert, Unplug, Wifi } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, CheckCircle2, ClipboardPaste, Loader2, Save, ShieldAlert, Unplug, Wifi } from "lucide-react";
 import { useSyncSources, useSyncSourceMutations } from "@/hooks/use-sync-sources";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,7 @@ import type { SyncSource } from "@/types/session";
 const PROVIDER_META: Record<string, { label: string; description: string }> = {
   garmin: {
     label: "Garmin Connect",
-    description: "Descarga tus actividades, sesiones y tracks desde Garmin Connect.",
-  },
-  strava: {
-    label: "Strava",
-    description: "Importa actividades desde Strava (autenticación vía OAuth).",
+    description: "Descarga tus actividades y sesiones desde Garmin Connect.",
   },
 };
 
@@ -316,116 +312,6 @@ function GarminCard({ source, defaultMinDate }: { source: SyncSource; defaultMin
   );
 }
 
-function StravaCard({ source, stravaConfigured, defaultMinDate }: { source: SyncSource; stravaConfigured: boolean; defaultMinDate?: string | null }) {
-  const { toast } = useToast();
-  const mutations = useSyncSourceMutations();
-  const { refetch } = useSyncSources();
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  function stopPolling() {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }
-
-  async function handleConnect() {
-    try {
-      const { url } = await mutations.stravaConnect.mutateAsync();
-      window.open(url, "_blank");
-      toast({ type: "success", title: "Autoriza en la nueva pestaña", description: "Al volver se conectará automáticamente." });
-      pollRef.current = setInterval(async () => {
-        const data = await refetch();
-        if (data.data?.items.some((s) => s.provider === "strava" && s.status === "connected")) {
-          stopPolling();
-          toast({ type: "success", title: "Strava conectado" });
-        }
-      }, 3000);
-    } catch (e) {
-      toast({ type: "error", title: "No se pudo iniciar la conexión con Strava", description: (e as Error).message });
-    }
-  }
-
-  function handleDisconnect() {
-    if (window.confirm("¿Desconectar Strava? Las sesiones ya importadas se conservan.")) {
-      mutations.disconnect.mutate("strava");
-    }
-  }
-
-  return (
-    <div className="card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent-light flex items-center justify-center">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-gray-300">{PROVIDER_META.strava.label}</h2>
-            <p className="text-xs text-gray-500">{PROVIDER_META.strava.description}</p>
-          </div>
-        </div>
-        <StatusBadge source={source} />
-      </div>
-
-      {source.status === "connected" ? (
-        <div className="space-y-3">
-          <div className="p-3 rounded-xl bg-dark-300/50 text-sm">
-            <p className="text-gray-300">
-              Cuenta: <span className="text-gray-100 font-medium">{source.account_name ?? "—"}</span>
-            </p>
-            {source.min_date && (
-              <p className="text-xs text-gray-500 mt-1">Sincroniza desde {source.min_date}</p>
-            )}
-          </div>
-          <DateRangeEditor source={source} defaultMinDate={defaultMinDate} />
-          <Button
-            variant="ghost"
-            className="text-xs px-3 py-1.5 text-red-400 hover:text-red-300 w-fit"
-            onClick={handleDisconnect}
-            disabled={mutations.disconnect.isPending}
-          >
-            {mutations.disconnect.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-            Desconectar
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {!stravaConfigured ? (
-            <p className="text-xs text-red-400">
-              Strava no está configurado todavía. 
-              {/* Añade STRAVA_CLIENT_ID y STRAVA_CLIENT_SECRET en el .env. */}
-            </p>
-          ) : (
-            <>
-              <Button onClick={handleConnect} disabled={mutations.stravaConnect.isPending}>
-                {mutations.stravaConnect.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Conectar con Strava
-              </Button>
-              <p className="text-xs text-gray-500">
-                Se abrirá una ventana de autorización de Strava. No es necesario guardar credenciales aquí.
-              </p>
-              <p className="text-xs text-gray-500">
-                ¿Usas Garmin? Activa el auto-sync Garmin→Strava en Strava y conéctala aquí; así no tendrás que
-                compartir tu contraseña de Garmin.
-              </p>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function SyncTab() {
   const { data, isLoading } = useSyncSources();
 
@@ -439,15 +325,13 @@ export function SyncTab() {
   }
 
   const garmin = data?.items.find((s) => s.provider === "garmin");
-  const strava = data?.items.find((s) => s.provider === "strava");
   const defaultMinDate = data?.defaultMinDate ?? null;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {strava && <StravaCard source={strava} stravaConfigured={!!data?.stravaConfigured} defaultMinDate={defaultMinDate} />}
+    <div className="grid gap-4">
       {garmin && <GarminCard source={garmin} defaultMinDate={defaultMinDate} />}
       <p className="text-xs text-gray-500 lg:col-span-2">
-        El botón Sincronizar de Inicio usa la fuente conectada. Solo puede haber una fuente activa a la vez.
+        El botón Sincronizar de Inicio usa Garmin Connect.
       </p>
     </div>
   );

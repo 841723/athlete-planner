@@ -25,7 +25,7 @@ export function readBody(req) {
       raw += chunk;
       if (raw.length > 1_000_000) {
         settled = true;
-        reject(new Error("Cuerpo demasiado grande"));
+        reject(Object.assign(new Error("Cuerpo demasiado grande"), { status: 413 }));
         req.destroy();
       }
     });
@@ -62,6 +62,7 @@ export function parseCookies(req) {
 
 export function setCookie(res, name, value, maxAge) {
   const parts = [`${name}=${encodeURIComponent(value)}`, "Path=/", "HttpOnly", "SameSite=Lax"];
+  if (process.env.NODE_ENV === "production") parts.push("Secure");
   if (maxAge !== undefined) parts.push(`Max-Age=${maxAge}`);
   res.setHeader("Set-Cookie", parts.join("; "));
 }
@@ -92,8 +93,9 @@ export function serveStatic(req, res, staticDir) {
   } catch {
     urlPath = "/";
   }
-  let filePath = path.join(staticDir, urlPath === "/" ? "index.html" : urlPath);
-  if (!filePath.startsWith(staticDir)) filePath = path.join(staticDir, "index.html");
+  const root = path.resolve(staticDir);
+  let filePath = path.resolve(root, urlPath === "/" ? "index.html" : `.${urlPath}`);
+  if (filePath !== root && !filePath.startsWith(`${root}${path.sep}`)) filePath = path.join(root, "index.html");
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     filePath = path.join(staticDir, "index.html");
   }

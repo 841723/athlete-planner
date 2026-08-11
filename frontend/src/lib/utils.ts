@@ -8,6 +8,16 @@ import {
 } from "date-fns";
 import { SportCategory, SPORT_COLORS, SPORT_LABELS } from "@/types/session";
 
+export function safeExternalUrl(value?: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export function formatDistance(meters: number | undefined): string {
   if (meters == null) return "—";
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;

@@ -5,18 +5,21 @@ import {
   setActiveProfileVersion,
 } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useProfileHistory() {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["profile-history"],
+    queryKey: ["profile-history", activeTenantId],
     queryFn: fetchProfileHistory,
     staleTime: 60 * 1000,
   });
 }
 
 export function useProfileVersion(versionId: string | null) {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["profile-version", versionId],
+    queryKey: ["profile-version", activeTenantId, versionId],
     queryFn: () => fetchProfileVersion(versionId!),
     enabled: !!versionId,
     staleTime: 5 * 60 * 1000,

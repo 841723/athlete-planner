@@ -4,9 +4,11 @@ import path from "node:path";
 import { runPython, GARMIN_LOGIN, GARMIN_FETCH } from "./sync-run.js";
 
 export async function garminLogin({ email, password, mfaCode = null }) {
-  const args = ["--email", email, "--password", password];
-  if (mfaCode) args.push("--mfa", mfaCode);
-  const out = await runPython(GARMIN_LOGIN, args);
+  const args = ["--email", email];
+  const out = await runPython(GARMIN_LOGIN, args, {
+    GARMIN_PASSWORD: password,
+    ...(mfaCode ? { GARMIN_MFA: mfaCode } : {}),
+  });
   let parsed = null;
   try {
     parsed = JSON.parse(out || "{}");

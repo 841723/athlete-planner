@@ -34,8 +34,8 @@ export function run(cmd, args, { cwd = ROOT } = {}) {
   });
 }
 
-export function runPython(script, args) {
-  return run("uv", ["run", "--python", PYTHON_VERSION, "--with", GARMIN_DEPS, "python", script, ...args]);
+export function runPython(script, args, env = undefined) {
+  return run("uv", ["run", "--python", PYTHON_VERSION, "--with", GARMIN_DEPS, "python", script, ...args], { env });
 }
 
 export function runNode(script, args) {

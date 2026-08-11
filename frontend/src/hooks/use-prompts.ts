@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchPrompts, savePrompt, deletePrompt, updatePrompt } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function usePrompts() {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["prompts"],
+    queryKey: ["prompts", activeTenantId],
     queryFn: fetchPrompts,
     staleTime: 5 * 60 * 1000,
   });

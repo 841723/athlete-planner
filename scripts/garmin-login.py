@@ -16,15 +16,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", required=True)
-    parser.add_argument("--password", required=True)
+    parser.add_argument("--password", default=None)
     parser.add_argument("--mfa", default=None)
     args = parser.parse_args()
+    password = args.password or os.environ.get("GARMIN_PASSWORD")
+    mfa = args.mfa or os.environ.get("GARMIN_MFA")
+    if not password:
+        parser.error("falta la contraseña")
 
     try:
         from garminconnect import Garmin, GarminConnectAuthenticationError
@@ -32,10 +37,10 @@ def main() -> None:
         sys.exit("No está instalada la librería `garminconnect`.")
 
     try:
-        if args.mfa:
-            g = Garmin(email=args.email, password=args.password, prompt_mfa=lambda: args.mfa)
+        if mfa:
+            g = Garmin(email=args.email, password=password, prompt_mfa=lambda: mfa)
         else:
-            g = Garmin(email=args.email, password=args.password, return_on_mfa=True)
+            g = Garmin(email=args.email, password=password, return_on_mfa=True)
         result = g.login()
         if result and result[0] == "needs_mfa":
             print(json.dumps({"mfa_required": True}))

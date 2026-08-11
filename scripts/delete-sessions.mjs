@@ -77,17 +77,8 @@ if (!yes) {
 db.exec("BEGIN");
 try {
   const sessionsResult = db.prepare(`DELETE FROM sessions${whereSql}`).run(...params);
-  const tenantFilter = tenantId ? "tenant_id = ? AND" : "";
-  const tenantParams = tenantId ? [tenantId] : [];
-  const tracksResult = db
-    .prepare(
-      `DELETE FROM activity_tracks WHERE ${tenantFilter} (tenant_id, session_id) NOT IN
-       (SELECT tenant_id, id FROM sessions)`
-    )
-    .run(...tenantParams);
   db.exec("COMMIT");
   console.log(`Sesiones eliminadas: ${sessionsResult.changes}`);
-  console.log(`Tracks huérfanos eliminados: ${tracksResult.changes}`);
   console.log(`BD: ${DB_PATH}`);
 } catch (err) {
   db.exec("ROLLBACK");

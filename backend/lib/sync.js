@@ -3,7 +3,6 @@ import os from "node:os";
 import path from "node:path";
 import { getDb } from "./db.js";
 import { getTenantId, upsertSession } from "./sessions.js";
-import { saveTrack, existingTrackIds } from "./track.js";
 import { mergePlannedWithCompleted } from "./merge.js";
 import { runPython, runNode, GARMIN_FETCH, SYNC_SESSIONS } from "./sync-run.js";
 import { getSyncSource, getSyncTokensRaw } from "./sync-sources.js";
@@ -55,24 +54,6 @@ function importNormalizedSessions(dir, ids) {
   return imported;
 }
 
-function importTracks(dir, ids) {
-  let imported = 0;
-  if (!fs.existsSync(dir)) return 0;
-  for (const file of fs.readdirSync(dir)) {
-    if (!file.endsWith(".json")) continue;
-    const m = file.match(/^(\d+)\.json$/);
-    if (!m || !ids.includes(m[1])) continue;
-    try {
-      const data = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
-      saveTrack(getTenantId(), m[1], data);
-      imported++;
-    } catch {
-      /* ignorar track inválido */
-    }
-  }
-  return imported;
-}
-
 function connectedSource() {
   const tenantId = getTenantId();
   const garmin = getSyncSource(tenantId, "garmin");
@@ -105,21 +86,16 @@ async function syncGarmin({ force = false }) {
   const listFile = path.join(workDir, "raw-activities.json");
   const detailsDir = path.join(workDir, "details");
   const sessionsDir = path.join(workDir, "sessions");
-  const tracksDir = path.join(workDir, "tracks");
   try {
     fs.writeFileSync(tokensFile, rawTokens);
     fs.mkdirSync(detailsDir, { recursive: true });
     fs.mkdirSync(sessionsDir, { recursive: true });
-    fs.mkdirSync(tracksDir, { recursive: true });
 
     const allIds = await fetchAllIds(tokensFile, dateArgs);
     const existing = existingIds();
     const missingIds = allIds.filter((id) => !existing.has(id));
 
-    const withTrack = existingTrackIds(tenantId);
-    const trackIds = allIds.filter((id) => !withTrack.has(id));
-
-    if (!missingIds.length && !trackIds.length) {
+    if (!missingIds.length) {
       return {
         synced: 0,
         skipped: allIds.length,
@@ -140,16 +116,11 @@ async function syncGarmin({ force = false }) {
     let syncOut = "";
     let imported = 0;
     if (missingIds.length) {
-      const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`];
+      const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`, "--min-date", minDate];
       if (force) syncArgs.push("--force");
       syncOut = await runNode(SYNC_SESSIONS, syncArgs);
       imported = importNormalizedSessions(sessionsDir, missingIds);
     }
-
-    for (const id of trackIds) {
-      await runPython(GARMIN_FETCH, ["track", id, "--tokens", tokensFile, "--out", path.join(tracksDir, `${id}.json`)]);
-    }
-    const trackCount = importTracks(tracksDir, trackIds);
 
     const merged = mergePlannedWithCompleted();
 
@@ -158,7 +129,6 @@ async function syncGarmin({ force = false }) {
         ? (parseSummary(syncOut) ?? { synced: imported, skipped: 0, filtered: 0, missing: 0 })
         : { synced: 0, skipped: 0, filtered: 0, missing: 0 }),
       ids: missingIds,
-      tracks: trackCount,
       merged,
     };
   } finally {
@@ -170,7 +140,7 @@ async function syncGarmin({ force = false }) {
   }
 }
 
-export async function runSync({ force = false, backfillTracks = false } = {}) {
+export async function runSync({ force = false } = {}) {
   if (syncing) {
     const err = new Error("Ya hay una sincronización en curso");
     err.status = 409;

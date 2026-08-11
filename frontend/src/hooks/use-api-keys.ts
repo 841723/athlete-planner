@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchApiKeys, createApiKey, deleteApiKey } from "@/services/api";
 import { useToast } from "@/components/ui/toast";
 import type { ApiKey } from "@/types/session";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useApiKeys() {
+  const { activeTenantId } = useAuth();
   return useQuery<ApiKey[]>({
-    queryKey: ["api-keys"],
+    queryKey: ["api-keys", activeTenantId],
     queryFn: fetchApiKeys,
   });
 }

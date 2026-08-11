@@ -464,15 +464,6 @@ function createPlannedSession(sessionData, planId) {
   return { ...enrich(session), objectives: buildObjectives(session) };
 }
 
-function clearPlannedSessions() {
-  getDb()
-    .prepare(
-      `DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'
-       AND (json_extract(data, '$.merged_with') IS NULL OR json_extract(data, '$.merged_with') = '')`
-    )
-    .run(getTenantId());
-}
-
 export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null, promptId = null, equipment = null, settings, actor, planId = null }) {
   const tenantId = getTenantId();
   if (planId) updatePlanStatus(planId, "generating");
@@ -526,8 +517,6 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
         status: "completed",
       });
     }
-
-    clearPlannedSessions();
 
     const createdSessions = [];
     for (const rawSession of rawSessions) {
