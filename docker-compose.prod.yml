@@ -4,7 +4,7 @@ services:
     image: alpine:3.20
     command: ["sh", "-c", "mkdir -p /data && sleep infinity"]
     volumes:
-      - db_data:/data
+      - ./data:/data
     restart: unless-stopped
 
   # Instancia local de opencode (proveedor de IA), solo red interna.
@@ -22,8 +22,8 @@ services:
       - database
       - opencode
     volumes:
-      # Base de datos SQLite (compartida con el servicio database)
-      - db_data:/app/data
+      # Base de datos SQLite (compartida con el servicio database; persiste en el host)
+      - ./data:/app/data
       # Garmin OAuth tokens (persisten fuera del repo)
       - garmin_tokens:/root/.garminconnect
     env_file:
@@ -45,5 +45,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  db_data:
   garmin_tokens:

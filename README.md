@@ -161,14 +161,14 @@ Requiere el `.env` configurado (ver arriba).
 ### Producción
 
 El despliegue usa un contenedor `frontend` con nginx que sirve el compilado y
-proxya `/api` al backend (mismo origen, URLs relativas) y un volumen `db_data`
-para la BD.
+proxya `/api` al backend (mismo origen, URLs relativas) y el directorio `./data`
+del host (bind mount) para la BD SQLite, igual que el desarrollo.
 
 ```sh
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Mapea el puerto `13799` (host) al `80` (nginx). Pasos para exponerlo a internet
+Mapea el puerto `43520` (host) al `80` (nginx). Pasos para exponerlo a internet
 tras levantar el contenedor:
 
 1. **`.env` en el servidor**: copia el fichero `.env` (está en `.gitignore`).
@@ -177,7 +177,7 @@ tras levantar el contenedor:
    añade `https://<tu-subdominio>` en **Authorized JavaScript origins** (el
    login usa el flujo de `credential`, no hace falta redirect URI).
 3. **Túnel de Cloudflare**: apunta un túnel (cloudflared) al puerto
-   `http://localhost:13799`. El backend no gestiona TLS; la termina Cloudflare.
+   `http://localhost:43520`. El backend no gestiona TLS; la termina Cloudflare.
 4. **Garmin (opcional)**: la conexión se gestiona desde Configuración →
    Sincronización (los tokens se guardan en la BD del tenant, no en ficheros).
 
