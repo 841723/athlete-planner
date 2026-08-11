@@ -198,7 +198,7 @@ export interface MetaPayload {
   focus_sports?: string[];
 }
 
-export type FocusSport = "running" | "cycling" | "swimming";
+export type FocusSport = "running" | "cycling" | "swimming" | "strength";
 
 export interface SessionTotals {
   totalDistance: number;
@@ -384,7 +384,6 @@ export interface AiConfig {
   base_url?: string | null;
   currency: string;
   chat_duration_hours: number;
-  chatDurationLabel?: string;
   pricing?: Record<string, AiPricingValue> | null;
   is_default: boolean;
 }
@@ -402,7 +401,6 @@ export interface AiConfigPayload {
   model?: string | null;
   baseUrl?: string | null;
   currency?: string;
-  chatDurationHours?: number;
   pricing?: Record<string, AiPricingValue>;
   isDefault?: boolean;
 }
@@ -561,8 +559,6 @@ export interface PlanChat {
   planId: string;
   planCreatedAt: string;
   canChat: boolean;
-  chatDurationLabel?: string;
-  expiresAt?: string | null;
   messages: PlanMessage[];
 }
 

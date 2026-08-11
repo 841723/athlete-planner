@@ -24,7 +24,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
   const [selectedConfigId, setSelectedConfigId] = useState<string>("");
   const [selectedPromptId, setSelectedPromptId] = useState<string>("");
   const [promptPreview, setPromptPreview] = useState(false);
-  const [equipment, setEquipment] = useState<string[]>([]);
 
   if (!open) return null;
 
@@ -46,7 +45,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
         weeks,
         aiConfigId: selectedConfigId || undefined,
         promptId: selectedPromptId || undefined,
-        equipment: equipment.length > 0 ? equipment : undefined,
       },
       {
         onSuccess: () => {
@@ -62,7 +60,6 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
     setSelectedConfigId("");
     setSelectedPromptId("");
     setPromptPreview(false);
-    setEquipment([]);
     generateMutation.reset();
     onClose();
   }
@@ -128,31 +125,19 @@ export function GeneratePlanModal({ open, onClose }: GeneratePlanModalProps) {
               <label className="text-xs text-gray-400 block mb-1.5 flex items-center gap-1">
                 <Dumbbell className="w-3 h-3" /> Equipamiento disponible
               </label>
-              <div className="flex flex-wrap gap-1.5">
-                {equipmentItems.map((it) => {
-                  const active = equipment.includes(it.item);
-                  return (
-                    <button
-                      key={it.item}
-                      type="button"
-                      onClick={() =>
-                        setEquipment((e) =>
-                          active ? e.filter((x) => x !== it.item) : [...e, it.item]
-                        )
-                      }
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                        active
-                          ? "bg-accent/20 border-accent/50 text-accent-light"
-                          : "bg-dark-300/40 border-dark-400 text-gray-400 hover:text-gray-200"
-                      }`}
-                    >
-                      {it.item}
-                    </button>
-                  );
-                })}
+              <div className="rounded-lg bg-dark-300/50 border border-dark-400 p-2.5 flex flex-wrap gap-1.5">
+                {equipmentItems.map((it) => (
+                  <span
+                    key={it.item}
+                    className="text-xs px-2.5 py-1 rounded-full bg-dark-400/40 border border-dark-400 text-gray-300"
+                  >
+                    {it.item}
+                  </span>
+                ))}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Solo se envía si seleccionas equipamiento.
+                Tu perfil marca este material como disponible y el entrenador IA lo tendrá en cuenta en el plan.
+                Puedes cambiarlo en Configuración → Equipamiento.
               </p>
             </div>
           )}

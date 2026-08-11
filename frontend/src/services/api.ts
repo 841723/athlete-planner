@@ -196,10 +196,6 @@ export function fetchMembers(tenantId: string): Promise<Member[]> {
   return get(`/tenants/${encodeURIComponent(tenantId)}/members`);
 }
 
-export function updateTenantName(name: string): Promise<{ name: string }> {
-  return send(`/tenants/${encodeURIComponent(activeTenantId ?? "")}/name`, "PUT", { name });
-}
-
 export function addMember(
   tenantId: string,
   payload: { email: string; role: TenantRole }
@@ -303,7 +299,6 @@ export function updateAiSettings(payload: {
   model: string | null;
   baseUrl?: string | null;
   currency?: string;
-  chatDurationHours?: number | null;
   pricing?: Record<string, { input_per_mtok?: number; output_per_mtok?: number }>;
 }): Promise<{ ok: boolean }> {
   return send("/ai-settings", "PUT", payload);

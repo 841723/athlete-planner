@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot, Send, Loader2, Lock, RefreshCw, User } from "lucide-react";
+import { Bot, Send, Loader2, RefreshCw, User } from "lucide-react";
 import { format } from "@/lib/date-format";
 import { usePlanChat, useSendPlanChat } from "@/hooks/use-plan-chat";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -19,11 +19,6 @@ export function PlanChat({ plan }: PlanChatProps) {
   const [draft, setDraft] = useState("");
 
   const canChat = perms.canEdit && !!data?.canChat;
-  const expiresAt = data?.expiresAt
-    ? new Date(data.expiresAt)
-    : data?.planCreatedAt
-      ? new Date(new Date(data.planCreatedAt).getTime() + 24 * 60 * 60 * 1000)
-      : null;
 
   function handleSend() {
     const message = draft.trim();
@@ -38,15 +33,7 @@ export function PlanChat({ plan }: PlanChatProps) {
         <div className="flex items-center gap-1.5 text-xs font-semibold text-accent-light">
           <Bot className="w-3.5 h-3.5" />
           Chat con el entrenador IA
-          {data && !data.canChat && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-dark-400/60 text-gray-400 text-[10px]">
-              <Lock className="w-2.5 h-2.5" /> Caducado
-            </span>
-          )}
         </div>
-        {expiresAt && data?.canChat && (
-          <span className="text-[10px] text-gray-500">Expira {format(expiresAt, "d MMM HH:mm")}</span>
-        )}
       </div>
 
       <div className="bg-dark-300/20 p-3 space-y-3 flex-1 overflow-y-auto min-h-[200px] max-h-[60vh]">
@@ -139,9 +126,7 @@ export function PlanChat({ plan }: PlanChatProps) {
         <div className="px-3 py-2.5 border-t border-dark-400 text-xs text-gray-500">
           {!perms.canEdit
             ? "Solo los usuarios con permisos de edición pueden chatear."
-            : data?.chatDurationLabel
-              ? `El chat caducó (disponible ${data.chatDurationLabel} desde la generación del plan).`
-              : "El chat caducó a las 24 horas de generar el plan."}
+            : "El chat solo está disponible cuando el plan está completo."}
         </div>
       )}
     </div>

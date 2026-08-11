@@ -46,7 +46,7 @@ export function saveMeta(tenantId, body = {}) {
   };
   let focusSports = current.focus_sports ?? null;
   if (Array.isArray(body.focus_sports)) {
-    const valid = new Set(["running", "cycling", "swimming"]);
+    const valid = new Set(["running", "cycling", "swimming", "strength"]);
     const sports = [...new Set(body.focus_sports)].filter((s) => valid.has(s));
     focusSports = sports.length > 0 ? JSON.stringify(sports) : null;
   }

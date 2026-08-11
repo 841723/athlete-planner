@@ -153,7 +153,13 @@ function assistantCompleted(m) {
 // Espera a que opencode termine la respuesta sondeando el endpoint de mensajes.
 // No se usa POST /wait: en modo servidor (opencode serve 1.18.x) devuelve 503
 // "Session wait is not available yet" incluso con la sesión inactiva.
-async function waitForAssistant(base, headers, sessionId) {
+//
+// Al reutilizar una sesión ya existe un mensaje de asistente completado del turno
+// anterior; hay que ignorarlo y esperar al mensaje NUEVO. Para ello `startCount`
+// indica cuántos mensajes había antes de enviar el prompt, y `minCreatedAt` es el
+// instante en que se envió: la respuesta nueva debe ser posterior (por índice y,
+// si hay timestamp, también por fecha).
+async function waitForAssistant(base, headers, sessionId, { startCount = 0, minCreatedAt = 0 } = {}) {
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   let lastErr = null;
   while (Date.now() < deadline) {
@@ -164,7 +170,14 @@ async function waitForAssistant(base, headers, sessionId) {
         { headers, timeoutMs: 30_000 }
       );
       const messages = Array.isArray(data) ? data : data?.data ?? [];
-      const assistant = [...messages].reverse().find(assistantCompleted);
+      const assistant = [...messages]
+        .reverse()
+        .find(
+          (m, i, arr) =>
+            assistantCompleted(m) &&
+            arr.length - 1 - i >= startCount &&
+            (m?.time?.created == null || new Date(m.time.created).getTime() >= minCreatedAt)
+        );
       if (assistant) {
         if (assistant.error) {
           throw new Error(`opencode devolvió un error: ${JSON.stringify(assistant.error).slice(0, 400)}`);
@@ -196,15 +209,33 @@ export async function runConversation({ baseUrl, modelId, modelProviderId, syste
   const ensure = (id) => id ?? createSession(base, headers, workspaceDir, modelId, modelProviderId);
 
   let sid = await ensure(sessionId);
+
+  // Al reutilizar una sesión, cuenta los mensajes existentes para poder distinguir
+  // la respuesta de este turno de la del turno anterior al esperar.
+  let startCount = 0;
+  if (sessionId) {
+    try {
+      const data = await opencodeFetch(
+        base,
+        `/api/session/${encodeURIComponent(sessionId)}/message?order=asc`,
+        { headers, timeoutMs: 30_000 }
+      );
+      startCount = Array.isArray(data) ? data.length : (data?.data ?? []).length;
+    } catch {
+      startCount = 0;
+    }
+  }
+
   try {
     await sendPrompt(base, headers, sid, text);
   } catch (err) {
     if (!sessionId || err.status !== 404) throw err;
     sid = await createSession(base, headers, workspaceDir, modelId, modelProviderId);
+    startCount = 0;
     await sendPrompt(base, headers, sid, text);
   }
 
-  const assistant = await waitForAssistant(base, headers, sid);
+  const assistant = await waitForAssistant(base, headers, sid, { startCount, minCreatedAt: Date.now() - 2000 });
   const parts = Array.isArray(assistant.content) ? assistant.content : [];
   const answer = parts
     .filter((p) => p?.type === "text")

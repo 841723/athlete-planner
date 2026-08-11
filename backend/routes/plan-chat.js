@@ -1,7 +1,7 @@
 import { getPlan, updatePlanResponseId } from "../lib/plans.js";
 import { listPlanMessages, addPlanMessage, deletePlanAndSessions } from "../lib/plan-chat.js";
 import { chatWithPlan } from "../lib/trainer.js";
-import { getAiConfigWithKey, getDefaultAiConfig, getChatWindowMs, chatDurationLabel } from "../lib/ai-configs.js";
+import { getAiConfigWithKey, getDefaultAiConfig } from "../lib/ai-configs.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 function planConfig(c, plan) {
@@ -9,14 +9,8 @@ function planConfig(c, plan) {
   return getDefaultAiConfig(c.tenantId, true);
 }
 
-function isExpired(plan, windowMs) {
-  if (windowMs == null) return false;
-  const created = new Date(plan.created_at).getTime();
-  return Date.now() - created > windowMs;
-}
-
-function canChat(plan, windowMs) {
-  return plan.status === "completed" && !isExpired(plan, windowMs);
+function canChat(plan) {
+  return plan.status === "completed";
 }
 
 function isGenerating(plan) {
@@ -33,15 +27,10 @@ export function register(router) {
   router.get("/api/plans/:id/chat", (c) => {
     const plan = getPlanOr404(c, c.params.id);
     if (!plan) return;
-    const config = planConfig(c, plan);
-    const windowMs = getChatWindowMs(config);
-    const chatHours = config?.chat_duration_hours ?? null;
     return sendJson(c.res, 200, {
       planId: plan.id,
       planCreatedAt: plan.created_at,
-      canChat: canChat(plan, windowMs),
-      chatDurationLabel: chatDurationLabel(chatHours),
-      expiresAt: windowMs == null ? null : new Date(new Date(plan.created_at).getTime() + windowMs).toISOString(),
+      canChat: canChat(plan),
       messages: listPlanMessages(plan.id),
     });
   });
@@ -58,13 +47,6 @@ export function register(router) {
       });
     }
     const config = planConfig(c, plan);
-    const windowMs = getChatWindowMs(config);
-    if (isExpired(plan, windowMs)) {
-      const label = chatDurationLabel(config?.chat_duration_hours ?? null);
-      return sendJson(c.res, 403, {
-        error: `El chat con la IA ha expirado (disponible durante ${label} desde la generación del plan).`,
-      });
-    }
     const body = await readBody(c.req);
     const message = String(body?.message ?? "").trim();
     if (!message) {

@@ -7,7 +7,6 @@ import {
   Star,
   Trash2,
   XCircle,
-  Clock,
   Wallet,
   Pencil,
   TestTube2,
@@ -20,14 +19,6 @@ import type { AiConfig, AiProviderInfo, AiProviderPricing, AiPricingValue, Openc
 
 const FALLBACK_PROVIDERS: AiProviderInfo[] = [{ id: "gemini", name: "Google Gemini", needsApiKey: true }];
 
-const CHAT_DURATION_OPTIONS = [
-  { value: "24", label: "24 horas" },
-  { value: "48", label: "48 horas" },
-  { value: "72", label: "72 horas" },
-  { value: "168", label: "1 semana" },
-  { value: "0", label: "Sin límite" },
-];
-
 type FormState = {
   name: string;
   provider: string;
@@ -35,7 +26,6 @@ type FormState = {
   model: string;
   baseUrl: string;
   currency: string;
-  chatDuration: string;
   pricing: Record<string, AiPricingValue>;
 };
 
@@ -46,7 +36,6 @@ const EMPTY_FORM: FormState = {
   model: "",
   baseUrl: "",
   currency: "EUR",
-  chatDuration: "24",
   pricing: {},
 };
 
@@ -64,7 +53,6 @@ function formFromConfig(c: AiConfig, providers: AiProviderInfo[]): FormState {
     model: c.model ?? "",
     baseUrl: c.base_url ?? "",
     currency: c.currency,
-    chatDuration: c.chat_duration_hours == null ? "0" : String(c.chat_duration_hours),
     pricing,
   };
 }
@@ -154,7 +142,6 @@ export function AiConfigsManager() {
           model: form.model || null,
           baseUrl: form.baseUrl || null,
           currency: form.currency.trim() || "EUR",
-          chatDurationHours: form.chatDuration === "0" ? 0 : Number(form.chatDuration),
           pricing: form.pricing,
         };
     const options = {
@@ -239,7 +226,6 @@ export function AiConfigsManager() {
                   <span className="text-sm font-medium">{c.name}</span>
                   <span className="text-xs text-gray-400">{c.provider}</span>
                   {c.model && <span className="text-xs text-gray-500">{c.model}</span>}
-                  <span className="text-xs text-gray-600">Chat {c.chatDurationLabel ?? `${c.chat_duration_hours}h`}</span>
                   <div className="flex items-center gap-1 ml-auto">
                     <Button
                       variant="ghost"
@@ -402,36 +388,18 @@ export function AiConfigsManager() {
           )}
 
           {!isOpencode && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> Ventana de chat
-                </label>
-                <select
-                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
-                  value={form.chatDuration}
-                  onChange={(e) => patch({ chatDuration: e.target.value })}
-                >
-                  {CHAT_DURATION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
-                  <Wallet className="w-3 h-3" /> Moneda
-                </label>
-                <input
-                  type="text"
-                  className="input w-full uppercase"
-                  value={form.currency}
-                  onChange={(e) => patch({ currency: e.target.value })}
-                  placeholder="EUR"
-                  maxLength={3}
-                />
-              </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
+                <Wallet className="w-3 h-3" /> Moneda
+              </label>
+              <input
+                type="text"
+                className="input w-full uppercase"
+                value={form.currency}
+                onChange={(e) => patch({ currency: e.target.value })}
+                placeholder="EUR"
+                maxLength={3}
+              />
             </div>
           )}
 

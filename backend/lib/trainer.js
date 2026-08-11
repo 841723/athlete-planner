@@ -575,7 +575,7 @@ function formatPlannedSessionForPrompt(session) {
   return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
 }
 
-function buildChatUserPrompt(planId, message) {
+function buildChatUserPrompt(planId, message, options = {}) {
   const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
   const planText =
     planned.length > 0
@@ -603,6 +603,17 @@ function buildChatUserPrompt(planId, message) {
 
   const today = format(new Date(), "yyyy-MM-dd");
 
+  let historyText = "";
+  if (options.includeHistory) {
+    const messages = listPlanMessages(planId);
+    historyText =
+      messages.length > 0
+        ? `\nHISTORIAL DE LA CONVERSACIÓN (preguntas y respuestas anteriores del chat con este plan):\n${messages
+            .map((m) => `${m.role === "user" ? "Atleta" : "Entrenador"}: ${m.content}`)
+            .join("\n")}\n`
+        : "";
+  }
+
   return `
 Hoy es: ${today}
 
@@ -618,7 +629,7 @@ El atleta quiere mejorar principalmente en estos deportes; el plan y tus propues
 
 PLAN ACTUAL (sesiones planificadas de este plan):
 ${planText}
-
+${historyText}
 MENSAJE DEL ATLETA:
 ${message}
 
@@ -647,11 +658,28 @@ export async function chatWithPlan({ planId, message, previousResponseId, settin
   const systemPrompt = requireRolePrompt("chat");
   const userPrompt = buildChatUserPrompt(planId, message);
 
-  const { text, responseId } = await callAiChat(
-    settings,
-    { systemPrompt, input: userPrompt, previousResponseId },
-    actor
-  );
+  let text;
+  let responseId;
+  try {
+    // Primera llamada "normal": apoya en la sesión del proveedor (previousResponseId)
+    // para mantener la conversación de forma barata.
+    ({ text, responseId } = await callAiChat(
+      settings,
+      { systemPrompt, input: userPrompt, previousResponseId },
+      actor
+    ));
+  } catch (err) {
+    // Si el proveedor falla (p.ej. sesión de chat caducada o se cambió de proveedor a
+    // mitad de la conversación), se reintenta una única vez enviando el contexto completo
+    // (prompt base + historial + sesiones planificadas + perfil) sin depender de la sesión.
+    if (!previousResponseId) throw err;
+    const fullPrompt = buildChatUserPrompt(planId, message, { includeHistory: true });
+    ({ text, responseId } = await callAiChat(
+      settings,
+      { systemPrompt, input: fullPrompt, previousResponseId: null },
+      actor
+    ));
+  }
 
   const parsed = parseChatResponse(text);
   const reply = parsed.reply || text;
