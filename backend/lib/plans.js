@@ -91,6 +91,29 @@ export function hasActiveGeneration(tenantId) {
     .get(tenantId);
 }
 
+export function getPlanProgress(tenantId, planId) {
+  const rows = getDb()
+    .prepare(
+      "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' AND json_extract(data, '$.plan_id') = ?"
+    )
+    .all(tenantId, planId);
+  let completedSessions = 0;
+  for (const row of rows) {
+    let session;
+    try {
+      session = JSON.parse(row.data);
+    } catch {
+      continue;
+    }
+    if (getMergedCompletedSession(session, tenantId)) completedSessions++;
+  }
+  return {
+    totalSessions: rows.length,
+    completedSessions,
+    trainingCompleted: rows.length > 0 && completedSessions === rows.length,
+  };
+}
+
 export function listPlans(tenantId) {
   recoverStalePlans(tenantId);
   return getDb()
@@ -116,13 +139,14 @@ export function getPlan(tenantId, planId) {
 export function getPlanDto(tenantId, planId) {
   const plan = getPlan(tenantId, planId);
   if (!plan) return null;
+  const progress = getPlanProgress(tenantId, planId);
   const plannedSessions = getDb().prepare(
     "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' AND json_extract(data, '$.plan_id') = ? ORDER BY start_date_local"
   ).all(tenantId, planId).map((row) => {
     const session = enrich(JSON.parse(row.data));
     return { ...session, completed_session: getMergedCompletedSession(session, tenantId) };
   });
-  return { ...plan, plannedSessions };
+  return { ...plan, ...progress, plannedSessions };
 }
 
 export function deletePlan(tenantId, planId) {
