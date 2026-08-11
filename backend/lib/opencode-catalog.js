@@ -8,24 +8,26 @@ function rowToModel(row) {
   if (!row) return null;
   return {
     modelId: row.model_id,
+    provider: row.provider,
     name: row.name,
     providerID: row.provider_id,
     enabled: Boolean(row.enabled),
     input_price: row.input_price == null ? null : Number(row.input_price),
     output_price: row.output_price == null ? null : Number(row.output_price),
+    currency: row.currency ?? "EUR",
   };
 }
 
-export function getCatalogModel(modelId) {
-  const row = getDb().prepare("SELECT * FROM opencode_models WHERE model_id = ?").get(modelId);
+export function getCatalogModel(modelId, provider = "opencode") {
+  const row = getDb().prepare("SELECT * FROM ai_model_catalog WHERE provider = ? AND model_id = ?").get(provider, modelId);
   return rowToModel(row);
 }
 
 export function listCatalogModels() {
-  return getDb().prepare("SELECT * FROM opencode_models").all().map(rowToModel);
+  return getDb().prepare("SELECT * FROM ai_model_catalog WHERE provider = 'opencode' ORDER BY model_id").all().map(rowToModel);
 }
 
-export function upsertOpencodeModel({ modelId, name, providerId, enabled, inputPrice, outputPrice }) {
+export function upsertOpencodeModel({ modelId, name, providerId, enabled, inputPrice, outputPrice, currency = "EUR" }) {
   if (!modelId || typeof modelId !== "string" || !modelId.trim()) {
     const err = new Error("Falta model_id");
     err.status = 400;
@@ -41,14 +43,15 @@ export function upsertOpencodeModel({ modelId, name, providerId, enabled, inputP
   }
   getDb()
     .prepare(
-      `INSERT INTO opencode_models (model_id, name, provider_id, enabled, input_price, output_price, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(model_id) DO UPDATE SET
-         name = excluded.name,
-         provider_id = excluded.provider_id,
+      `INSERT INTO ai_model_catalog (provider, model_id, provider_id, name, enabled, input_price, output_price, currency, updated_at)
+       VALUES ('opencode', ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(provider, model_id) DO UPDATE SET
+          name = excluded.name,
+          provider_id = excluded.provider_id,
          enabled = excluded.enabled,
          input_price = excluded.input_price,
-         output_price = excluded.output_price,
+          output_price = excluded.output_price,
+          currency = excluded.currency,
          updated_at = excluded.updated_at`
     )
     .run(
@@ -58,14 +61,19 @@ export function upsertOpencodeModel({ modelId, name, providerId, enabled, inputP
       enabled ? 1 : 0,
       i,
       o,
+      currency,
       new Date().toISOString()
     );
-  return getCatalogModel(modelId);
+  return getCatalogModel(modelId, "opencode");
+}
+
+export function deleteOpencodeModel(modelId) {
+  return getDb().prepare("DELETE FROM ai_model_catalog WHERE provider = 'opencode' AND model_id = ?").run(modelId).changes > 0;
 }
 
 // Precio efectivo: el del catálogo si existe, si no el de la instancia.
-export function effectivePrice(modelId, apiPrice) {
-  const cat = getCatalogModel(modelId);
+export function effectivePrice(modelId, apiPrice, provider = "opencode") {
+  const cat = getCatalogModel(modelId, provider);
   if (cat && (cat.input_price != null || cat.output_price != null)) {
     return {
       input_per_mtok: cat.input_price ?? apiPrice?.input_per_mtok ?? null,
@@ -81,16 +89,17 @@ export function effectivePrice(modelId, apiPrice) {
 // Un modelo solo está disponible para los tenants si está habilitado en el catálogo.
 export function mergeModelsWithCatalog(models) {
   return models.map((m) => {
-    const cat = getCatalogModel(m.id);
+    const cat = getCatalogModel(m.id, "opencode");
     const price = effectivePrice(m.id, {
       input_per_mtok: m.input_per_mtok,
       output_per_mtok: m.output_per_mtok,
     });
     return {
       ...m,
-      enabled: cat ? cat.enabled : false,
+      enabled: Boolean(cat?.enabled && cat.input_price != null && cat.output_price != null),
       input_per_mtok: price?.input_per_mtok ?? null,
       output_per_mtok: price?.output_per_mtok ?? null,
+      currency: cat?.currency ?? null,
       overridden: !!cat && (cat.input_price != null || cat.output_price != null),
       in_catalog: !!cat,
     };

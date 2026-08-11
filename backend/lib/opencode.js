@@ -107,6 +107,33 @@ export function listModels(baseUrl, { force = false } = {}) {
   });
 }
 
+export async function getAuthStatus(baseUrl) {
+  const { base, headers } = parseBaseUrl(baseUrl);
+  const data = await opencodeFetch(base, "/provider", { headers, timeoutMs: 15_000 });
+  const connected = new Set(Array.isArray(data?.connected) ? data.connected : []);
+  return Object.fromEntries(
+    (Array.isArray(data?.all) ? data.all : []).map((provider) => [
+      provider.id,
+      {
+        providerID: provider.id,
+        name: provider.name,
+        connected: connected.has(provider.id),
+      },
+    ])
+  );
+}
+
+export async function connectAuth(baseUrl, providerId, credentials) {
+  if (!/^(opencode|opencode-go|zen|go)$/i.test(providerId)) {
+    throw new Error("Proveedor OpenCode no permitido");
+  }
+  const { base, headers } = parseBaseUrl(baseUrl);
+  await opencodeFetch(base, `/auth/${encodeURIComponent(providerId)}`, {
+    method: "PUT", headers, body: credentials ?? {}, timeoutMs: 15_000,
+  });
+  return { providerID: providerId, connected: true };
+}
+
 export function getWorkspaceDir() {
   const dir = process.env.OPENCODE_WORKSPACE || "/tmp/opencode-workspace";
   try {
@@ -150,6 +177,13 @@ function assistantCompleted(m) {
   return !!m?.time?.completed;
 }
 
+function isNewMessage(message, minCreatedAt) {
+  if (message?.time?.created == null || !minCreatedAt) return true;
+  const created = new Date(message.time.created).getTime();
+  // Algunas versiones/dev servers usan timestamps relativos o sintéticos.
+  return !Number.isFinite(created) || created < 100_000_000_000 || created >= minCreatedAt;
+}
+
 // Espera a que opencode termine la respuesta sondeando el endpoint de mensajes.
 // No se usa POST /wait: en modo servidor (opencode serve 1.18.x) devuelve 503
 // "Session wait is not available yet" incluso con la sesión inactiva.
@@ -176,7 +210,7 @@ async function waitForAssistant(base, headers, sessionId, { startCount = 0, minC
           (m, i, arr) =>
             assistantCompleted(m) &&
             arr.length - 1 - i >= startCount &&
-            (m?.time?.created == null || new Date(m.time.created).getTime() >= minCreatedAt)
+            isNewMessage(m, minCreatedAt)
         );
       if (assistant) {
         if (assistant.error) {

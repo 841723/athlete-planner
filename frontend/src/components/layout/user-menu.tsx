@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Building2, Check, LogOut, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
-import { replaceTenantInPath, tenantPath } from "@/lib/tenant";
+import { tenantPath } from "@/lib/tenant";
 
 export function UserMenu() {
-  const { user, tenants, activeTenantId, logout } = useAuth();
+  const { user, activeTenantId, logout } = useAuth();
   const perms = usePermissions();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -44,35 +42,6 @@ export function UserMenu() {
                 <p className="text-sm font-semibold truncate">{user?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
-
-              {tenants.length > 1 && (
-                <div className="mb-1">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 px-2.5 pt-1.5 pb-1">
-                    Cambiar de atleta
-                  </p>
-                  {tenants.map((t) => (
-                    <button
-                      key={t.id}
-                      className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-left ${
-                        t.id === activeTenantId
-                          ? "bg-accent/15 text-accent-light"
-                          : "text-gray-300 hover:bg-dark-300"
-                      }`}
-                      onClick={() => {
-                        close();
-                        if (t.id !== activeTenantId) {
-                          navigate(replaceTenantInPath(location.pathname, t.id));
-                        }
-                      }}
-                    >
-                      <Building2 className="w-3.5 h-3.5 shrink-0" />
-                      <span className="flex-1 truncate">{t.name}</span>
-                      <span className="text-[10px] text-gray-500 uppercase">{t.role}</span>
-                      {t.id === activeTenantId && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {perms.canManageUsers && (
                 <Link

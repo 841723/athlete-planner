@@ -1,334 +1,205 @@
 import { useState } from "react";
 import {
-  Pencil,
-  Plus,
-  Trash2,
-  Sparkles,
   CalendarRange,
-  CheckCircle2,
-  User,
-  ChevronDown,
   ChevronRight,
-  Loader2,
+  Plus,
   RotateCcw,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
 import { parseISO } from "date-fns";
 import { Link } from "react-router-dom";
+
 import { format } from "@/lib/date-format";
-import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
+import { tenantPath } from "@/lib/tenant";
+import { useAuth } from "@/components/auth/auth-context";
+import { usePlanned } from "@/hooks/use-planned";
 import { usePlans } from "@/hooks/use-plans";
 import { useRetryPlan } from "@/hooks/use-generate-plan";
-import { useDeletePlanChat } from "@/hooks/use-plan-chat";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { GeneratePlanModal } from "@/components/planned/generate-plan-modal";
-import { PlanChat } from "@/components/planned/plan-chat";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useAuth } from "@/components/auth/auth-context";
-import { tenantPath } from "@/lib/tenant";
-import { WorkoutText } from "@/components/session/workout-text";
-import { Markdown } from "@/components/ui/markdown";
-import { getSportColor, getSportLabel, formatDistance } from "@/lib/utils";
-import type { PlannedSessionView, Plan } from "@/types/session";
+import type { Plan, PlannedSessionView } from "@/types/session";
+
+function statusLabel(status: Plan["status"]) {
+  if (status === "completed") return "Completado";
+  if (status === "failed") return "Error";
+  if (status === "generating") return "Generando";
+  return "Pendiente";
+}
+
+function statusClass(status: Plan["status"]) {
+  if (status === "completed") return "badge-completed";
+  if (status === "failed") return "bg-red-500/15 text-red-400";
+  return "bg-amber-500/15 text-amber-400";
+}
+
+function PlanCard({
+  plan,
+  sessions,
+  activeTenantId,
+  canEdit,
+  onRetry,
+}: {
+  plan: Plan;
+  sessions: PlannedSessionView[];
+  activeTenantId: string | null;
+  canEdit: boolean;
+  onRetry: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const dates = sessions
+    .map((session) => parseISO(session.start_date_local))
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  const range = dates.length > 0
+    ? `${format(dates[0], "d MMM")} – ${format(dates[dates.length - 1], "d MMM yyyy")}`
+    : `${plan.weeks} semanas`;
+
+  return (
+    <Link
+      to={tenantPath(activeTenantId, `/planned/${plan.id}`)}
+      className="card group flex items-center gap-4 p-5 transition-colors hover:border-accent/40"
+    >
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15">
+        <CalendarRange className="h-5 w-5 text-accent-light" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-semibold">Plan de {format(parseISO(plan.createdAt), "d MMM yyyy")}</h2>
+          <span className={`badge ${statusClass(plan.status)}`}>{statusLabel(plan.status)}</span>
+        </div>
+        <p className="mt-1 text-xs text-gray-500">{range} · {sessions.length} entrenamientos</p>
+
+        {plan.status === "failed" && (
+          <p className="mt-2 text-xs text-red-400">{plan.error ?? "La generación falló."}</p>
+        )}
+      </div>
+
+      {plan.status === "failed" && canEdit ? (
+        <Button
+          variant="ghost"
+          className="text-xs"
+          onClick={(event) => {
+            event.preventDefault();
+            onRetry(event);
+          }}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Reintentar
+        </Button>
+      ) : (
+        <ChevronRight className="h-5 w-5 text-gray-600 group-hover:text-accent-light" />
+      )}
+    </Link>
+  );
+}
+
+function ManualSessions({ sessions }: { sessions: PlannedSessionView[] }) {
+  return (
+    <section className="card mt-6 p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <UserRound className="h-4 w-4 text-gray-400" />
+        <div>
+          <h2 className="font-semibold">Sesiones manuales</h2>
+          <p className="text-xs text-gray-500">No pertenecen a un plan generado.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {sessions.slice(0, 8).map((session) => (
+          <div key={session.id} className="rounded-lg bg-dark-300/40 p-3 text-sm">
+            <p className="truncate font-medium">{session.title ?? session.name}</p>
+            <p className="mt-1 text-xs text-gray-500">
+              {format(parseISO(session.start_date_local), "d MMM yyyy · HH:mm")}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function PlannedPage() {
-  const { data: planned, isLoading } = usePlanned();
+  const { data: sessions, isLoading } = usePlanned();
   const { data: plans } = usePlans();
-  const deleteMutation = useDeletePlanned();
-  const deletePlanMutation = useDeletePlanChat();
-  const retryMutation = useRetryPlan();
-  const perms = usePermissions();
+  const permissions = usePermissions();
   const { activeTenantId } = useAuth();
+  const retryPlan = useRetryPlan();
+
   const [formOpen, setFormOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [editing, setEditing] = useState<PlannedSessionView | null>(null);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-12 rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
-          ))}
-        </div>
+        <Skeleton className="h-16 rounded-2xl" />
+        <Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-40 rounded-2xl" />
       </div>
     );
   }
 
-  const sessions = planned ?? [];
-
-  const isGenerating = (plans ?? []).some(
-    (p) => p.status === "pending" || p.status === "generating"
+  const plannedSessions = sessions ?? [];
+  const generatedPlans = plans ?? [];
+  const manualSessions = plannedSessions.filter((session) => !session.plan_id);
+  const isGenerating = generatedPlans.some(
+    (plan) => plan.status === "pending" || plan.status === "generating"
   );
 
-  const planGroups: { plan: Plan | null; sessions: PlannedSessionView[] }[] = [];
-  for (const plan of plans ?? []) {
-    const group = sessions.filter((s) => s.plan_id === plan.id);
-    if (group.length > 0 || plan.status !== "completed") {
-      planGroups.push({ plan, sessions: group });
-    }
-  }
-  const manual = sessions.filter((s) => !s.plan_id);
-  if (manual.length > 0) planGroups.push({ plan: null, sessions: manual });
-
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <div className="mx-auto max-w-5xl animate-fade-in">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Planificadas</h1>
-          <p className="text-sm text-gray-500 mt-1">{sessions.length} entrenamientos planificados</p>
+          <h1 className="text-3xl font-bold">Planificadas</h1>
+          <p className="mt-1 text-sm text-gray-500">Elige un plan para ver sus sesiones, análisis y conversación.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* TEMPORAL: botón de generar plan oculto */}
-          {perms.canGeneratePlan && (
-            <Button
-              variant="outline"
-              onClick={() => setGenerateOpen(true)}
-              disabled={isGenerating}
-              title={isGenerating ? "Ya hay un plan en generación" : undefined}
-            >
-              <Sparkles className="w-4 h-4" /> Generar Plan con IA
-            </Button>
-          )}
-          {perms.canEdit && (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4" /> Nueva planificada
-            </Button>
-          )}
-        </div>
-      </div>
 
-      {planGroups.length === 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {permissions.canGeneratePlan && (
+            <Button variant="outline" disabled={isGenerating} onClick={() => setGenerateOpen(true)}>
+              <Sparkles className="h-4 w-4" /> Generar con IA
+            </Button>
+          )}
+          {permissions.canEdit && (
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4" /> Nueva sesión
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {generatedPlans.length === 0 && manualSessions.length === 0 ? (
         <div className="card p-10 text-center">
-          <p className="text-gray-500">No hay entrenamientos planificados.</p>
+          <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent" />
+          <p className="font-medium text-gray-300">Todavía no hay una hoja de ruta</p>
+          <p className="mt-1 text-sm text-gray-500">Genera un plan con IA o añade una sesión manual.</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {planGroups.map((group) => {
-            const done = group.sessions.filter((s) => s.merged_with).length;
-            const groupKey = group.plan?.id ?? "manual";
-            const isCollapsed = !!collapsed[groupKey];
-            const plan = group.plan;
-            const hasChat = !!plan && plan.status === "completed";
-            return (
-              <section key={groupKey} className="card p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <button
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-dark-300/60 text-gray-300 text-sm"
-                    onClick={() => setCollapsed((c) => ({ ...c, [groupKey]: !isCollapsed }))}
-                    title={isCollapsed ? "Expandir" : "Comprimir"}
-                  >
-                    {isCollapsed ? (
-                      <ChevronRight className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                    {group.plan ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-accent/15 text-accent-light text-xs font-semibold">
-                        <CalendarRange className="w-3.5 h-3.5" />
-                        Plan del {format(parseISO(group.plan.createdAt), "d MMM yyyy")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-dark-400/50 text-gray-300 text-xs font-semibold">
-                        <User className="w-3.5 h-3.5" />
-                        Manual
-                      </span>
-                    )}
-                  </button>
-                  {group.plan?.promptName && (
-                    <span className="px-1.5 py-0.5 rounded bg-dark-400/50 text-gray-400 text-[10px]">
-                      {group.plan.promptName}
-                    </span>
-                  )}
-                  {plan?.status === "pending" && (
-                    <span className="badge bg-gray-500/15 text-gray-300 border border-gray-500/20">
-                      Generación pendiente
-                    </span>
-                  )}
-                  {plan?.status === "generating" && (
-                    <span className="badge bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Generando...
-                    </span>
-                  )}
-                  {plan?.status === "failed" && (
-                    <span className="badge bg-red-500/15 text-red-400 border border-red-500/20">
-                      Error
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    {group.sessions.length} sesiones
-                    {done > 0 && <span className="text-green-400"> · {done} realizadas</span>}
-                  </span>
-                  {plan && perms.canEdit && (
-                    <Button
-                      variant="ghost"
-                      className="text-xs px-2 py-1 text-red-400 hover:text-red-300 ml-auto"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "Esto elimina el plan completo: todas sus sesiones planificadas y el chat con la IA. ¿Continuar?"
-                          )
-                        ) {
-                          deletePlanMutation.mutate({ planId: plan.id });
-                        }
-                      }}
-                      disabled={deletePlanMutation.isPending}
-                    >
-                      <Trash2 className="w-3 h-3" /> Eliminar plan
-                    </Button>
-                  )}
-                </div>
-                {!isCollapsed && (
-                  <div className={hasChat ? "grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 items-start" : ""}>
-                    {plan && group.sessions.length === 0 && (plan.status === "pending" || plan.status === "generating") && (
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-dark-300/40 text-sm text-gray-300">
-                        <Loader2 className="w-4 h-4 animate-spin text-accent" />
-                        La IA está generando el plan...
-                      </div>
-                    )}
-                    {plan && group.sessions.length === 0 && plan.status === "failed" && (
-                      <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 space-y-3">
-                        <p className="text-sm text-red-400">
-                          {plan.error ?? "No se pudo generar el plan."}
-                        </p>
-                        {perms.canEdit && (
-                          <Button
-                            variant="outline"
-                            className="text-xs px-2 py-1"
-                            onClick={() => retryMutation.mutate(plan.id)}
-                            disabled={retryMutation.isPending}
-                          >
-                            {retryMutation.isPending ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <RotateCcw className="w-3 h-3" />
-                            )}{" "}
-                            Reintentar
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {hasChat && (
-                      <div className="space-y-4 lg:sticky lg:top-4">
-                        {group.plan?.comments && (
-                          <div className="rounded-xl border border-dark-400 bg-dark-300/20 p-4">
-                            <div className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
-                              Análisis del entrenador
-                            </div>
-                            <Markdown text={group.plan.comments} />
-                          </div>
-                        )}
-                        <PlanChat plan={plan} />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {group.sessions.map((s) => {
-                        const merged = !!s.merged_with;
-                        return (
-                          <div key={s.id} className={`card p-5 flex flex-col ${merged ? "opacity-75" : ""}`}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <div
-                                className="w-3 h-3 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: getSportColor(s.category) }}
-                              />
-                              <span className="text-sm font-semibold truncate">{s.title ?? s.name}</span>
-                              {merged ? (
-                                <span className="badge badge-completed ml-auto">Realizada</span>
-                              ) : (
-                                <span className="badge badge-planned ml-auto">Plan</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500 mb-3">
-                              {getSportLabel(s.category)} · {format(parseISO(s.start_date_local), "d MMM yyyy")} ·{" "}
-                              {format(parseISO(s.start_date_local), "HH:mm")}
-                            </div>
-                            {s.workout_text ? (
-                              <div className="mt-2 flex-1">
-                                <WorkoutText text={s.workout_text} />
-                              </div>
-                            ) : (
-                              <>
-                                {(s.objectives ?? []).length > 0 && (
-                                  <div className="mt-1 space-y-1.5 flex-1">
-                                    {(s.objectives ?? []).map((obj, i) => (
-                                      <div key={i} className="flex items-center gap-1.5 text-xs">
-                                        {obj.label && (
-                                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/20 text-accent-light">
-                                            {obj.label}
-                                          </span>
-                                        )}
-                                        <span className="text-gray-300">{obj.text}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {s.distance_m ? (
-                                  <div className="mt-3 text-xs text-gray-400">{formatDistance(s.distance_m)}</div>
-                                ) : null}
-                              </>
-                            )}
-                            {merged && s.merged_with ? (
-                              <div className="mt-3 text-xs">
-                                <Link
-                                  to={tenantPath(activeTenantId, `/session/${s.merged_with}`)}
-                                  className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Ver sesión realizada
-                                </Link>
-                              </div>
-                            ) : null}
-                            {perms.canEdit && !merged && (
-                              <div className="flex gap-2 mt-4 pt-3 border-t border-dark-400">
-                                <Button
-                                  variant="ghost"
-                                  className="text-xs px-2 py-1"
-                                  onClick={() => {
-                                    setEditing(s);
-                                    setFormOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="w-3 h-3" /> Editar
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
-                                  onClick={() => {
-                                    if (window.confirm(`¿Eliminar "${s.title ?? s.name}"?`)) {
-                                      deleteMutation.mutate(s.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-3 h-3" /> Eliminar
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </section>
-            );
-          })}
+        <div className="space-y-3">
+          {generatedPlans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              sessions={plannedSessions.filter((session) => session.plan_id === plan.id)}
+              activeTenantId={activeTenantId}
+              canEdit={permissions.canEdit}
+              onRetry={() => retryPlan.mutate(plan.id)}
+            />
+          ))}
+
+          {manualSessions.length > 0 && <ManualSessions sessions={manualSessions} />}
         </div>
       )}
 
       <PlannedFormModal
         open={formOpen}
-        session={editing}
+        session={null}
         defaultDate={new Date().toISOString().slice(0, 10)}
         onClose={() => setFormOpen(false)}
       />
-
       <GeneratePlanModal open={generateOpen} onClose={() => setGenerateOpen(false)} />
     </div>
   );

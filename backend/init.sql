@@ -272,3 +272,16 @@ CREATE TABLE IF NOT EXISTS opencode_models (
   output_price REAL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ai_model_catalog (
+  provider TEXT NOT NULL,
+  model_id TEXT NOT NULL,
+  provider_id TEXT,
+  name TEXT,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  input_price REAL,
+  output_price REAL,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (provider, model_id)
+);

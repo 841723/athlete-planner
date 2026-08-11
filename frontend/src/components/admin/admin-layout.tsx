@@ -1,10 +1,9 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Cpu, Server, Users } from "lucide-react";
+import { Cpu, Users } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 
 const TABS = [
   { path: "providers", label: "Proveedores", icon: Cpu },
-  { path: "models", label: "Modelos", icon: Server },
   { path: "tenants", label: "Tenants", icon: Users },
 ];
 

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
+import { enrich } from "./sessions.js";
 
 export const PLAN_STATES = ["pending", "generating", "completed", "failed"];
 
@@ -109,6 +110,15 @@ export function getPlan(tenantId, planId) {
       )
       .get(tenantId, planId) ?? null
   );
+}
+
+export function getPlanDto(tenantId, planId) {
+  const plan = getPlan(tenantId, planId);
+  if (!plan) return null;
+  const plannedSessions = getDb().prepare(
+    "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' AND json_extract(data, '$.plan_id') = ? ORDER BY start_date_local"
+  ).all(tenantId, planId).map((row) => enrich(JSON.parse(row.data)));
+  return { ...plan, plannedSessions };
 }
 
 export function deletePlan(tenantId, planId) {

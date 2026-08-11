@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Calendar, ChartBar, ClipboardList, Home, Menu, Settings2, X, Trophy } from "lucide-react";
 import { useState } from "react";
 import { UserMenu } from "./user-menu";
+import { TenantSwitcher } from "./tenant-switcher";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
 
@@ -27,7 +28,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             className="btn-icon md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -36,9 +37,10 @@ export function Header() {
           </button>
           <Link to={tenantPath(activeTenantId, "/")} className="flex items-center gap-2 text-[#C8102E]">
             <picture>
-              <img src="/edasi-light-long.png" alt="edasi logo" className="h-12" />
+              <img src="/edasi-light-long.png" alt="edasi logo" className="h-9 w-auto sm:h-12" />
             </picture>
           </Link>
+          <TenantSwitcher />
         </div>
         <div className="flex items-center gap-2">
           <nav className="hidden md:flex items-center gap-1">

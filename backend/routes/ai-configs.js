@@ -75,7 +75,7 @@ export function register(router) {
     }
     try {
       const baseUrl = getOpencodeBaseUrl();
-      const models = await listModels(baseUrl);
+      const models = await listModels(baseUrl, { force: true });
       const merged = mergeModelsWithCatalog(models);
       return sendJson(c.res, 200, { provider: "opencode", models: merged });
     } catch (err) {

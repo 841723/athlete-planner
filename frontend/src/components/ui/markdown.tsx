@@ -7,9 +7,9 @@ const components: Components = {
   h2: (props) => <h2 className="text-base font-bold text-gray-100 mb-2 mt-3 first:mt-0" {...props} />,
   h3: (props) => <h3 className="text-sm font-bold text-gray-100 mb-2 mt-3 first:mt-0" {...props} />,
   h4: (props) => <h4 className="text-sm font-semibold text-gray-100 mb-1.5 mt-2.5 first:mt-0" {...props} />,
-  p: (props) => <p className="text-sm leading-relaxed text-gray-200 mb-2 last:mb-0" {...props} />,
-  ul: (props) => <ul className="list-disc pl-5 space-y-1 text-sm text-gray-200 mb-2 last:mb-0" {...props} />,
-  ol: (props) => <ol className="list-decimal pl-5 space-y-1 text-sm text-gray-200 mb-2 last:mb-0" {...props} />,
+  p: (props) => <p className="mb-3 text-sm leading-relaxed text-gray-200 last:mb-0" {...props} />,
+  ul: (props) => <ul className="mb-3 list-disc space-y-1.5 pl-5 text-sm text-gray-200 last:mb-0" {...props} />,
+  ol: (props) => <ol className="mb-3 list-decimal space-y-1.5 pl-5 text-sm text-gray-200 last:mb-0" {...props} />,
   li: (props) => <li className="leading-relaxed" {...props} />,
   strong: (props) => <strong className="font-semibold text-gray-100" {...props} />,
   em: (props) => <em className="italic text-gray-300" {...props} />,
@@ -33,12 +33,20 @@ interface MarkdownProps {
   className?: string;
 }
 
+function normalizeMarkdown(text: string) {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t")
+    .trim();
+}
+
 export function Markdown({ text, className }: MarkdownProps) {
   if (!text) return null;
   return (
     <div className={className}>
       <ReactMarkdown remarkPlugins={[remarkBreaks]} components={components}>
-        {text}
+        {normalizeMarkdown(text)}
       </ReactMarkdown>
     </div>
   );

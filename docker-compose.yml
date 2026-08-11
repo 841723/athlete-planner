@@ -15,6 +15,8 @@ services:
     ports:
       - "4096:4096"
     command: ["opencode", "serve", "--port", "4096", "--hostname", "0.0.0.0", "--print-logs"]
+    volumes:
+      - opencode_auth:/root/.local/share/opencode
     restart: unless-stopped
 
   backend:
@@ -29,6 +31,8 @@ services:
     volumes:
       # Hot reload: mount source code into container
       - ./backend:/app/backend
+      # Keep dependencies installed by the image out of the bind mount.
+      - /app/backend/node_modules
       - ./scripts:/app/scripts
       - ./sessions:/app/sessions
       # Base de datos SQLite (compartida con el servicio database y el host)
@@ -65,3 +69,4 @@ services:
 
 volumes:
   garmin_tokens:
+  opencode_auth:

@@ -119,7 +119,8 @@ async function callOpencode(settings, { systemPrompt, input, sessionId = null },
   const baseUrl = getOpencodeBaseUrl();
   const model = settings?.model;
   if (!model) throw new Error("No hay modelo configurado para el proveedor opencode");
-  if (!getCatalogModel(model)?.enabled) {
+  const catalog = getCatalogModel(model, "opencode");
+  if (!catalog?.enabled || catalog.input_price == null || catalog.output_price == null) {
     throw new Error(`El modelo "${model}" no está disponible para este tenant`);
   }
 
@@ -132,6 +133,7 @@ async function callOpencode(settings, { systemPrompt, input, sessionId = null },
   let inputTokens = null;
   let outputTokens = null;
   let cost = null;
+  let catalogPrice = null;
 
   try {
     const models = await listModels(baseUrl);
@@ -145,6 +147,7 @@ async function callOpencode(settings, { systemPrompt, input, sessionId = null },
       input_per_mtok: info.input_per_mtok,
       output_per_mtok: info.output_per_mtok,
     });
+    catalogPrice = price;
 
     const result = await runConversation({
       baseUrl,
@@ -177,7 +180,7 @@ async function callOpencode(settings, { systemPrompt, input, sessionId = null },
       inputTokens,
       outputTokens,
       cost,
-      currency: settings?.currency ?? null,
+      currency: catalog.currency,
     });
   }
 }

@@ -1,23 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  Brain,
+  Check,
+  ChevronDown,
+  ChevronRight,
   Loader2,
-  Plus,
-  Save,
-  Star,
-  Trash2,
-  XCircle,
-  Wallet,
   Pencil,
+  Save,
+  Server,
+  Star,
   TestTube2,
+  Trash2,
 } from "lucide-react";
+
 import { useAiConfigs, useAiConfigsMutations, useOpencodeModels } from "@/hooks/use-ai-configs";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AiConfig, AiProviderInfo, AiProviderPricing, AiPricingValue, OpencodeModelInfo } from "@/types/session";
-
-const FALLBACK_PROVIDERS: AiProviderInfo[] = [{ id: "gemini", name: "Google Gemini", needsApiKey: true }];
+import type { AiConfig, AiProviderInfo } from "@/types/session";
 
 type FormState = {
   name: string;
@@ -25,8 +24,6 @@ type FormState = {
   apiKey: string;
   model: string;
   baseUrl: string;
-  currency: string;
-  pricing: Record<string, AiPricingValue>;
 };
 
 const EMPTY_FORM: FormState = {
@@ -35,123 +32,216 @@ const EMPTY_FORM: FormState = {
   apiKey: "",
   model: "",
   baseUrl: "",
-  currency: "EUR",
-  pricing: {},
 };
 
-function formFromConfig(c: AiConfig, providers: AiProviderInfo[]): FormState {
-  const needsKey = providers.find((p) => p.id === c.provider)?.needsApiKey !== false;
-  const pricing = c.pricing ? { ...c.pricing } : {};
-  if (!pricing[c.provider]) {
-    const def = providers.find((p) => p.id === c.provider)?.defaultPricing;
-    if (def) pricing[c.provider] = { ...def };
-  }
-  return {
-    name: c.name,
-    provider: c.provider,
-    apiKey: needsKey ? "" : "mock",
-    model: c.model ?? "",
-    baseUrl: c.base_url ?? "",
-    currency: c.currency,
-    pricing,
-  };
+function ProviderPanel({
+  provider,
+  expanded,
+  form,
+  editing,
+  models,
+  onToggle,
+  onChange,
+  onSave,
+  saving,
+}: {
+  provider: AiProviderInfo;
+  expanded: boolean;
+  form: FormState;
+  editing: boolean;
+  models: ReturnType<typeof useOpencodeModels>;
+  onToggle: () => void;
+  onChange: (field: keyof FormState, value: string) => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const isOpenCode = provider.id === "opencode";
+  const availableModels = (models.data?.models ?? []).filter(
+    (model) => model.enabled !== false
+  );
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-dark-400">
+      <button
+        type="button"
+        className="flex w-full items-center gap-3 p-4 text-left hover:bg-dark-300/30"
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
+        {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <span className="flex-1">
+          <span className="block text-sm font-medium">{provider.name}</span>
+          <span className="block text-xs text-gray-500">
+            {isOpenCode ? "Modelos gestionados por el administrador" : "Configuración propia del atleta"}
+          </span>
+        </span>
+        {form.provider === provider.id && form.model && (
+          <Check className="h-4 w-4 text-accent-light" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="space-y-4 border-t border-dark-400 bg-dark-300/15 p-4">
+          <label className="block text-xs text-gray-400">
+            Nombre de esta configuración
+            <input
+              className="input mt-1 w-full"
+              value={form.name}
+              onChange={(event) => onChange("name", event.target.value)}
+              placeholder={`Mi configuración de ${provider.name}`}
+            />
+          </label>
+
+          {isOpenCode ? (
+            <div className="rounded-xl border border-accent/15 bg-accent/5 p-3 text-xs text-gray-400">
+              <div className="flex items-center gap-2 font-medium text-accent-light">
+                <Server className="h-4 w-4" />
+                OpenCode Zen / Go
+              </div>
+              <p className="mt-1">
+                No tienes que introducir credenciales. El administrador ya ha conectado OpenCode
+                y solo ofrece los modelos con precio configurado.
+              </p>
+              {models.data?.error && (
+                <p className="mt-2 text-red-400">
+                  No se pudieron cargar los modelos: {models.data.error}
+                </p>
+              )}
+            </div>
+          ) : (
+            <label className="block text-xs text-gray-400">
+              API key propia
+              <input
+                type="password"
+                className="input mt-1 w-full"
+                value={form.apiKey}
+                onChange={(event) => onChange("apiKey", event.target.value)}
+                placeholder={editing ? "Vacío para conservar la actual" : "Pega tu API key"}
+                autoComplete="new-password"
+              />
+            </label>
+          )}
+
+          <label className="block text-xs text-gray-400">
+            Modelo
+            {isOpenCode ? (
+              <select
+                className="input mt-1 w-full"
+                value={form.model}
+                onChange={(event) => onChange("model", event.target.value)}
+                disabled={models.isLoading}
+              >
+                <option value="">
+                  {models.isLoading ? "Cargando modelos..." : "Selecciona un modelo"}
+                </option>
+                {availableModels.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} · {model.id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="input mt-1 w-full"
+                value={form.model}
+                onChange={(event) => onChange("model", event.target.value)}
+                placeholder={provider.defaultModel ?? "Escribe el nombre exacto del modelo"}
+              />
+            )}
+          </label>
+
+          {!isOpenCode && (
+            <label className="block text-xs text-gray-400">
+              Base URL opcional
+              <input
+                className="input mt-1 w-full"
+                value={form.baseUrl}
+                onChange={(event) => onChange("baseUrl", event.target.value)}
+                placeholder="https://generativelanguage.googleapis.com/v1beta"
+              />
+            </label>
+          )}
+
+          {isOpenCode && (
+            <p className="text-xs text-gray-500">
+              El precio lo establece el administrador y se muestra en los registros de consumo.
+            </p>
+          )}
+
+          <Button onClick={onSave} disabled={saving || !form.model.trim()}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {editing ? "Guardar cambios" : "Crear configuración"}
+          </Button>
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function AiConfigsManager() {
-  const { data, isLoading } = useAiConfigs();
+  const query = useAiConfigs();
   const mutations = useAiConfigsMutations();
   const { toast } = useToast();
-
-  const providers: AiProviderInfo[] =
-    data?.providers?.length ? data.providers : FALLBACK_PROVIDERS;
+  const providers = query.data?.providers ?? [];
+  const models = useOpencodeModels({ enabled: providers.some((provider) => provider.id === "opencode") });
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [expanded, setExpanded] = useState<string | null>("gemini");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
 
-  function patch(p: Partial<FormState>) {
-    setForm((f) => ({ ...f, ...p }));
-  }
-
-  function resetForm() {
+  function reset() {
     setForm(EMPTY_FORM);
     setEditingId(null);
   }
 
-  function startEdit(c: AiConfig) {
-    setForm(formFromConfig(c, providers));
-    setEditingId(c.id);
-  }
-
-  const selectedProvider = providers.find((p) => p.id === form.provider);
-  const isOpencode = form.provider === "opencode";
-
-  const modelsQuery = useOpencodeModels({ enabled: isOpencode });
-  const opencodeModels: OpencodeModelInfo[] = (modelsQuery.data?.models ?? []).filter(
-    (m) => m.enabled !== false
-  );
-  const modelsError = modelsQuery.data?.error;
-  const selectedOpencodeModel = opencodeModels.find((m) => m.id === form.model) ?? null;
-  const genericPricing = !isOpencode
-    ? (form.pricing[selectedProvider?.id ?? ""] as AiProviderPricing | undefined)
-    : undefined;
-
-  function handleProviderChange(providerId: string) {
-    const p = providers.find((x) => x.id === providerId);
-    setForm((f) => {
-      const pricing = { ...f.pricing };
-      if (p?.defaultPricing && !pricing[providerId]) {
-        pricing[providerId] = { ...p.defaultPricing };
-      }
-      return {
-        ...f,
-        provider: providerId,
-        pricing,
-        model: f.model && f.provider === providerId ? f.model : "",
-      };
+  function edit(config: AiConfig) {
+    setEditingId(config.id);
+    setExpanded(config.provider);
+    setForm({
+      name: config.name,
+      provider: config.provider,
+      apiKey: "",
+      model: config.model ?? "",
+      baseUrl: config.base_url ?? "",
     });
   }
 
-  function startNew() {
-    resetForm();
-    const p = providers[0];
-    const pricing: Record<string, AiPricingValue> = {};
-    if (p?.defaultPricing) pricing[p.id] = { ...p.defaultPricing };
-    setForm({ ...EMPTY_FORM, provider: p?.id ?? "gemini", pricing });
+  function change(field: keyof FormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handleSave() {
+  function save() {
+    const provider = providers.find((item) => item.id === form.provider);
     if (!form.name.trim()) {
       toast({ type: "error", title: "Introduce un nombre para la configuración" });
       return;
     }
-    if (isOpencode && !form.model.trim()) {
-      toast({ type: "error", title: "Selecciona un modelo de opencode" });
+    if (!form.model.trim()) {
+      toast({ type: "error", title: "Introduce o selecciona un modelo" });
       return;
     }
-    const payload = isOpencode
-      ? {
-          name: form.name.trim(),
-          provider: "opencode",
-          model: form.model,
-        }
-      : {
-          name: form.name.trim(),
-          provider: form.provider,
-          apiKey: form.apiKey,
-          model: form.model || null,
-          baseUrl: form.baseUrl || null,
-          currency: form.currency.trim() || "EUR",
-          pricing: form.pricing,
-        };
+    if (provider?.needsApiKey && !form.apiKey && !editingId) {
+      toast({ type: "error", title: "Introduce tu API key de Gemini" });
+      return;
+    }
+
+    const payload = {
+      name: form.name.trim(),
+      provider: form.provider,
+      apiKey: form.apiKey,
+      model: form.model,
+      baseUrl: form.baseUrl || null,
+    };
     const options = {
       onSuccess: () => {
         toast({ type: "success", title: editingId ? "Configuración actualizada" : "Configuración creada" });
-        resetForm();
+        reset();
       },
-      onError: (err: Error) =>
-        toast({ type: "error", title: "Error al guardar", description: err.message }),
+      onError: (error: Error) =>
+        toast({ type: "error", title: "No se pudo guardar", description: error.message }),
     };
+
     if (editingId) {
       mutations.update.mutate({ id: editingId, payload }, options);
     } else {
@@ -159,351 +249,101 @@ export function AiConfigsManager() {
     }
   }
 
-  function handleTest(c: AiConfig) {
-    setTestingId(c.id);
-    mutations.test.mutate(c.id, {
+  function test(config: AiConfig) {
+    setTestingId(config.id);
+    mutations.test.mutate(config.id, {
       onSettled: () => setTestingId(null),
       onSuccess: () => toast({ type: "success", title: "Conexión correcta" }),
-      onError: (err: Error) =>
-        toast({ type: "error", title: "Error de conexión", description: err.message }),
+      onError: (error: Error) =>
+        toast({ type: "error", title: "Error de conexión", description: error.message }),
     });
   }
 
-  function patchPricing(providerId: string, field: "input_per_mtok" | "output_per_mtok", value: string) {
-    const num = value === "" ? undefined : Number(value);
-    setForm((f) => {
-      const current = (f.pricing[providerId] ?? {}) as AiProviderPricing;
-      return {
-        ...f,
-        pricing: { ...f.pricing, [providerId]: { ...current, [field]: num } },
-      };
-    });
+  if (query.isLoading) {
+    return <Skeleton className="h-48 rounded-xl" />;
   }
-
-  const saveDisabled = mutations.create.isPending || mutations.update.isPending;
 
   return (
     <div className="space-y-4">
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-            <Brain className="w-4 h-4" /> Configuraciones de IA
+      <div className="card space-y-4 p-5">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
+            Cambiar modelo
           </h2>
-          {/* {!editingId && (
-            <Button
-              variant="ghost"
-              className="text-xs"
-              onClick={startNew}
-            >
-              <Plus className="w-3.5 h-3.5" /> Nueva configuración
-            </Button>
-          )} */}
+          <p className="mt-1 text-xs text-gray-500">
+            Crea configuraciones independientes. Gemini usa tu propia API key; OpenCode está
+            preparado por el administrador.
+          </p>
         </div>
-        <p className="text-xs text-gray-500 mb-3">
-          Define una o varias configuraciones (proveedor, modelo y costes) y elige cuál es la
-          predeterminada. Se usan para generar planes, títulos y chats.
-        </p>
 
-        {isLoading ? (
-          <Skeleton className="h-24 rounded-xl" />
-        ) : data && data.items.length === 0 && !editingId ? (
-          <div className="p-4 rounded-xl bg-dark-300/40 text-sm text-gray-400">
-            Todavía no hay configuraciones. Crea la primera para poder generar planes.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {data?.items.map((c) => (
-              <div
-                key={c.id}
-                className={`p-3 rounded-xl bg-dark-300/50 border ${
-                  c.is_default ? "border-accent/50" : "border-dark-400"
-                }`}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  {c.is_default && (
-                    <Star className="w-4 h-4 text-accent-light fill-accent-light" />
-                  )}
-                  <span className="text-sm font-medium">{c.name}</span>
-                  <span className="text-xs text-gray-400">{c.provider}</span>
-                  {c.model && <span className="text-xs text-gray-500">{c.model}</span>}
-                  <div className="flex items-center gap-1 ml-auto">
-                    <Button
-                      variant="ghost"
-                      className="text-xs px-2 py-1"
-                      title="Probar conexión"
-                      onClick={() => handleTest(c)}
-                      disabled={mutations.test.isPending}
-                    >
-                      {testingId === c.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <TestTube2 className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    {!c.is_default && (
-                      <Button
-                        variant="ghost"
-                        className="text-xs px-2 py-1 text-accent-light"
-                        title="Usar por defecto"
-                        onClick={() => mutations.setDefault.mutate(c.id)}
-                      >
-                        <Star className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      className="text-xs px-2 py-1"
-                      title="Editar"
-                      onClick={() => startEdit(c)}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
-                      title="Eliminar"
-                      disabled={c.is_default}
-                      onClick={() => {
-                        if (window.confirm(`¿Eliminar la configuración "${c.name}"?`)) {
-                          mutations.remove.mutate(c.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {providers.map((provider) => (
+          <ProviderPanel
+            key={provider.id}
+            provider={provider}
+            expanded={expanded === provider.id}
+            form={form.provider === provider.id ? form : { ...form, provider: provider.id, model: "", apiKey: "", baseUrl: "" }}
+            editing={!!editingId}
+            models={models}
+            onToggle={() => {
+              setExpanded(expanded === provider.id ? null : provider.id);
+              setForm((current) => ({
+                ...current,
+                provider: provider.id,
+                model: current.provider === provider.id ? current.model : "",
+                apiKey: current.provider === provider.id ? current.apiKey : "",
+                baseUrl: current.provider === provider.id ? current.baseUrl : "",
+              }));
+            }}
+            onChange={(field, value) => {
+              setExpanded(provider.id);
+              setForm((current) => ({ ...current, provider: provider.id, [field]: value }));
+            }}
+            onSave={save}
+            saving={mutations.create.isPending || mutations.update.isPending}
+          />
+        ))}
       </div>
 
       <div className="card p-5">
-        <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Brain className="w-4 h-4" />
-          {editingId ? "Editar configuración" : "Nueva configuración"}
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-300">
+          Mis configuraciones
         </h2>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Nombre</label>
-            <input
-              className="input w-full"
-              value={form.name}
-              onChange={(e) => patch({ name: e.target.value })}
-              placeholder="Ej. Gemini para planes"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Proveedor</label>
-              <select
-                className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
-                value={form.provider}
-                onChange={(e) => handleProviderChange(e.target.value)}
-              >
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Modelo</label>
-              {isOpencode ? (
-                <select
-                  className="w-full rounded-lg bg-dark-300/50 border border-dark-400 px-3 py-2 text-sm focus:outline-none focus:border-accent/60"
-                  value={form.model}
-                  onChange={(e) => patch({ model: e.target.value })}
-                  disabled={modelsQuery.isLoading}
-                >
-                  <option value="">
-                    {modelsQuery.isLoading ? "Cargando modelos…" : "Selecciona un modelo…"}
-                  </option>
-                  {opencodeModels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  className="input w-full"
-                  value={form.model}
-                  onChange={(e) => patch({ model: e.target.value })}
-                  placeholder={selectedProvider?.defaultModel ?? "Modelo del proveedor"}
-                />
-              )}
-            </div>
-          </div>
-          {isOpencode && (
-            <div>
-              {modelsError ? (
-                <p className="text-xs text-red-400">
-                  No se pudieron cargar los modelos desde opencode: {modelsError}
-                </p>
-              ) : !modelsQuery.isLoading && opencodeModels.length === 0 ? (
-                <p className="text-xs text-gray-500">
-                  La instancia de opencode no expone modelos habilitados.
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500">
-                  Modelos servidos por la instancia de opencode (solo se listan los habilitados).
-                </p>
-              )}
-            </div>
-          )}
-          {selectedProvider?.needsApiKey !== false && (
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">API Key</label>
-              <input
-                type="password"
-                className="input w-full"
-                value={form.apiKey}
-                onChange={(e) => patch({ apiKey: e.target.value })}
-                placeholder={editingId ? "•••••••• (guardada, deja en blanco para no cambiarla)" : "API key del proveedor"}
-              />
-            </div>
-          )}
-          {selectedProvider?.needsApiKey === false && (
-            <p className="text-xs text-gray-500">
-              {isOpencode
-                ? "OpenCode se conecta a la instancia local del sistema. No necesita API key y el modelo, la URL y el precio los gestiona el administrador."
-                : "El proveedor mock no necesita API key: genera respuestas simuladas para probar sin coste."}
-            </p>
-          )}
-          {!isOpencode && (
-            <div>
-              <label className="text-xs text-gray-400 block mb-1">Base URL (opcional)</label>
-              <input
-                type="text"
-                className="input w-full"
-                value={form.baseUrl}
-                onChange={(e) => patch({ baseUrl: e.target.value })}
-                placeholder="https://… (endpoint base del proveedor)"
-              />
-            </div>
-          )}
 
-          {!isOpencode && (
-            <div>
-              <label className="text-xs text-gray-400 block mb-1 flex items-center gap-1">
-                <Wallet className="w-3 h-3" /> Moneda
-              </label>
-              <input
-                type="text"
-                className="input w-full uppercase"
-                value={form.currency}
-                onChange={(e) => patch({ currency: e.target.value })}
-                placeholder="EUR"
-                maxLength={3}
-              />
-            </div>
-          )}
+        <div className="space-y-2">
+          {(query.data?.items ?? []).map((config) => (
+            <div
+              key={config.id}
+              className={`rounded-xl border p-3 ${config.is_default ? "border-accent/50 bg-accent/5" : "border-dark-400 bg-dark-300/30"}`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Star className={`h-4 w-4 ${config.is_default ? "fill-accent-light text-accent-light" : "text-gray-600"}`} />
+                <span className="text-sm font-medium">{config.name}</span>
+                <span className="text-xs text-gray-500">
+                  {config.provider} · {config.model}
+                </span>
 
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">
-              Precio por millón de tokens (entrada/salida) · {selectedProvider?.name}
-            </label>
-            {isOpencode ? (
-              <div className="space-y-2">
-                {selectedOpencodeModel ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center rounded-xl bg-dark-300/40 border border-dark-400 px-3 py-2">
-                    <span className="text-sm text-gray-300">
-                      {selectedOpencodeModel.name}{" "}
-                      <span className="text-gray-500">· {selectedOpencodeModel.providerID}</span>
-                    </span>
-                    <div>
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
-                      <div className="text-sm font-medium text-gray-200">
-                        {selectedOpencodeModel.input_per_mtok != null
-                          ? `${selectedOpencodeModel.input_per_mtok.toLocaleString("es")}`
-                          : "—"}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Salida / Mtok</label>
-                      <div className="text-sm font-medium text-gray-200">
-                        {selectedOpencodeModel.output_per_mtok != null
-                          ? `${selectedOpencodeModel.output_per_mtok.toLocaleString("es")}`
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    {modelsQuery.isLoading
-                      ? "Cargando modelos…"
-                      : modelsError
-                        ? `No se pudieron cargar los modelos: ${modelsError}`
-                        : "Selecciona un modelo para ver su precio."}
-                  </p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  El precio lo fija el administrador del sistema y no se puede modificar aquí.
-                </p>
+                <div className="ml-auto flex gap-1">
+                  <Button variant="ghost" className="px-2 text-xs" onClick={() => test(config)} disabled={!!testingId}>
+                    {testingId === config.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <TestTube2 className="h-3.5 w-3.5" />}
+                    Probar
+                  </Button>
+                  <Button variant="ghost" className="px-2 text-xs" onClick={() => edit(config)}>
+                    <Pencil className="h-3.5 w-3.5" /> Editar
+                  </Button>
+                  {!config.is_default && (
+                    <Button variant="ghost" className="px-2 text-xs text-accent-light" onClick={() => mutations.setDefault.mutate(config.id)}>
+                      <Star className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {!config.is_default && (
+                    <Button variant="ghost" className="px-2 text-xs text-red-400" onClick={() => window.confirm("¿Eliminar esta configuración?") && mutations.remove.mutate(config.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {selectedProvider ? (
-                  <div key={selectedProvider.id} className="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-2 items-center">
-                    <span className="text-sm text-gray-300">{selectedProvider.name}</span>
-                    <div>
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Entrada / Mtok</label>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        className="input w-full py-1.5 text-sm"
-                        value={genericPricing?.input_per_mtok ?? ""}
-                        placeholder={selectedProvider.defaultPricing?.input_per_mtok != null ? String(selectedProvider.defaultPricing.input_per_mtok) : "0.10"}
-                        onChange={(e) => patchPricing(selectedProvider.id, "input_per_mtok", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Salida / Mtok</label>
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        className="input w-full py-1.5 text-sm"
-                        value={genericPricing?.output_per_mtok ?? ""}
-                        placeholder={selectedProvider.defaultPricing?.output_per_mtok != null ? String(selectedProvider.defaultPricing.output_per_mtok) : "0.40"}
-                        onChange={(e) => patchPricing(selectedProvider.id, "output_per_mtok", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">Selecciona un proveedor para configurar su precio.</p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Precio fijo precargado para el proveedor; puedes cambiarlo por configuración. El coste se calcula sobre los tokens usados.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button onClick={handleSave} disabled={saveDisabled}>
-              {mutations.create.isPending || mutations.update.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              {editingId ? "Guardar cambios" : "Crear configuración"}
-            </Button>
-            {editingId && (
-              <Button variant="ghost" onClick={resetForm}>
-                <XCircle className="w-4 h-4" /> Cancelar
-              </Button>
-            )}
-          </div>
-          <p className="text-xs text-gray-500">
-            La API key se guarda cifrada y solo se usa para las solicitudes al proveedor. La
-            configuración predeterminada es la que se usa por defecto al generar planes.
-          </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

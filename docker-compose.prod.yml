@@ -13,6 +13,8 @@ services:
       context: .
       dockerfile: docker/opencode.Dockerfile
     restart: unless-stopped
+    volumes:
+      - opencode_auth:/root/.local/share/opencode
 
   backend:
     build:
@@ -46,3 +48,4 @@ services:
 
 volumes:
   garmin_tokens:
+  opencode_auth:

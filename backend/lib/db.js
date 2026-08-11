@@ -52,5 +52,10 @@ export function getDb() {
   ensureColumn("ai_logs", "currency", "currency TEXT");
   ensureColumn("ai_prompts", "role", "role TEXT NOT NULL DEFAULT 'plan'");
   ensureColumn("tenant_settings", "focus_sports", "focus_sports TEXT");
+  ensureColumn("ai_model_catalog", "provider_id", "provider_id TEXT");
+  db.exec(`INSERT OR IGNORE INTO ai_model_catalog
+    (provider, model_id, provider_id, name, enabled, input_price, output_price, currency, updated_at)
+    SELECT 'opencode', model_id, provider_id, name, enabled, input_price, output_price, 'EUR', updated_at
+    FROM opencode_models`);
   return db;
 }

@@ -6,6 +6,7 @@ import type {
   AiPrompt,
   ProfileVersion,
   ProfileVersionFull,
+  PlannedSessionView,
 } from "@/types/session";
 import { get, send } from "./api";
 
@@ -19,6 +20,12 @@ export function regeneratePlan(planId: string): Promise<Plan> {
 
 export function fetchPlans(): Promise<Plan[]> {
   return get("/plans");
+}
+
+export function fetchPlanDetail(
+  planId: string
+): Promise<Plan & { plannedSessions: PlannedSessionView[] }> {
+  return get(`/plans/${encodeURIComponent(planId)}`);
 }
 
 export function fetchPlanChat(planId: string): Promise<PlanChat> {

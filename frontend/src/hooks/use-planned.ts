@@ -8,13 +8,16 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { PlannedSessionView, Session } from "@/types/session";
+import { useAuth } from "@/components/auth/auth-context";
 
 const INVALIDATE = ["sessions", "session", "weekly", "stats", "charts", "planned", "stats-records"];
 
 export function usePlanned() {
+  const { activeTenantId } = useAuth();
   return useQuery<PlannedSessionView[]>({
-    queryKey: ["planned"],
+    queryKey: ["planned", activeTenantId],
     queryFn: fetchPlanned,
+    enabled: !!activeTenantId,
     staleTime: 1000 * 60 * 5,
   });
 }

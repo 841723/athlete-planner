@@ -230,6 +230,23 @@ export function updateAdminSettings(payload: {
   return send("/admin/settings", "PUT", payload);
 }
 
+export interface OpenCodeAuthStatus {
+  baseUrl: string;
+  providers: Record<string, { providerID: string; connected: boolean }>;
+  error?: string;
+}
+
+export function fetchOpenCodeAuth(): Promise<OpenCodeAuthStatus> {
+  return get("/admin/opencode/auth");
+}
+
+export function connectOpenCode(providerId: string, apiKey: string): Promise<{ providerID: string; connected: boolean }> {
+  return send(`/admin/opencode/auth/${encodeURIComponent(providerId)}`, "PUT", {
+    type: "api",
+    key: apiKey,
+  });
+}
+
 export function fetchAdminOpencodeModels(): Promise<AdminOpencodeModelsResponse> {
   return get("/admin/opencode/models");
 }

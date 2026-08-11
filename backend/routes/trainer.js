@@ -1,5 +1,5 @@
 import { generatePlan } from "../lib/trainer.js";
-import { listPlans, getPlan, savePlan, hasActiveGeneration, updatePlanStatus } from "../lib/plans.js";
+import { listPlans, getPlan, getPlanDto, savePlan, hasActiveGeneration, updatePlanStatus } from "../lib/plans.js";
 import { getPrompt } from "../lib/ai-prompts.js";
 import { getAiConfigWithKey, getDefaultAiConfig } from "../lib/ai-configs.js";
 import { withTenant } from "../lib/sessions.js";
@@ -43,6 +43,12 @@ function resolveConfig(c, aiConfigId) {
 export function register(router) {
   router.get("/api/plans", (c) => {
     return sendJson(c.res, 200, listPlans(c.tenantId).map(toPlanDto));
+  });
+
+  router.get("/api/plans/:id", (c) => {
+    const plan = getPlanDto(c.tenantId, c.params.id);
+    if (!plan) return sendJson(c.res, 404, { error: "Plan no encontrado" });
+    return sendJson(c.res, 200, { ...toPlanDto(plan), plannedSessions: plan.plannedSessions });
   });
 
   router.post("/api/generate-plan", async (c) => {

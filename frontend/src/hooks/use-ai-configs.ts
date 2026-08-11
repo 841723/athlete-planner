@@ -15,11 +15,14 @@ import {
   testAiConfig,
 } from "@/services/api";
 import { invalidateMany } from "@/lib/invalidate";
+import { useAuth } from "@/components/auth/auth-context";
 
 export function useAiConfigs() {
+  const { activeTenantId } = useAuth();
   return useQuery({
-    queryKey: ["ai-configs"],
+    queryKey: ["ai-configs", activeTenantId],
     queryFn: fetchAiConfigs,
+    enabled: !!activeTenantId,
   });
 }
 
