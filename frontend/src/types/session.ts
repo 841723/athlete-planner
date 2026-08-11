@@ -64,6 +64,7 @@ export interface Session {
   hr_from?: number;
   hr_to?: number;
   merged_with?: string;
+  completed_session?: Session | null;
   plan_id?: string;
   category?: SportCategory;
   time_s?: number;

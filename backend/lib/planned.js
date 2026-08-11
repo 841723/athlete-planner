@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getTenantId, loadPlannedSessions, enrich, getSession, updateSession, deleteSession, upsertSession } from "./sessions.js";
+import { getTenantId, loadPlannedSessions, enrich, getMergedCompletedSession, getSession, updateSession, deleteSession, upsertSession } from "./sessions.js";
 import { buildObjectives } from "./objectives.js";
 
 const LEGACY_KEYS = [
@@ -20,7 +20,11 @@ function stripLegacy(session) {
 
 function withObjectives(session) {
   if (!session) return null;
-  return { ...session, objectives: buildObjectives(session) };
+  return {
+    ...session,
+    objectives: buildObjectives(session),
+    completed_session: getMergedCompletedSession(session),
+  };
 }
 
 export function listPlanned() {

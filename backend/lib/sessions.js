@@ -194,6 +194,20 @@ export function getSession(id) {
   return { ...enrich(session), kind: row.kind };
 }
 
+export function getMergedCompletedSession(plannedSession, tenantId = getTenantId()) {
+  const completedId = plannedSession?.merged_with;
+  if (!completedId || !tenantId) return null;
+  const row = getDb()
+    .prepare("SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'completed' AND id = ?")
+    .get(tenantId, String(completedId));
+  if (!row) return null;
+  try {
+    return enrich(JSON.parse(row.data));
+  } catch {
+    return null;
+  }
+}
+
 export function updateSession(id, updates) {
   const row = getDb()
     .prepare("SELECT data, kind FROM sessions WHERE tenant_id = ? AND id = ?")

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
-import { enrich } from "./sessions.js";
+import { enrich, getMergedCompletedSession } from "./sessions.js";
 
 export const PLAN_STATES = ["pending", "generating", "completed", "failed"];
 
@@ -117,7 +117,10 @@ export function getPlanDto(tenantId, planId) {
   if (!plan) return null;
   const plannedSessions = getDb().prepare(
     "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' AND json_extract(data, '$.plan_id') = ? ORDER BY start_date_local"
-  ).all(tenantId, planId).map((row) => enrich(JSON.parse(row.data)));
+  ).all(tenantId, planId).map((row) => {
+    const session = enrich(JSON.parse(row.data));
+    return { ...session, completed_session: getMergedCompletedSession(session, tenantId) };
+  });
   return { ...plan, plannedSessions };
 }
 

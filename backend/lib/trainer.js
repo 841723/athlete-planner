@@ -5,6 +5,7 @@ import {
   getSportCategory,
   getTenantId,
   getTenantSettings,
+  getMergedCompletedSession,
   loadCompletedSessions,
   loadPlannedSessions,
   enrich,
@@ -564,12 +565,36 @@ function formatPlannedSessionForPrompt(session) {
   return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
 }
 
-function buildChatUserPrompt(planId, message, options = {}) {
+function formatCompletedSessionForPrompt(session) {
+  const date = session.start_date_local
+    ? format(parseISO(session.start_date_local), "yyyy-MM-dd HH:mm")
+    : "sin fecha";
+  const metrics = [
+    session.distance_m != null ? `distancia=${Math.round(session.distance_m)}m` : null,
+    session.time_s != null ? `tiempo=${Math.round(session.time_s)}s` : null,
+    session.avg_pace_s_per_km != null ? `ritmo=${Math.round(session.avg_pace_s_per_km)}s/km` : null,
+    session.avg_speed_ms != null ? `velocidad=${session.avg_speed_ms}m/s` : null,
+    session.avg_heartrate != null ? `FC=${Math.round(session.avg_heartrate)}ppm` : null,
+    session.avg_watts != null ? `potencia=${Math.round(session.avg_watts)}W` : null,
+    session.rpe != null ? `RPE=${Math.round(session.rpe / 10)}/10` : null,
+    session.feel != null ? `sensacion=${Math.round(session.feel / 10)}/10` : null,
+  ].filter(Boolean).join(", ");
+  const notes = session.notes?.trim() ? ` | notas: ${session.notes.trim()}` : "";
+  return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${metrics || "sin métricas"}${notes}`;
+}
+
+export function buildChatUserPrompt(planId, message, options = {}) {
   const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
   const planText =
     planned.length > 0
       ? planned.map(formatPlannedSessionForPrompt).join("\n")
       : "(no hay sesiones planificadas para este plan)";
+  const completed = planned
+    .map((session) => getMergedCompletedSession(session))
+    .filter(Boolean);
+  const completedText = completed.length > 0
+    ? completed.map(formatCompletedSessionForPrompt).join("\n")
+    : "(ninguna sesión de este plan se ha realizado todavía)";
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
@@ -618,6 +643,9 @@ El atleta quiere mejorar principalmente en estos deportes; el plan y tus propues
 
 PLAN ACTUAL (sesiones planificadas de este plan):
 ${planText}
+
+ACTIVIDADES REALIZADAS DE ESTE PLAN (solo sesiones completadas fusionadas automáticamente; pueden incluir notas del atleta):
+${completedText}
 ${historyText}
 MENSAJE DEL ATLETA:
 ${message}

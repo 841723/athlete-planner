@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MessageCircle, Sparkles } from "lucide-react";
 import { parseISO } from "date-fns";
 import { Link, useParams } from "react-router-dom";
 
@@ -118,6 +118,16 @@ export function PlanDetailPage() {
                 </div>
                 {session.merged_with && <CheckCircle2 className="h-4 w-4 text-green-400" />}
               </div>
+
+              {session.completed_session && (
+                <Link
+                  to={tenantPath(activeTenantId, `/session/${session.completed_session.id}`)}
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-green-400 hover:text-green-300"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Ver actividad realizada
+                </Link>
+              )}
 
               <div className="mt-3">
                 {session.workout_text ? (
