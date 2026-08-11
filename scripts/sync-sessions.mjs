@@ -8,8 +8,10 @@ const optionValue = (name) => {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : null;
 };
-const minDate = optionValue("--min-date") ?? "2026-05-12";
+const minDateArg = optionValue("--min-date");
+const maxDateArg = optionValue("--max-date");
 const minDateIndex = args.indexOf("--min-date");
+const maxDateIndex = args.indexOf("--max-date");
 const idsOnly = new Set();
 for (const a of args) {
   if (a.startsWith("--ids=")) {
@@ -19,12 +21,12 @@ for (const a of args) {
   }
 }
 const rest = args.filter((a, index) =>
-  a !== "--force" && !a.startsWith("--ids=") && a !== "--min-date" && !(minDateIndex >= 0 && index === minDateIndex + 1)
+  a !== "--force" && !a.startsWith("--ids=") && a !== "--min-date" && !(minDateIndex >= 0 && index === minDateIndex + 1) && a !== "--max-date" && !(maxDateIndex >= 0 && index === maxDateIndex + 1)
 );
 
 const [listPath, detailsDir, sessionsDir = "sessions"] = rest;
 if (!listPath || !detailsDir) {
-  console.error("Uso: node scripts/sync-sessions.mjs <list.json> <detailsDir> [sessionsDir] [--force] [--ids=id1,id2]");
+  console.error("Uso: node scripts/sync-sessions.mjs <list.json> <detailsDir> [sessionsDir] [--force] [--ids=id1,id2] [--min-date YYYY-MM-DD] [--max-date YYYY-MM-DD]");
   process.exit(1);
 }
 
@@ -34,6 +36,16 @@ if (!activities.length) {
   console.error("No se encontraron actividades en el listado.");
   process.exit(1);
 }
+
+// La min y max date salen de Garmin: si no se indica un rango explícito
+// (--min-date/--max-date), se usa el rango real de actividades que devolvió
+// Garmin en el listado, en vez de una fecha mínima hardcodeada.
+const activityDates = activities
+  .map((a) => (a.startTimeLocal?.datetime ?? "").slice(0, 10))
+  .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+  .sort();
+const minDate = minDateArg ?? activityDates[0] ?? "1970-01-01";
+const maxDate = maxDateArg ?? activityDates[activityDates.length - 1] ?? "9999-12-31";
 
 const details = new Map();
 if (fs.existsSync(detailsDir)) {
@@ -201,7 +213,7 @@ let filtered = 0;
 for (const a of activities) {
   const id = String(a.activityId);
   const startDate = (a.startTimeLocal?.datetime ?? "").slice(0, 10);
-  if (startDate < minDate) {
+  if (startDate && (startDate < minDate || startDate > maxDate)) {
     filtered++;
     continue;
   }
@@ -235,4 +247,4 @@ for (const a of activities) {
   written++;
   if (!details.has(id)) missing++;
 }
-console.log(`Sincronizadas: ${written} | Omitidas: ${skipped} | Filtradas (antes de ${MIN_DATE}): ${filtered} | Sin detalles (sin segmentos): ${missing} | Total: ${activities.length}`);
+console.log(`Sincronizadas: ${written} | Omitidas: ${skipped} | Filtradas: ${filtered} (rango ${minDate} → ${maxDate}) | Sin detalles: ${missing} | Total: ${activities.length}`);

@@ -10,19 +10,44 @@ export const SYNC_SESSIONS = path.join(SCRIPTS_DIR, "sync-sessions.mjs");
 export const GARMIN_DEPS = "garminconnect==0.3.8";
 export const PYTHON_VERSION = "3.12";
 
-export function run(cmd, args, { cwd = ROOT } = {}) {
+export function run(cmd, args, { cwd = ROOT, env = null, timeoutMs = 0 } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd, shell: false });
+    const child = spawn(cmd, args, {
+      cwd,
+      shell: false,
+      ...(env ? { env: { ...process.env, ...env } } : {}),
+    });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    const timer =
+      timeoutMs > 0
+        ? setTimeout(() => {
+            child.kill("SIGKILL");
+            if (!settled) {
+              settled = true;
+              const err = new Error(`El comando ${cmd} superó el límite de ${Math.round(timeoutMs / 1000)}s`);
+              err.timeout = true;
+              reject(err);
+            }
+          }, timeoutMs)
+        : null;
     child.stdout.on("data", (chunk) => {
       stdout += chunk;
     });
     child.stderr.on("data", (chunk) => {
       stderr += chunk;
     });
-    child.on("error", (err) => reject(err));
+    child.on("error", (err) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      reject(err);
+    });
     child.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
       if (code === 0) resolve(stdout.trim());
       else {
         const err = new Error(stderr.trim() || `El comando ${cmd} terminó con código ${code}`);
@@ -34,10 +59,10 @@ export function run(cmd, args, { cwd = ROOT } = {}) {
   });
 }
 
-export function runPython(script, args, env = undefined) {
-  return run("uv", ["run", "--python", PYTHON_VERSION, "--with", GARMIN_DEPS, "python", script, ...args], { env });
+export function runPython(script, args, env = undefined, timeoutMs = 10 * 60 * 1000) {
+  return run("uv", ["run", "--python", PYTHON_VERSION, "--with", GARMIN_DEPS, "python", script, ...args], { env, timeoutMs });
 }
 
-export function runNode(script, args) {
-  return run("node", [script, ...args]);
+export function runNode(script, args, timeoutMs = 5 * 60 * 1000) {
+  return run("node", [script, ...args], { timeoutMs });
 }

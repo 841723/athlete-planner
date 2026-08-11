@@ -48,8 +48,8 @@
 - Actualmente la UI muestra solo Garmin Connect. El backend conserva código Strava para posible reactivación, pero no añadas Strava a la UI sin una petición explícita.
 - Garmin usa siempre `uv run --with garminconnect==0.3.8 python scripts/garmin-fetch.py ...`; los tokens del tenant se pasan mediante fichero temporal.
 - Garmin admite `list`, `details` e `ids`; no se descargan ni almacenan tracks/GPS. No recrees la tabla `activity_tracks` ni endpoints de tracks.
-- `scripts/sync-sessions.mjs` acepta `--force`, `--ids=id1,id2` y `--min-date YYYY-MM-DD`; el rango efectivo debe conservarse al normalizar.
-- El rango de fuente es `min_date`/`max_date`; si falta, el backend usa `config.min_date` o `MIN_DATE`.
+- `scripts/sync-sessions.mjs` acepta `--force`, `--ids=id1,id2`, `--min-date YYYY-MM-DD` y `--max-date YYYY-MM-DD`; el rango efectivo debe conservarse al normalizar.
+- El rango de fuente es `min_date`/`max_date` de la fuente (config de Garmin) o `MIN_DATE` (env). Si no hay rango configurado, la sincronización deriva la fecha mínima de la sesión más antigua del atleta (o de `tenant_settings.min_date`) para acotar el fetch de Garmin, y `sync-sessions.mjs` conserva el rango efectivo al normalizar: no hay fecha mínima hardcodeada. Los comandos `uv`/`node` de sincronización llevan timeout (`runPython`/`runNode` en `sync-run.js`) para no quedarse colgados sin error.
 - La sincronización hace upsert de sesiones por `(tenant_id, id)` y debe conservar campos editados localmente como `title`/notas.
 - Nunca ejecutes una sincronización automática durante una tarea de análisis o desarrollo.
 

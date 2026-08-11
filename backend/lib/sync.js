@@ -2,15 +2,27 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { getDb } from "./db.js";
-import { getTenantId, upsertSession } from "./sessions.js";
+import { getTenantId, getTenantSettings, upsertSession } from "./sessions.js";
 import { mergePlannedWithCompleted } from "./merge.js";
 import { runPython, runNode, GARMIN_FETCH, SYNC_SESSIONS } from "./sync-run.js";
 import { getSyncSource, getSyncTokensRaw } from "./sync-sources.js";
 import { syncStrava } from "./strava.js";
 
-const MIN_DATE = process.env.MIN_DATE ?? "2026-05-12";
-
 let syncing = false;
+
+// El rango de sincronización sale del propio atleta, nunca de una fecha
+// hardcodeada: primero el rango configurado en la fuente (config.min_date),
+// luego MIN_DATE de entorno, luego la sesión más antigua que ya tiene el
+// atleta (así el fetch de Garmin queda acotado a su historial real).
+function effectiveMinDate(config) {
+  if (config.min_date) return config.min_date;
+  if (process.env.MIN_DATE) return process.env.MIN_DATE;
+  const oldest = getDb()
+    .prepare("SELECT MIN(json_extract(data, '$.start_date_local')) AS d FROM sessions WHERE tenant_id = ?")
+    .get(getTenantId())?.d;
+  if (oldest) return String(oldest).slice(0, 10);
+  return getTenantSettings(getTenantId())?.min_date ?? null;
+}
 
 function existingIds() {
   const rows = getDb()
@@ -25,7 +37,7 @@ async function fetchAllIds(tokensFile, dateArgs = []) {
 }
 
 function parseSummary(line) {
-  const m = line.match(/Sincronizadas:\s*(\d+).*Omitidas:\s*(\d+).*Filtradas.*?(\d+).*Sin detalles.*?(\d+)/);
+  const m = line.match(/Sincronizadas:\s*(\d+).*?Omitidas:\s*(\d+).*?Filtradas:\s*(\d+).*?Sin detalles:\s*(\d+)/);
   if (!m) return null;
   return {
     synced: Number(m[1]),
@@ -74,7 +86,7 @@ async function syncGarmin({ force = false }) {
   }
 
   const config = JSON.parse(source?.config ?? "{}") ?? {};
-  const minDate = config.min_date ?? process.env.MIN_DATE ?? MIN_DATE;
+  const minDate = effectiveMinDate(config);
   const maxDate = config.max_date ?? null;
 
   const dateArgs = [];
@@ -116,7 +128,9 @@ async function syncGarmin({ force = false }) {
     let syncOut = "";
     let imported = 0;
     if (missingIds.length) {
-      const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`, "--min-date", minDate];
+      const syncArgs = [listFile, detailsDir, sessionsDir, `--ids=${missingIds.join(",")}`];
+      if (minDate) syncArgs.push("--min-date", minDate);
+      if (maxDate) syncArgs.push("--max-date", maxDate);
       if (force) syncArgs.push("--force");
       syncOut = await runNode(SYNC_SESSIONS, syncArgs);
       imported = importNormalizedSessions(sessionsDir, missingIds);
