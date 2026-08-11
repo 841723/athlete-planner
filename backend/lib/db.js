@@ -49,6 +49,7 @@ export function getDb() {
   ensureColumn("plans", "started_at", "started_at TEXT");
   ensureColumn("plans", "finished_at", "finished_at TEXT");
   ensureColumn("plans", "chat_pending", "chat_pending INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("plans", "context_hash", "context_hash TEXT");
   ensureColumn("ai_logs", "input_tokens", "input_tokens INTEGER");
   ensureColumn("ai_logs", "output_tokens", "output_tokens INTEGER");
   ensureColumn("ai_logs", "cost", "cost REAL");

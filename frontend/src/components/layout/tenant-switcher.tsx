@@ -17,14 +17,15 @@ export function TenantSwitcher() {
     <div className="relative min-w-0">
       <button
         type="button"
-        className="flex max-w-[min(42vw,14rem)] items-center gap-2 rounded-xl border border-dark-400 bg-dark-300/50 px-2.5 py-1.5 text-left hover:bg-dark-300"
+        className="flex items-center gap-2 rounded-xl border border-dark-400 bg-dark-300/50 px-2.5 py-1.5 text-left hover:bg-dark-300 sm:max-w-[min(42vw,14rem)]"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-label={`Atleta activo: ${active.name}`}
       >
         <Users className="h-4 w-4 shrink-0 text-accent-light" />
-        <span className="truncate text-xs font-medium sm:text-sm">{active.name}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="hidden truncate text-xs font-medium sm:inline sm:text-sm">{active.name}</span>
+        <ChevronDown className={`hidden h-3.5 w-3.5 shrink-0 text-gray-500 transition-transform sm:block ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

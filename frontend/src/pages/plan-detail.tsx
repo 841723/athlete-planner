@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MessageCircle, Pencil, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MessageCircle, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import { tenantPath } from "@/lib/tenant";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePlanDetail } from "@/hooks/use-plan-detail";
+import { useDeletePlanned } from "@/hooks/use-planned";
 import { usePermissions } from "@/hooks/use-permissions";
 import { PlanChat } from "@/components/planned/plan-chat";
 import { SessionTextModal } from "@/components/planned/session-text-modal";
@@ -19,6 +20,7 @@ export function PlanDetailPage() {
   const { activeTenantId } = useAuth();
   const query = usePlanDetail(planId);
   const permissions = usePermissions();
+  const deleteMutation = useDeletePlanned();
   const [editingSession, setEditingSession] = useState<PlannedSessionView | null>(null);
 
   if (query.isLoading) {
@@ -126,15 +128,29 @@ export function PlanDetailPage() {
                      {getSportLabel(session.category)} · {formatTrainingDay(session.start_date_local, session.weekNumber)}
                   </p>
                 </div>
-                {session.merged_with && <CheckCircle2 className="h-4 w-4 text-green-400" />}
+                {session.merged_with && <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />}
                 {permissions.canEdit && (
                   <button
                     onClick={() => setEditingSession(session)}
                     title="Editar el texto del entrenamiento"
                     aria-label={`Editar el texto de ${session.title ?? session.name}`}
-                    className="shrink-0 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-dark-300 hover:text-gray-200"
+                    className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-gray-200"
                   >
                     <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {permissions.canEdit && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar "${session.title ?? session.name}" de este plan?`)) {
+                        deleteMutation.mutate(session.id);
+                      }
+                    }}
+                    title="Eliminar sesión del plan"
+                    aria-label={`Eliminar ${session.title ?? session.name}`}
+                    className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-red-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>

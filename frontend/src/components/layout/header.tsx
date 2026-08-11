@@ -28,17 +28,17 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass border-b border-white/5 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-40 glass border-b border-white/5 px-3 py-3 flex items-center justify-between sm:px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
-            className="btn-icon md:hidden"
+            className="btn-icon shrink-0 md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
           <Link to={tenantPath(activeTenantId, "/")} className="flex items-center gap-2 text-[#C8102E]">
             <picture>
-              <img src="/edasi-light-long.png" alt="edasi logo" className="h-9 w-auto sm:h-12" />
+              <img src="/edasi-light-long.png" alt="edasi logo" className="h-8 w-auto sm:h-12" />
             </picture>
           </Link>
           <TenantSwitcher />

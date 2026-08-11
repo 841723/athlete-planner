@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS plans (
   request_comments TEXT,
   started_at TEXT,
   finished_at TEXT,
-  chat_pending INTEGER NOT NULL DEFAULT 0
+  chat_pending INTEGER NOT NULL DEFAULT 0,
+  context_hash TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_plans_tenant ON plans(tenant_id, created_at DESC);
 

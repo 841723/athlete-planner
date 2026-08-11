@@ -72,7 +72,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="card p-4 min-w-[260px] max-w-sm animate-scale-in shadow-xl border"
+            className="card p-4 min-w-[min(260px,calc(100vw-2rem))] max-w-[min(24rem,calc(100vw-2rem))] animate-scale-in shadow-xl border"
             style={{ borderColor: t.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)" }}
           >
             <div className="flex items-start gap-2">

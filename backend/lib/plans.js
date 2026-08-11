@@ -7,6 +7,7 @@ export const PLAN_STATES = ["pending", "generating", "completed", "failed"];
 const STALE_MS = 10 * 60 * 1000;
 
 const PLAN_COLUMNS = `id, created_at, comments, weeks, response_id,
+              context_hash AS contextHash,
               profile_version_id AS profileVersionId,
               prompt_id AS promptId,
               prompt_name AS promptName,
@@ -67,6 +68,12 @@ export function updatePlanResponseId(planId, responseId) {
   getDb()
     .prepare("UPDATE plans SET response_id = ? WHERE id = ?")
     .run(responseId ?? null, planId);
+}
+
+export function updatePlanContextHash(planId, contextHash) {
+  getDb()
+    .prepare("UPDATE plans SET context_hash = ? WHERE id = ?")
+    .run(contextHash ?? null, planId);
 }
 
 export function setChatPending(planId, pending) {

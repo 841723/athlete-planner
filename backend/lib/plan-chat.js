@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
-import { getTenantId, upsertSession, enrich, deleteSession, loadPlannedSessions } from "./sessions.js";
+import {
+  getTenantId,
+  upsertSession,
+  enrich,
+  deleteSession,
+  loadPlannedSessions,
+  loadCompletedSessions,
+  getSportCategory,
+} from "./sessions.js";
 import { buildObjectives } from "./objectives.js";
 
 export function listPlanMessages(planId) {
@@ -39,9 +47,31 @@ export function deletePlanAndSessions(tenantId, planId) {
 
 export function replacePlanSessions(planId, rawSessions) {
   deletePlanSessions(planId);
+
+  const completed = loadCompletedSessions();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const created = [];
   for (const raw of rawSessions) {
     if (!raw?.sport || !raw?.start_date_local) continue;
+
+    // Nunca se crean sesiones en el pasado: el plan solo se modifica hacia
+    // delante. Las sesiones pasadas ya realizadas se conservan por separado.
+    const start = new Date(raw.start_date_local);
+    if (Number.isNaN(start.getTime()) || start < today) continue;
+
+    // No se vuelve a planificar una sesión cuya actividad ya se realizó ese
+    // día y categoría de deporte: impedir que reaparezcan en el calendario.
+    const date = raw.start_date_local.slice(0, 10);
+    const cat = getSportCategory(raw.sport);
+    const alreadyDone = completed.some(
+      (c) =>
+        (c.start_date_local ?? "").slice(0, 10) === date &&
+        getSportCategory(c.sport) === cat
+    );
+    if (alreadyDone) continue;
+
     const session = {
       schema_version: 2,
       id: randomUUID(),

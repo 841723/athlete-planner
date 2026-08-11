@@ -151,6 +151,18 @@ export function loadCompletedSessions() {
   return rowsToSessions(rows);
 }
 
+export function loadCompletedSessionsSince(cutoffDate) {
+  const tenantId = getTenantId();
+  if (!tenantId) return [];
+  const rows = getDb()
+    .prepare(
+      `SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'completed'
+       AND substr(start_date_local, 1, 10) >= ? ORDER BY start_date_local`
+    )
+    .all(tenantId, cutoffDate);
+  return rowsToSessions(rows);
+}
+
 export function cleanupOldPlanned() {
   const tenantId = getTenantId();
   if (!tenantId) return 0;

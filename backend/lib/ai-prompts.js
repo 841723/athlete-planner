@@ -134,16 +134,22 @@ function loadRoleFile(role) {
   return ROLE_FALLBACK[role];
 }
 
-function hasRole(tenantId, role) {
-  return (
-    getDb()
-      .prepare("SELECT COUNT(*) AS cnt FROM ai_prompts WHERE tenant_id = ? AND role = ?")
-      .get(tenantId, role).cnt > 0
-  );
-}
-
 export function seedRolePrompt(tenantId, role) {
-  if (hasRole(tenantId, role)) return;
+  const existing = getDb()
+    .prepare(
+      "SELECT id, content FROM ai_prompts WHERE tenant_id = ? AND role = ? ORDER BY is_predefined DESC, created_at ASC LIMIT 1"
+    )
+    .get(tenantId, role);
+  if (existing) {
+    // Los prompts de rol (system, titles, chat) son internos, sin UI de edición:
+    // se refrescan con el seed actual del fichero para que las mejoras lleguen a
+    // tenants ya existentes sin perder la posibilidad de corregirlos por SQL.
+    const seed = loadRoleFile(role);
+    if (seed !== existing.content) {
+      getDb().prepare("UPDATE ai_prompts SET content = ? WHERE id = ?").run(seed, existing.id);
+    }
+    return;
+  }
   const insert = getDb().prepare(
     "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)"
   );

@@ -5,6 +5,7 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,7 +13,7 @@ import { Link } from "react-router-dom";
 import { formatTrainingDay } from "@/lib/utils";
 import { tenantPath } from "@/lib/tenant";
 import { useAuth } from "@/components/auth/auth-context";
-import { usePlanned } from "@/hooks/use-planned";
+import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
 import { usePlans } from "@/hooks/use-plans";
 import { useRetryPlan } from "@/hooks/use-generate-plan";
 import { PlannedFormModal } from "@/components/planned/planned-form";
@@ -97,7 +98,9 @@ function PlanCard({
   );
 }
 
-function ManualSessions({ sessions }: { sessions: PlannedSessionView[] }) {
+function ManualSessions({ sessions, canEdit }: { sessions: PlannedSessionView[]; canEdit: boolean }) {
+  const deleteMutation = useDeletePlanned();
+
   return (
     <section className="card mt-6 p-5">
       <div className="mb-3 flex items-center gap-2">
@@ -110,11 +113,27 @@ function ManualSessions({ sessions }: { sessions: PlannedSessionView[] }) {
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {sessions.slice(0, 8).map((session) => (
-          <div key={session.id} className="rounded-lg bg-dark-300/40 p-3 text-sm">
-            <p className="truncate font-medium">{session.title ?? session.name}</p>
-            <p className="mt-1 text-xs text-gray-500">
-              {formatTrainingDay(session.start_date_local, session.weekNumber)}
-            </p>
+          <div key={session.id} className="flex items-center gap-2 rounded-lg bg-dark-300/40 p-3 text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{session.title ?? session.name}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                {formatTrainingDay(session.start_date_local, session.weekNumber)}
+              </p>
+            </div>
+            {canEdit && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`¿Eliminar "${session.title ?? session.name}"?`)) {
+                    deleteMutation.mutate(session.id);
+                  }
+                }}
+                title="Eliminar sesión"
+                aria-label={`Eliminar ${session.title ?? session.name}`}
+                className="shrink-0 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-dark-300 hover:text-red-300"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -190,7 +209,9 @@ export function PlannedPage() {
             />
           ))}
 
-          {manualSessions.length > 0 && <ManualSessions sessions={manualSessions} />}
+          {manualSessions.length > 0 && (
+            <ManualSessions sessions={manualSessions} canEdit={permissions.canEdit} />
+          )}
         </div>
       )}
 

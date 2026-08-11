@@ -7,7 +7,8 @@ process.env.DB_PATH = `/tmp/opencode/plan-chat-context-${randomUUID()}.db`;
 const { getDb } = await import("../lib/db.js");
 const { withTenant, upsertSession } = await import("../lib/sessions.js");
 const { listPlanned } = await import("../lib/planned.js");
-const { buildChatUserPrompt, getRecentSessions } = await import("../lib/trainer.js");
+const { buildChatUserPrompt, getRecentSessions, computeContextHash } = await import("../lib/trainer.js");
+const { getRolePrompt } = await import("../lib/ai-prompts.js");
 const { replacePlanSessions } = await import("../lib/plan-chat.js");
 const { getPlanProgress } = await import("../lib/plans.js");
 
@@ -97,15 +98,22 @@ withTenant(tenantId, () => {
   });
 });
 
-test("el contexto del chat incluye solo actividades realizadas fusionadas y sus notas", () => {
+test("el contexto del chat incluye solo actividades de las últimas 4 semanas y sus notas", () => {
   const prompt = withTenant(tenantId, () => buildChatUserPrompt(planId, "Analiza mi semana"));
 
-  assert.match(prompt, /ACTIVIDADES REALIZADAS DE ESTE PLAN/);
+  assert.match(prompt, /ACTIVIDADES REALIZADAS — ÚLTIMAS 4 SEMANAS/);
   assert.match(prompt, /Me encontré bien; terminé algo más rápido/);
   assert.match(prompt, /Carrera Z2 realizada/);
   assert.match(prompt, /Actividad real fuera de este plan/);
-  const completedSection = prompt.split("ACTIVIDADES REALIZADAS DE ESTE PLAN")[1].split("MENSAJE DEL ATLETA")[0];
+  const completedSection = prompt.split("ACTIVIDADES REALIZADAS — ÚLTIMAS 4 SEMANAS")[1].split("MENSAJE DEL ATLETA")[0];
   assert.doesNotMatch(completedSection, /60 min suaves/);
+  assert.doesNotMatch(completedSection, /Actividad antigua/);
+});
+
+test("el contexto del chat marca las planificadas realizadas como completadas", () => {
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt(planId, "Analiza mi semana"));
+  assert.match(prompt, /\[COMPLETADA\]/);
+  assert.match(prompt, /\[PENDIENTE\]/);
 });
 
 test("las planificadas fusionadas exponen la actividad completada", () => {
@@ -138,6 +146,70 @@ test("el feedback del chat no borra planificadas ya realizadas", () => {
   const planned = withTenant(tenantId, () => listPlanned());
   assert.ok(planned.some((session) => session.id === plannedId));
   assert.ok(planned.some((session) => session.title === "Nueva sesión futura"));
+});
+
+test("el feedback del chat no crea sesiones en fechas pasadas", () => {
+  withTenant(tenantId, () => replacePlanSessions(planId, [
+    {
+      sport: "running",
+      title: "Sesión en el pasado",
+      start_date_local: `${dateAt(-2).slice(0, 10)}T08:00:00`,
+      workout_text: "No debería crearse",
+    },
+    {
+      sport: "running",
+      title: "Sesión de hoy",
+      start_date_local: `${dateAt(0).slice(0, 10)}T08:00:00`,
+      workout_text: "Sí debería crearse",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+  assert.ok(!planned.some((session) => session.title === "Sesión en el pasado"));
+  assert.ok(planned.some((session) => session.title === "Sesión de hoy"));
+});
+
+test("el feedback del chat no re-planifica una actividad ya realizada el mismo día", () => {
+  const today = dateAt(0).slice(0, 10);
+  withTenant(tenantId, () => upsertSession(tenantId, "completed", {
+    id: "garmin-today-running",
+    sport: "running",
+    name: "Rodaje de hoy realizado",
+    start_date_local: `${today}T07:00:00`,
+    moving_time_s: 1800,
+  }));
+  withTenant(tenantId, () => replacePlanSessions(planId, [
+    {
+      sport: "running",
+      title: "Rodaje duplicado de hoy",
+      start_date_local: `${today}T18:00:00`,
+      workout_text: "No debería aparecer en calendario",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+  assert.ok(!planned.some((session) => session.title === "Rodaje duplicado de hoy"));
+});
+
+test("el hash de contexto cambia cuando se registra una actividad nueva", () => {
+  const before = withTenant(tenantId, () => computeContextHash(planId));
+  const newId = "garmin-hash-change";
+  withTenant(tenantId, () => upsertSession(tenantId, "completed", {
+    id: newId,
+    sport: "running",
+    name: "Nueva actividad reciente",
+    start_date_local: `${dateAt(0).slice(0, 10)}T07:30:00`,
+    moving_time_s: 1800,
+  }));
+  const after = withTenant(tenantId, () => computeContextHash(planId));
+  assert.notEqual(before, after);
+});
+
+test("el prompt de chat de un tenant existente se refresca con el seed actual", () => {
+  getDb()
+    .prepare("UPDATE ai_prompts SET content = ? WHERE tenant_id = ? AND role = 'chat'")
+    .run("contenido obsoleto del chat", tenantId);
+  const refreshed = withTenant(tenantId, () => getRolePrompt(tenantId, "chat"));
+  assert.notEqual(refreshed.content, "contenido obsoleto del chat");
+  assert.match(refreshed.content, /NUNCA modifiques, elimines ni vuelvas a incluir sesiones planificadas en fechas pasadas/);
 });
 
 test("la ventana de sesiones recientes para generar planes es configurable y permite cuatro semanas", () => {

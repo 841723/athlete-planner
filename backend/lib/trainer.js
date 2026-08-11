@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { getDb } from "./db.js";
 import {
   getAthleteProfile,
@@ -7,6 +7,7 @@ import {
   getTenantId,
   getTenantSettings,
   loadCompletedSessions,
+  loadCompletedSessionsSince,
   loadPlannedSessions,
   enrich,
   saveAthleteProfile,
@@ -15,7 +16,7 @@ import {
 } from "./sessions.js";
 import { saveProfileVersion } from "./profile-history.js";
 import { getPrompt, getRolePrompt, getFormatBlock } from "./ai-prompts.js";
-import { savePlan, updatePlanStatus, updatePlanResult } from "./plans.js";
+import { savePlan, updatePlanStatus, updatePlanResult, getPlan, updatePlanContextHash } from "./plans.js";
 import { buildObjectives } from "./objectives.js";
 import { callAi, callAiChat } from "./ai-provider.js";
 import { listPlanMessages, addPlanMessage, replacePlanSessions } from "./plan-chat.js";
@@ -563,7 +564,8 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
 
 function formatPlannedSessionForPrompt(session) {
   const date = session.start_date_local ? formatTrainingDayForPrompt(session.start_date_local) : "sin fecha";
-  return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
+  const status = session.merged_with ? "[COMPLETADA]" : "[PENDIENTE]";
+  return `- ${date} | ${status} | ${session.sport} | ${session.title ?? session.name} | ${session.workout_text ?? ""}`.trim();
 }
 
 function formatCompletedSessionForPrompt(session) {
@@ -588,10 +590,11 @@ export function buildChatUserPrompt(planId, message, options = {}) {
     planned.length > 0
       ? planned.map(formatPlannedSessionForPrompt).join("\n")
       : "(no hay sesiones planificadas para este plan)";
-  const completed = loadCompletedSessions();
+  const cutoff = format(subWeeks(new Date(), 4), "yyyy-MM-dd");
+  const completed = loadCompletedSessionsSince(cutoff);
   const completedText = completed.length > 0
     ? completed.map(formatCompletedSessionForPrompt).join("\n")
-    : "(no hay actividades realizadas todavía)";
+    : "(no hay actividades realizadas en las últimas 4 semanas)";
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
@@ -638,10 +641,10 @@ DEPORTES DE ENFOQUE:
 ${focusText}
 El atleta quiere mejorar principalmente en estos deportes; el plan y tus propuestas deben centrarse en ellos (puede haber otros deportes puntuales).
 
-PLAN ACTUAL (sesiones planificadas de este plan):
+PLAN ACTUAL (sesiones planeadas de este plan; [COMPLETADA] = ya realizada y fusionada con la actividad real, [PENDIENTE] = aún por hacer):
 ${planText}
 
-ACTIVIDADES REALIZADAS DE ESTE PLAN (solo sesiones completadas fusionadas automáticamente; pueden incluir notas del atleta):
+ACTIVIDADES REALIZADAS — ÚLTIMAS 4 SEMANAS (incluyen las fusionadas con sesiones planeadas de este plan y cualquier otra actividad registrada):
 ${completedText}
 ${historyText}
 MENSAJE DEL ATLETA:
@@ -667,16 +670,65 @@ function parseChatResponse(response) {
   }
 }
 
+// Huella del contexto que se le envía al entrenador: perfil del atleta,
+// configuración relevante, equipamiento, sesiones del plan (con estado de
+// merge) y actividades completadas de las últimas 4 semanas. Si nada de esto
+// cambia, el contexto que ya conoce el proveedor sigue siendo válido y el chat
+// puede reutilizar el hilo anterior enviando solo el mensaje nuevo.
+export function computeContextHash(planId) {
+  const profile = getAthleteProfile();
+  const settings = getTenantSettings();
+  const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
+  const cutoff = format(subWeeks(new Date(), 4), "yyyy-MM-dd");
+  const completed = loadCompletedSessionsSince(cutoff);
+  const state = {
+    today: format(new Date(), "yyyy-MM-dd"),
+    profile: sanitizeProfile(profile),
+    settings: {
+      focusSports: getFocusSports(getTenantId()),
+      planStart: settings?.plan_start ?? null,
+      goalDate: settings?.goal_date ?? null,
+      trainingWeekOneStart: settings?.training_week_one_start ?? null,
+    },
+    equipment: getEquipmentLabels(getTenantId()),
+    planned: planned.map((s) => ({
+      id: s.id,
+      date: (s.start_date_local ?? "").slice(0, 10),
+      sport: s.sport,
+      title: s.title ?? s.name,
+      merged: Boolean(s.merged_with),
+    })),
+    completed: completed.map((s) => ({
+      id: s.id,
+      date: (s.start_date_local ?? "").slice(0, 10),
+      sport: s.sport,
+      title: s.title ?? s.name,
+      time_s: s.time_s ?? null,
+      distance_m: s.distance_m ?? null,
+      avg_heartrate: s.avg_heartrate ?? null,
+      avg_watts: s.avg_watts ?? null,
+      notes: s.notes ?? null,
+    })),
+  };
+  return createHash("sha256").update(JSON.stringify(state)).digest("hex");
+}
+
 export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
   const tenantId = getTenantId();
   const systemPrompt = requireRolePrompt("chat");
 
-  // Cuando el proveedor permite seguir el hilo (opencode con sesión por
-  // atleta/plan, gemini con previous_interaction_id), se reutiliza la
-  // interacción anterior y se envía SOLO el mensaje nuevo: el contexto
-  // completo (perfil, plan, actividades) ya quedó en la sesión. El mock no
-  // mantiene un hilo real, así que siempre se le envía el contexto completo.
-  const threaded = settings?.provider !== "mock" && Boolean(previousResponseId);
+  // El contexto completo (perfil, plan, actividades recientes) solo se reenvía
+  // cuando cambia de verdad: nueva actividad realizada, perfil editado, plan
+  // modificado o día nuevo. Si no ha cambiado y el proveedor mantiene hilo
+  // (opencode con sesión por atleta/plan, gemini con previous_interaction_id),
+  // se reutiliza la interacción anterior enviando SOLO el mensaje nuevo. El
+  // mock no mantiene un hilo real, así que siempre recibe el contexto completo.
+  const currentHash = computeContextHash(planId);
+  const plan = getPlan(tenantId, planId);
+  const contextChanged = currentHash !== plan?.contextHash;
+
+  const threaded =
+    settings?.provider !== "mock" && Boolean(previousResponseId) && !contextChanged;
 
   let text;
   let responseId;
@@ -699,16 +751,19 @@ export async function chatWithPlan({ planId, message, previousResponseId, settin
         { systemPrompt, input: fullPrompt, previousResponseId: null },
         actor
       ));
+      updatePlanContextHash(planId, currentHash);
     }
   } else {
-    // Primera pregunta de la conversación (o hilo no soportado): se envía el
-    // contexto completo una sola vez.
+    // Primera pregunta de la conversación, hilo no soportado o contexto
+    // cambiado: se envía el contexto completo actualizado y se arranca un hilo
+    // nuevo (el hilo anterior, si existe, tiene contexto desactualizado).
     const fullPrompt = buildChatUserPrompt(planId, message, { includeHistory: true });
     ({ text, responseId } = await callAiChat(
       settings,
-      { systemPrompt, input: fullPrompt, previousResponseId },
+      { systemPrompt, input: fullPrompt, previousResponseId: null },
       actor
     ));
+    updatePlanContextHash(planId, currentHash);
   }
 
   const parsed = parseChatResponse(text);
