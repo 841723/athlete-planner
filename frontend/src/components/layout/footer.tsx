@@ -58,7 +58,7 @@ export function Footer() {
       <div className="flex-1" />
       <button
         onClick={handleCopy}
-        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 px-3 py-1.5 rounded-lg bg-dark-300/40 hover:bg-dark-300 transition-colors"
+        className="flex md:hidden items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 px-3 py-1.5 rounded-lg bg-dark-300/40 hover:bg-dark-300 transition-colors"
         title="Copiar la URL actual (incluye el atleta y la página)"
       >
         {copied ? <Check className="w-3.5 h-3.5 text-accent-light" /> : <Copy className="w-3.5 h-3.5" />}

@@ -564,13 +564,12 @@ export interface PlanChat {
   planId: string;
   planCreatedAt: string;
   canChat: boolean;
+  chatPending: boolean;
   messages: PlanMessage[];
 }
 
 export interface PlanChatReply {
-  reply: string;
-  sessionsUpdated: number;
-  responseId: string | null;
+  pending: boolean;
 }
 
 export interface EquipmentItem {

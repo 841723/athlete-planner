@@ -1,7 +1,8 @@
-import { getPlan, updatePlanResponseId } from "../lib/plans.js";
+import { getPlan, updatePlanResponseId, setChatPending } from "../lib/plans.js";
 import { listPlanMessages, addPlanMessage, deletePlanAndSessions } from "../lib/plan-chat.js";
 import { chatWithPlan } from "../lib/trainer.js";
 import { getAiConfigWithKey, getDefaultAiConfig } from "../lib/ai-configs.js";
+import { withTenant } from "../lib/sessions.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 function planConfig(c, plan) {
@@ -23,6 +24,34 @@ function getPlanOr404(c, planId) {
   return plan;
 }
 
+// Procesa la respuesta del entrenador fuera del ciclo de la petición HTTP para
+// que la conversación no dependa de que el navegador siga abierto: si el usuario
+// recarga o cierra la pestaña mientras la IA responde, el mensaje se persiste
+// igualmente y el frontend lo recoge al volver a consultar el chat.
+async function runChatReply({ planId, message, previousResponseId, settings, actor, tenantId }) {
+  await withTenant(tenantId, async () => {
+    try {
+      const result = await chatWithPlan({
+        planId,
+        message,
+        previousResponseId,
+        settings,
+        actor,
+      });
+      if (result.responseId) updatePlanResponseId(planId, result.responseId);
+    } catch (err) {
+      console.error("Error al responder en el chat del plan:", err.message);
+      addPlanMessage(
+        planId,
+        "assistant",
+        "No se pudo completar la respuesta en este momento. Vuelve a preguntar cuando quieras."
+      );
+    } finally {
+      setChatPending(planId, false);
+    }
+  });
+}
+
 export function register(router) {
   router.get("/api/plans/:id/chat", (c) => {
     const plan = getPlanOr404(c, c.params.id);
@@ -31,6 +60,7 @@ export function register(router) {
       planId: plan.id,
       planCreatedAt: plan.created_at,
       canChat: canChat(plan),
+      chatPending: Boolean(plan.chatPending),
       messages: listPlanMessages(plan.id),
     });
   });
@@ -44,6 +74,11 @@ export function register(router) {
     if (isGenerating(plan)) {
       return sendJson(c.res, 409, {
         error: "El plan aún se está generando. Prueba de nuevo cuando termine.",
+      });
+    }
+    if (plan.chatPending) {
+      return sendJson(c.res, 409, {
+        error: "El entrenador aún está escribiendo la respuesta al mensaje anterior.",
       });
     }
     const config = planConfig(c, plan);
@@ -61,22 +96,20 @@ export function register(router) {
     // Persist the athlete's message before the provider call so it remains in
     // the thread even if the model times out or returns an invalid response.
     addPlanMessage(plan.id, "user", message);
+    setChatPending(plan.id, true);
 
-    const result = await chatWithPlan({
+    // Respondemos de inmediato para no bloquear la pestaña; la respuesta llega
+    // en background y el frontend la muestra cuando vuelve a consultar.
+    void runChatReply({
       planId: plan.id,
       message,
       previousResponseId: plan.response_id ?? null,
       settings: config,
       actor: c.actor,
+      tenantId: c.tenantId,
     });
 
-    if (result.responseId) updatePlanResponseId(plan.id, result.responseId);
-
-    return sendJson(c.res, 200, {
-      reply: result.reply,
-      sessionsUpdated: result.sessionsUpdated.length,
-      responseId: result.responseId ?? null,
-    });
+    return sendJson(c.res, 200, { pending: true });
   });
 
   router.delete("/api/plans/:id/chat", (c) => {

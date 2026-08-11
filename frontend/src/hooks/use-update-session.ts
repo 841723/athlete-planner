@@ -4,7 +4,7 @@ import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { Session } from "@/types/session";
 
-const INVALIDATE = ["sessions", "session", "weekly", "stats", "charts"];
+const INVALIDATE = ["sessions", "session", "weekly", "stats", "charts", "planned", "plan-detail"];
 
 export function useUpdateSession() {
   const qc = useQueryClient();

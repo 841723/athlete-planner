@@ -61,6 +61,7 @@
 - La limpieza de logs ocurre al arrancar, al listar logs y diariamente; conserva ese comportamiento al cambiar el almacenamiento.
 - Valida límites de semanas, comentarios, prompts y respuestas antes de llamar al proveedor o persistir resultados.
 - Los prompts y planes siempre deben resolverse con `tenant_id`; no aceptes IDs de otro tenant.
+- El chat del plan sigue el hilo del proveedor cuando lo soporta (opencode: sesión por plan en `sessionId`; gemini: `previous_interaction_id`): en turnos encadenados se envía solo el mensaje del atleta. El contexto completo (perfil, plan, historial) se envía únicamente en la primera pregunta o cuando la interacción caduca (se reintenta con `includeHistory: true`); el proveedor `mock` siempre recibe el contexto completo.
 
 ## Cambios Y Verificación
 

@@ -155,7 +155,7 @@ test("runConversation sondea hasta que la respuesta del asistente está completa
   }
 });
 
-test("runConversation reutiliza sessionId y recrea la sesión si ya no existe", async () => {
+test("runConversation reutiliza sessionId y propaga el error si la sesión ya no existe", async () => {
   // s1 devuelve 404 en prompt: simula una sesión muerta tras reiniciar opencode.
   const { server, requests } = await createMockServer({ deadSession: "s1" });
   try {
@@ -168,17 +168,21 @@ test("runConversation reutiliza sessionId y recrea la sesión si ya no existe", 
     assert.ok(requests.includes("POST /api/session/s1/prompt"), "prompt enviado a s1");
 
     requests.length = 0;
-    const result = await runConversation({
-      baseUrl: base,
-      modelId: "model-a",
-      modelProviderId: "openai",
-      systemPrompt: "",
-      input: "dos",
-      sessionId: "s1",
-    });
-    assert.equal(result.text, "respuesta de prueba");
-    assert.ok(requests.includes("POST /api/session"), "recrea la sesión al fallar la anterior");
-    assert.ok(requests.includes("POST /api/session/s2/prompt"), "reenvía el prompt a la sesión nueva");
+    // Con sessionId y sesión muerta, el error se propaga (sin recrearla en
+    // silencio) para que el chat reintente con el contexto completo.
+    await assert.rejects(
+      runConversation({
+        baseUrl: base,
+        modelId: "model-a",
+        modelProviderId: "openai",
+        systemPrompt: "",
+        input: "dos",
+        sessionId: "s1",
+      }),
+      /sesión de chat caducó o ya no existe/
+    );
+    assert.ok(requests.includes("POST /api/session/s1/prompt"), "prompt enviado a s1");
+    assert.ok(!requests.includes("POST /api/session"), "no crea una sesión nueva en silencio");
   } finally {
     server.close();
   }

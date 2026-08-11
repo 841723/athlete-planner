@@ -104,7 +104,8 @@ test("el contexto del chat incluye solo actividades realizadas fusionadas y sus 
   assert.match(prompt, /Me encontré bien; terminé algo más rápido/);
   assert.match(prompt, /Carrera Z2 realizada/);
   assert.match(prompt, /Actividad real fuera de este plan/);
-  assert.doesNotMatch(prompt, /60 min suaves/);
+  const completedSection = prompt.split("ACTIVIDADES REALIZADAS DE ESTE PLAN")[1].split("MENSAJE DEL ATLETA")[0];
+  assert.doesNotMatch(completedSection, /60 min suaves/);
 });
 
 test("las planificadas fusionadas exponen la actividad completada", () => {

@@ -14,7 +14,8 @@ const PLAN_COLUMNS = `id, created_at, comments, weeks, response_id,
               status, error,
               request_comments AS requestComments,
               started_at AS startedAt,
-              finished_at AS finishedAt`;
+              finished_at AS finishedAt,
+              chat_pending AS chatPending`;
 
 export function savePlan(tenantId, { comments, weeks, aiConfigId = null, promptId, promptName, responseId = null, status = "completed", requestComments = null }) {
   const id = randomUUID();
@@ -66,6 +67,12 @@ export function updatePlanResponseId(planId, responseId) {
   getDb()
     .prepare("UPDATE plans SET response_id = ? WHERE id = ?")
     .run(responseId ?? null, planId);
+}
+
+export function setChatPending(planId, pending) {
+  getDb()
+    .prepare("UPDATE plans SET chat_pending = ? WHERE id = ?")
+    .run(pending ? 1 : 0, planId);
 }
 
 export function recoverStalePlans(tenantId) {

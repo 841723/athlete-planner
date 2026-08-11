@@ -670,27 +670,43 @@ function parseChatResponse(response) {
 export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
   const tenantId = getTenantId();
   const systemPrompt = requireRolePrompt("chat");
-  const userPrompt = buildChatUserPrompt(planId, message);
+
+  // Cuando el proveedor permite seguir el hilo (opencode con sesión por
+  // atleta/plan, gemini con previous_interaction_id), se reutiliza la
+  // interacción anterior y se envía SOLO el mensaje nuevo: el contexto
+  // completo (perfil, plan, actividades) ya quedó en la sesión. El mock no
+  // mantiene un hilo real, así que siempre se le envía el contexto completo.
+  const threaded = settings?.provider !== "mock" && Boolean(previousResponseId);
 
   let text;
   let responseId;
-  try {
-    // Primera llamada "normal": apoya en la sesión del proveedor (previousResponseId)
-    // para mantener la conversación de forma barata.
-    ({ text, responseId } = await callAiChat(
-      settings,
-      { systemPrompt, input: userPrompt, previousResponseId },
-      actor
-    ));
-  } catch (err) {
-    // Si el proveedor falla (p.ej. sesión de chat caducada o se cambió de proveedor a
-    // mitad de la conversación), se reintenta una única vez enviando el contexto completo
-    // (prompt base + historial + sesiones planificadas + perfil) sin depender de la sesión.
-    if (!previousResponseId) throw err;
+
+  if (threaded) {
+    try {
+      ({ text, responseId } = await callAiChat(
+        settings,
+        { systemPrompt, input: message, previousResponseId },
+        actor
+      ));
+    } catch (err) {
+      // La interacción anterior caducó (gemini devuelve error por un
+      // previous_interaction_id no válido; opencode perdió la sesión) o el
+      // proveedor no puede seguir el hilo: se arranca una interacción nueva
+      // enviando TODO el contexto y el historial, sin depender de la sesión.
+      const fullPrompt = buildChatUserPrompt(planId, message, { includeHistory: true });
+      ({ text, responseId } = await callAiChat(
+        settings,
+        { systemPrompt, input: fullPrompt, previousResponseId: null },
+        actor
+      ));
+    }
+  } else {
+    // Primera pregunta de la conversación (o hilo no soportado): se envía el
+    // contexto completo una sola vez.
     const fullPrompt = buildChatUserPrompt(planId, message, { includeHistory: true });
     ({ text, responseId } = await callAiChat(
       settings,
-      { systemPrompt, input: fullPrompt, previousResponseId: null },
+      { systemPrompt, input: fullPrompt, previousResponseId },
       actor
     ));
   }

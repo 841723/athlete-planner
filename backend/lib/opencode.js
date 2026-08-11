@@ -232,8 +232,9 @@ async function waitForAssistant(base, headers, sessionId, { startCount = 0, minC
 /**
  * Ejecuta una conversación contra opencode y devuelve el texto del asistente.
  * Si `sessionId` se pasa y la sesión ya no existe (p.ej. opencode reiniciado),
- * crea una nueva y reintenta una vez. La continuidad del chat se apoya en
- * reutilizar el mismo `sessionId` (devuelto como `responseId`).
+ * lanza un error para que el llamador reintente con el contexto completo en una
+ * sesión nueva. La continuidad del chat se apoya en reutilizar el mismo
+ * `sessionId` (devuelto como `responseId`).
  */
 export async function runConversation({ baseUrl, modelId, modelProviderId, systemPrompt, input, sessionId = null }) {
   const { base, headers } = parseBaseUrl(baseUrl);
@@ -264,9 +265,11 @@ export async function runConversation({ baseUrl, modelId, modelProviderId, syste
     await sendPrompt(base, headers, sid, text);
   } catch (err) {
     if (!sessionId || err.status !== 404) throw err;
-    sid = await createSession(base, headers, workspaceDir, modelId, modelProviderId);
-    startCount = 0;
-    await sendPrompt(base, headers, sid, text);
+    // La sesión se perdió (p.ej. opencode reiniciado). No la recreamos aquí:
+    // en un turno encadenado solo enviaríamos el mensaje sin contexto. El
+    // chat (chatWithPlan) captura este error y reintenta con el contexto
+    // completo en una sesión nueva.
+    throw new Error("opencode: la sesión de chat caducó o ya no existe");
   }
 
   const assistant = await waitForAssistant(base, headers, sid, { startCount, minCreatedAt: Date.now() - 2000 });

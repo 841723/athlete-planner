@@ -5,14 +5,16 @@ import {
   ChevronUp,
   Loader2,
   MessageCircle,
-  RefreshCw,
   Send,
   User,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { format } from "@/lib/date-format";
-import { usePlanChat, useSendPlanChat } from "@/hooks/use-plan-chat";
+import { usePlanChat, useSendPlanChat, planChatKey, CHAT_INVALIDATE } from "@/hooks/use-plan-chat";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useToast } from "@/components/ui/toast";
+import { invalidateMany } from "@/lib/invalidate";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Markdown } from "@/components/ui/markdown";
@@ -20,6 +22,8 @@ import type { Plan } from "@/types/session";
 
 export function PlanChat({ plan }: { plan: Plan }) {
   const permissions = usePermissions();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data, isLoading } = usePlanChat(plan.id, true);
   const sendMutation = useSendPlanChat();
   const [draft, setDraft] = useState("");
@@ -29,8 +33,11 @@ export function PlanChat({ plan }: { plan: Plan }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottom = useRef(true);
   const previousMessageCount = useRef(0);
+  const wasPending = useRef(false);
+  const completionHandled = useRef(false);
 
   const canChat = permissions.canEdit && Boolean(data?.canChat);
+  const coachWriting = sendMutation.isPending || Boolean(data?.chatPending);
 
   function scrollToLatest(smooth = false) {
     const container = scrollRef.current;
@@ -58,6 +65,28 @@ export function PlanChat({ plan }: { plan: Plan }) {
 
     previousMessageCount.current = messageCount;
   }, [data?.messages.length]);
+
+  // Cuando el plan vuelve a una respuesta pendiente a completada (por polling o
+  // por recarga), avisamos y refrescamos los datos que el entrenador pudo
+  // modificar (sesiones planificadas, semana, gráficas).
+  useEffect(() => {
+    const pending = Boolean(data?.chatPending);
+
+    if (pending) {
+      wasPending.current = true;
+      completionHandled.current = false;
+      return;
+    }
+
+    if (wasPending.current && !completionHandled.current) {
+      completionHandled.current = true;
+      wasPending.current = false;
+      toast({ type: "success", title: "El entrenador ha respondido" });
+      void queryClient.invalidateQueries({ queryKey: planChatKey(plan.id) });
+      invalidateMany(queryClient, CHAT_INVALIDATE);
+      void queryClient.invalidateQueries({ queryKey: ["plan-detail"] });
+    }
+  }, [data?.chatPending, data?.messages.length, plan.id, queryClient, toast]);
 
   function handleScroll() {
     const container = scrollRef.current;
@@ -158,20 +187,11 @@ export function PlanChat({ plan }: { plan: Plan }) {
               </div>
             ))}
 
-            {sendMutation.isPending && (
+            {coachWriting && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-sm bg-dark-400/60 px-4 py-3 text-sm text-gray-400">
                   <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                  El entrenador está pensando...
-                </div>
-              </div>
-            )}
-
-            {sendMutation.isSuccess && sendMutation.data.sessionsUpdated > 0 && (
-              <div className="flex justify-start">
-                <div className="inline-flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-400">
-                  <RefreshCw className="h-3 w-3" />
-                  Se actualizaron {sendMutation.data.sessionsUpdated} sesiones
+                  El entrenador está escribiendo...
                 </div>
               </div>
             )}

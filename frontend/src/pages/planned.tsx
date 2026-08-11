@@ -27,7 +27,7 @@ function statusLabel(plan: Plan) {
   if (plan.status === "generating") return "Generando";
   if (plan.status === "pending") return "Pendiente";
   if (plan.trainingCompleted) return "Completado";
-  return "En curso";
+  return "Activo";
 }
 
 function statusClass(plan: Plan) {

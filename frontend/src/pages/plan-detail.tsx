@@ -83,7 +83,7 @@ export function PlanDetailPage() {
               ? "Pendiente"
               : plan.trainingCompleted
               ? "Completado"
-              : "En curso"}
+              : "Activo"}
           </span>
         </div>
       </header>
