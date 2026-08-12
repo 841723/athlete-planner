@@ -264,88 +264,150 @@ export function AiConfigsManager() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="card space-y-4 p-5">
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-300">
-            Cambiar modelo
-          </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Crea configuraciones independientes. Gemini usa tu propia API key; OpenCode está
-            preparado por el administrador.
-          </p>
-        </div>
+      <div className='space-y-4'>
+          <div className='card p-5'>
+              <h2 className='mb-3 text-sm font-semibold uppercase tracking-wider text-gray-300'>
+                  Mis configuraciones
+              </h2>
 
-        {providers.map((provider) => (
-          <ProviderPanel
-            key={provider.id}
-            provider={provider}
-            expanded={expanded === provider.id}
-            form={form.provider === provider.id ? form : { ...form, provider: provider.id, model: "", apiKey: "", baseUrl: "" }}
-            editing={!!editingId}
-            models={models}
-            onToggle={() => {
-              setExpanded(expanded === provider.id ? null : provider.id);
-              setForm((current) => ({
-                ...current,
-                provider: provider.id,
-                model: current.provider === provider.id ? current.model : "",
-                apiKey: current.provider === provider.id ? current.apiKey : "",
-                baseUrl: current.provider === provider.id ? current.baseUrl : "",
-              }));
-            }}
-            onChange={(field, value) => {
-              setExpanded(provider.id);
-              setForm((current) => ({ ...current, provider: provider.id, [field]: value }));
-            }}
-            onSave={save}
-            saving={mutations.create.isPending || mutations.update.isPending}
-          />
-        ))}
-      </div>
+              <div className='space-y-2'>
+                  {(query.data?.items ?? []).map((config) => (
+                      <div
+                          key={config.id}
+                          className={`rounded-xl border p-3 ${config.is_default ? "border-accent/50 bg-accent/5" : "border-dark-400 bg-dark-300/30"}`}
+                      >
+                          <div className='flex flex-wrap items-center gap-2'>
+                              <Star
+                                  className={`h-4 w-4 ${config.is_default ? "fill-accent-light text-accent-light" : "text-gray-600"}`}
+                              />
+                              <span className='text-sm font-medium'>
+                                  {config.name}
+                              </span>
+                              <span className='text-xs text-gray-500'>
+                                  {config.provider} · {config.model}
+                              </span>
 
-      <div className="card p-5">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-300">
-          Mis configuraciones
-        </h2>
-
-        <div className="space-y-2">
-          {(query.data?.items ?? []).map((config) => (
-            <div
-              key={config.id}
-              className={`rounded-xl border p-3 ${config.is_default ? "border-accent/50 bg-accent/5" : "border-dark-400 bg-dark-300/30"}`}
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <Star className={`h-4 w-4 ${config.is_default ? "fill-accent-light text-accent-light" : "text-gray-600"}`} />
-                <span className="text-sm font-medium">{config.name}</span>
-                <span className="text-xs text-gray-500">
-                  {config.provider} · {config.model}
-                </span>
-
-                <div className="ml-auto flex gap-1">
-                  <Button variant="ghost" className="px-2 text-xs" onClick={() => test(config)} disabled={!!testingId}>
-                    {testingId === config.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <TestTube2 className="h-3.5 w-3.5" />}
-                    Probar
-                  </Button>
-                  <Button variant="ghost" className="px-2 text-xs" onClick={() => edit(config)}>
-                    <Pencil className="h-3.5 w-3.5" /> Editar
-                  </Button>
-                  {!config.is_default && (
-                    <Button variant="ghost" className="px-2 text-xs text-accent-light" onClick={() => mutations.setDefault.mutate(config.id)}>
-                      <Star className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                  {!config.is_default && (
-                    <Button variant="ghost" className="px-2 text-xs text-red-400" onClick={() => window.confirm("¿Eliminar esta configuración?") && mutations.remove.mutate(config.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
+                              <div className='ml-auto flex gap-1'>
+                                  <Button
+                                      variant='ghost'
+                                      className='px-2 text-xs'
+                                      onClick={() => test(config)}
+                                      disabled={!!testingId}
+                                  >
+                                      {testingId === config.id ? (
+                                          <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                                      ) : (
+                                          <TestTube2 className='h-3.5 w-3.5' />
+                                      )}
+                                      Probar
+                                  </Button>
+                                  <Button
+                                      variant='ghost'
+                                      className='px-2 text-xs'
+                                      onClick={() => edit(config)}
+                                  >
+                                      <Pencil className='h-3.5 w-3.5' /> Editar
+                                  </Button>
+                                  {!config.is_default && (
+                                      <Button
+                                          variant='ghost'
+                                          className='px-2 text-xs text-accent-light'
+                                          onClick={() =>
+                                              mutations.setDefault.mutate(
+                                                  config.id,
+                                              )
+                                          }
+                                      >
+                                          <Star className='h-3.5 w-3.5' />
+                                      </Button>
+                                  )}
+                                  {!config.is_default && (
+                                      <Button
+                                          variant='ghost'
+                                          className='px-2 text-xs text-red-400'
+                                          onClick={() =>
+                                              window.confirm(
+                                                  "¿Eliminar esta configuración?",
+                                              ) &&
+                                              mutations.remove.mutate(config.id)
+                                          }
+                                      >
+                                          <Trash2 className='h-3.5 w-3.5' />
+                                      </Button>
+                                  )}
+                              </div>
+                          </div>
+                      </div>
+                  ))}
               </div>
-            </div>
-          ))}
-        </div>
+          </div>
+
+          <div className='card space-y-4 p-5'>
+              <div>
+                  <h2 className='text-sm font-semibold uppercase tracking-wider text-gray-300'>
+                      Cambiar modelo
+                  </h2>
+                  <p className='mt-1 text-xs text-gray-500'>
+                      Crea configuraciones independientes. Gemini usa tu propia
+                      API key; OpenCode está preparado por el administrador.
+                  </p>
+              </div>
+
+              {providers.map((provider) => (
+                  <ProviderPanel
+                      key={provider.id}
+                      provider={provider}
+                      expanded={expanded === provider.id}
+                      form={
+                          form.provider === provider.id
+                              ? form
+                              : {
+                                    ...form,
+                                    provider: provider.id,
+                                    model: "",
+                                    apiKey: "",
+                                    baseUrl: "",
+                                }
+                      }
+                      editing={!!editingId}
+                      models={models}
+                      onToggle={() => {
+                          setExpanded(
+                              expanded === provider.id ? null : provider.id,
+                          );
+                          setForm((current) => ({
+                              ...current,
+                              provider: provider.id,
+                              model:
+                                  current.provider === provider.id
+                                      ? current.model
+                                      : "",
+                              apiKey:
+                                  current.provider === provider.id
+                                      ? current.apiKey
+                                      : "",
+                              baseUrl:
+                                  current.provider === provider.id
+                                      ? current.baseUrl
+                                      : "",
+                          }));
+                      }}
+                      onChange={(field, value) => {
+                          setExpanded(provider.id);
+                          setForm((current) => ({
+                              ...current,
+                              provider: provider.id,
+                              [field]: value,
+                          }));
+                      }}
+                      onSave={save}
+                      saving={
+                          mutations.create.isPending ||
+                          mutations.update.isPending
+                      }
+                  />
+              ))}
+          </div>
       </div>
-    </div>
   );
 }
