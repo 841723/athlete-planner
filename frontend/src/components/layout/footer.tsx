@@ -55,9 +55,9 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-10 pt-6 pb-4 border-t border-white/5 flex flex-col sm:flex-row items-center gap-4">
+    <footer className="mt-10 pt-6 pb-4 border-t border-white/5 flex flex-col sm:hidden items-center gap-4">
       <div className="flex items-center gap-2">
-        <img src="/edasi-light-long.png" alt="edasi logo" className="h-6" />
+        <img src="/edasi-light-long.png" alt="edasi logo" className="h-10" />
       </div>
       <div className="flex-1" />
       <button
@@ -77,6 +77,9 @@ export function Footer() {
         <RotateCw className="w-3.5 h-3.5" />
         Recargar página
       </button>
+      <p className="mt-5 text-[10px] text-gray-500 text-center">
+        &copy; {new Date().getFullYear()} Edasi. Todos los derechos reservados.
+      </p>
     </footer>
   );
 }

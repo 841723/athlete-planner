@@ -18,10 +18,26 @@ const ROLE_FALLBACK = {
     "Eres un entrenador personal de triatlón especializado en Ironman 70.3. Analiza las sesiones del atleta y genera planes progresivos.\n\nFORMATO DE RESPUESTA\n\nDebes responder únicamente con un JSON válido con esta estructura: { \"comments\": \"\", \"sessions\": [{ \"sport\": \"\", \"title\": \"\", \"name\": \"\", \"start_date_local\": \"AAAA-MM-DDTHH:MM:SS\", \"workout_text\": \"\" }], \"updated_profile\": {} }",
   titles:
     "Analiza cada sesión y asigna un título corto de entrenamiento en español (ej: 'Carrera en Z2', 'Series de 400m'). Responde únicamente con un JSON: { \"titles\": [{ \"id\": \"\", \"title\": \"\" }] }",
-  chat: "Eres el entrenador del plan de este atleta. Responde con un JSON: { \"reply\": \"texto obligatorio\", \"modified_sessions\": false, \"sessions\": [], \"modified_profile\": false, \"updated_profile\": {}, \"profile_change\": \"\" }. Usa modified_sessions=true solo si cambias el futuro y entonces devuelve todas las sesiones futuras. Usa modified_profile=true solo si actualizas el perfil y explica los cambios en profile_change.",
+  chat: "Eres el entrenador del atleta. Responde con un JSON: { \"reply\": \"texto obligatorio\", \"modified_sessions\": false, \"sessions\": [], \"modified_profile\": false, \"updated_profile\": {}, \"profile_change\": \"\" }. Usa modified_sessions=true solo si cambias el futuro y entonces devuelve todas las sesiones futuras. Usa modified_profile=true solo si actualizas el perfil y explica los cambios en profile_change.",
 };
 
 const PREDEFINED_PROMPTS = [
+  {
+    name: "Ironman Triatlón",
+    content: `Eres un entrenador personal de TRIATLÓN especializado en IRONMAN y media distancia (Ironman 70.3). Tu rol es un coach crítico y basado en evidencia que analiza las sesiones del atleta y genera planes progresivos de natación, ciclismo y carrera para terminar el Ironman y mejorar su rendimiento.
+
+REGLAS:
+- Entrena las tres disciplinas equilibradas (natación, ciclismo y carrera), reforzando el punto débil del atleta según su perfil y la fase de la temporada.
+- Base aeróbica predominante: rodajes largos en Z2 en bici y carrera, y natación continua de resistencia; en larga distancia el volumen es la prioridad.
+- La sesión clave es el brick de fin de semana (bici larga + carrera de transición), progresivo y con ritmo específico de competición tras el pedaleo.
+- Añade 1-2 sesiones de calidad por semana (umbral Z3/Z4) en cada disciplina para sostener el ritmo de carrera sin descuidar la asimilación.
+- Incluye 2 sesiones de fuerza a la semana (core y piernas) para proteger rodillas/lumbares y transferir potencia al pedal.
+- Progresión gradual en volumen (máximo 10-15% semanal) y semana de descarga cada 3-4 semanas.
+- Bloque de taper de 2-3 semanas antes del objetivo: menos volumen, más calidad e intensidad específica de competición.
+- Planifica en semanas completas empezando en lunes, con 1-2 días de descanso completo y recuperación activa.
+- Respeta el equipamiento disponible del atleta (piscina/aguas abiertas, rodillo/carretera) al describir cada sesión.
+- Responde exclusivamente con el JSON estructurado indicado.`,
+  },
   {
     name: "Maratón",
     content: `Eres un entrenador personal especializado en carreras de MARATÓN (42,195 km). Tu rol es ser un coach crítico, basado en evidencia, que analiza las sesiones del atleta y genera planes progresivos centrados en terminar y mejorar el maratón.
@@ -124,6 +140,13 @@ REGLAS:
   },
 ];
 
+const OLD_PREDEFINED_NAMES = [
+  "Entrenador estandar",
+  "Enfocado en fuerza",
+  "Conservador (prevencion de lesiones)",
+  "Competicion (alto volumen)",
+];
+
 function loadRoleFile(role) {
   try {
     const content = fs.readFileSync(path.join(DATA_DIR, ROLE_FILES[role]), "utf8");
@@ -157,7 +180,7 @@ export function seedRolePrompt(tenantId, role) {
   const nameByRole = {
     system: "Triatlón Ironman",
     titles: "Títulos de sesión",
-    chat: "Chat del plan",
+    chat: "Chat del entrenador",
   };
   insert.run(randomUUID(), tenantId, role, nameByRole[role] ?? role, loadRoleFile(role), now);
 }
@@ -169,14 +192,16 @@ export function seedTenantPrompts(tenantId) {
   seedPredefinedPrompts(tenantId);
 }
 
-const OLD_PREDEFINED_NAMES = [
-  "Entrenador estandar",
-  "Enfocado en fuerza",
-  "Conservador (prevencion de lesiones)",
-  "Competicion (alto volumen)",
-];
+export function getRolePrompt(tenantId, role) {
+  seedRolePrompt(tenantId, role);
+  return (
+    getDb()
+      .prepare("SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE tenant_id = ? AND role = ? ORDER BY is_predefined DESC, created_at ASC LIMIT 1")
+      .get(tenantId, role) ?? null
+  );
+}
 
-function migrateLegacyPrompts(tenantId) {
+export function migrateLegacyPrompts(tenantId) {
   const db = getDb();
   // El prompt base pasa a llamarse "Triatlón Ironman" (prompt de la disciplina triatlón).
   db.prepare("UPDATE ai_prompts SET name = ? WHERE tenant_id = ? AND role = 'system' AND name = ?").run(
@@ -209,42 +234,36 @@ export function seedPredefinedPrompts(tenantId) {
       .get(tenantId, p.name).cnt;
     if (exists === 0) insert.run(randomUUID(), tenantId, p.name, p.content, now);
   }
+  // El prompt de Ironman triatlón se activa por defecto si el tenant no tiene
+  // ningún prompt activo (first-run); el atleta puede cambiarlo desde la UI.
+  const hasActive = getDb()
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND is_active = 1")
+    .get(tenantId).cnt;
+  if (hasActive === 0) {
+    const ironman = getDb()
+      .prepare("SELECT id FROM ai_prompts WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 1 AND name = 'Ironman Triatlón' LIMIT 1")
+      .get(tenantId);
+    if (ironman) setActivePrompt(ironman.id, tenantId);
+  }
 }
 
 export function getPrompts(tenantId) {
-  seedTenantPrompts(tenantId);
+  seedRolePrompt(tenantId, "chat");
+  seedPredefinedPrompts(tenantId);
   return getDb()
     .prepare(
-      `SELECT id, role, name, content, is_predefined FROM ai_prompts
-       WHERE tenant_id = ? AND (role = 'plan' OR role = 'system')
-       ORDER BY CASE role WHEN 'system' THEN 0 ELSE 1 END, is_predefined DESC, name ASC`
+      `SELECT id, role, name, content, is_predefined, is_active FROM ai_prompts
+       WHERE tenant_id = ? AND role = 'plan'
+       ORDER BY is_predefined DESC, name ASC`
     )
     .all(tenantId);
 }
 
 export function getPrompt(promptId) {
   const row = getDb()
-    .prepare("SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE id = ?")
+    .prepare("SELECT id, tenant_id, role, name, content, is_predefined, is_active FROM ai_prompts WHERE id = ?")
     .get(promptId);
   return row ?? null;
-}
-
-export function getRolePrompt(tenantId, role) {
-  seedRolePrompt(tenantId, role);
-  return (
-    getDb()
-      .prepare("SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE tenant_id = ? AND role = ? ORDER BY is_predefined DESC, created_at ASC LIMIT 1")
-      .get(tenantId, role) ?? null
-  );
-}
-
-export function getFormatBlock(tenantId) {
-  const systemPrompt = getRolePrompt(tenantId, "system");
-  const content = systemPrompt?.content ?? "";
-  const marker = "FORMATO DE RESPUESTA";
-  const idx = content.indexOf(marker);
-  if (idx === -1) return "";
-  return content.slice(idx).trim();
 }
 
 export function savePrompt(tenantId, { name, content }) {
@@ -255,11 +274,14 @@ export function savePrompt(tenantId, { name, content }) {
     throw new Error(`Maximo ${MAX_CUSTOM_PROMPTS} prompts personalizados permitidos`);
   }
   const id = randomUUID();
-  getDb()
-    .prepare(
-      "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 0, ?)"
-    )
-    .run(id, tenantId, name, content, new Date().toISOString());
+  const db = getDb();
+  const insert = db.prepare(
+    "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, is_active, created_at) VALUES (?, ?, 'plan', ?, ?, 0, ?, ?)"
+  );
+  const hasActive = db
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND is_active = 1")
+    .get(tenantId).cnt;
+  insert.run(id, tenantId, name, content, hasActive === 0 ? 1 : 0, new Date().toISOString());
   return id;
 }
 
@@ -275,7 +297,7 @@ export function duplicatePrompt(promptId, tenantId) {
   const id = randomUUID();
   getDb()
     .prepare(
-      "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 0, ?)"
+      "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, is_active, created_at) VALUES (?, ?, 'plan', ?, ?, 0, 0, ?)"
     )
     .run(id, tenantId, `Copia de ${row.name}`, row.content, new Date().toISOString());
   return id;
@@ -301,4 +323,28 @@ export function updatePrompt(promptId, tenantId, { name, content }) {
     .prepare("UPDATE ai_prompts SET name = ?, content = ? WHERE id = ?")
     .run(name, content, promptId);
   return true;
+}
+
+// Marca el prompt que se envía con cada mensaje del chat. Solo puede haber un
+// prompt activo por tenant; activar uno desactiva el resto.
+export function setActivePrompt(promptId, tenantId) {
+  const row = getDb()
+    .prepare("SELECT id FROM ai_prompts WHERE id = ? AND tenant_id = ?")
+    .get(promptId, tenantId);
+  if (!row) return false;
+  const db = getDb();
+  db.prepare("UPDATE ai_prompts SET is_active = 0 WHERE tenant_id = ?").run(tenantId);
+  db.prepare("UPDATE ai_prompts SET is_active = 1 WHERE id = ?").run(promptId);
+  return true;
+}
+
+export function getActivePrompt(tenantId) {
+  seedRolePrompt(tenantId, "chat");
+  seedPredefinedPrompts(tenantId);
+  const row = getDb()
+    .prepare(
+      "SELECT id, tenant_id, role, name, content, is_predefined FROM ai_prompts WHERE tenant_id = ? AND is_active = 1 ORDER BY CASE role WHEN 'chat' THEN 0 ELSE 1 END LIMIT 1"
+    )
+    .get(tenantId);
+  return row ?? null;
 }

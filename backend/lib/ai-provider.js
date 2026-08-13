@@ -57,11 +57,6 @@ export function computeCost(providerId, usage, pricing = null) {
   };
 }
 
-function isoLocalDate(d) {
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T19:00:00`;
-}
-
 function mockTextFor({ input, systemPrompt }) {
   const combined = `${systemPrompt ?? ""}\n\n${input ?? ""}`;
   if (combined.includes("MENSAJE DEL ATLETA")) {
@@ -74,35 +69,6 @@ function mockTextFor({ input, systemPrompt }) {
         updated_profile: {},
         profile_change: "",
       });
-  }
-  if (combined.includes("Genera un plan de entrenamiento")) {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return JSON.stringify({
-      comments:
-        "Plan generado con el proveedor mock. Sustitúyelo por un plan real configurando Google Gemini en Configuración → IA.",
-      sessions: [
-        {
-          sport: "running",
-          title: "Carrera en Z2",
-          name: "Rodaje suave",
-          start_date_local: isoLocalDate(today),
-          workout_text: "40 min @ Z2",
-        },
-        {
-          sport: "cycling",
-          title: "Bici en rodillo",
-          name: "Rodillo suave",
-          start_date_local: isoLocalDate(tomorrow),
-          workout_text: "45 min suaves\n10 min @90W",
-        },
-      ],
-      updated_profile: null,
-    });
-  }
-  if (combined.includes("asigna un título") || combined.includes("título a cada una")) {
-    return JSON.stringify({ titles: [] });
   }
   return "OK";
 }

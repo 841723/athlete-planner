@@ -84,6 +84,60 @@ function migrateActivityIds() {
   }
 }
 
+function migrateRemovePlans() {
+  const db = getDbInstance();
+  const migration = "remove-plans-v1";
+  if (db.prepare("SELECT 1 FROM schema_migrations WHERE name = ?").get(migration)) return;
+
+  const now = new Date().toISOString();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    // El chat pasa a ser de tenant (tabla chat_messages). Los mensajes de cada
+    // plan se migran al chat del tenant al que pertenecía el plan.
+    const hasPlansTable = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'plans'")
+      .get();
+    if (hasPlansTable) {
+      db.exec(`
+        INSERT OR IGNORE INTO chat_messages (id, tenant_id, role, content, created_at)
+        SELECT pm.id, p.tenant_id, pm.role, pm.content, pm.created_at
+        FROM plan_messages pm JOIN plans p ON p.id = pm.plan_id
+      `);
+      // El estado del chat del plan activo pasa a tenant_settings.
+      db.exec(`
+        INSERT INTO tenant_settings (tenant_id, chat_pending, chat_response_id, chat_context_hash, chat_instructions)
+        SELECT tenant_id, chat_pending, response_id, context_hash, chat_instructions
+        FROM plans WHERE active = 1
+        ON CONFLICT(tenant_id) DO UPDATE SET
+          chat_pending = excluded.chat_pending,
+          chat_response_id = excluded.chat_response_id,
+          chat_context_hash = excluded.chat_context_hash,
+          chat_instructions = excluded.chat_instructions
+      `);
+    }
+
+    // Las sesiones planificadas de IA (plan_id no nulo) pasan al marcador
+    // "coach" para distinguirlas de las planificadas manuales (plan_id nulo)
+    // y poder reemplazar solo el futuro propuesto por el entrenador.
+    const rows = db.prepare("SELECT tenant_id, id, data FROM sessions WHERE kind = 'planned'").all();
+    const update = db.prepare("UPDATE sessions SET data = ?, updated_at = ? WHERE tenant_id = ? AND id = ?");
+    for (const row of rows) {
+      const data = JSON.parse(row.data);
+      if (data.plan_id == null) continue;
+      data.plan_id = "coach";
+      update.run(JSON.stringify(data), now, row.tenant_id, row.id);
+    }
+
+    db.exec("DROP TABLE IF EXISTS plan_messages;");
+    db.exec("DROP TABLE IF EXISTS plans;");
+    db.prepare("INSERT INTO schema_migrations (name, applied_at) VALUES (?, ?)").run(migration, now);
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+    throw error;
+  }
+}
+
 function getDbInstance() {
   return db;
 }
@@ -105,30 +159,24 @@ export function getDb() {
   ensureColumn("ai_provider_settings", "currency", "currency TEXT NOT NULL DEFAULT 'EUR'");
   ensureColumn("ai_provider_settings", "chat_duration_hours", "chat_duration_hours INTEGER NOT NULL DEFAULT 24");
   ensureColumn("ai_provider_settings", "pricing", "pricing TEXT");
-  ensureColumn("plans", "response_id", "response_id TEXT");
-  ensureColumn("plans", "ai_config_id", "ai_config_id TEXT");
-  ensureColumn("plans", "status", "status TEXT NOT NULL DEFAULT 'completed'");
-  ensureColumn("plans", "error", "error TEXT");
-  ensureColumn("plans", "request_comments", "request_comments TEXT");
-  ensureColumn("plans", "started_at", "started_at TEXT");
-  ensureColumn("plans", "finished_at", "finished_at TEXT");
-  ensureColumn("plans", "chat_pending", "chat_pending INTEGER NOT NULL DEFAULT 0");
-  ensureColumn("plans", "context_hash", "context_hash TEXT");
-  ensureColumn("plans", "active", "active INTEGER NOT NULL DEFAULT 0");
-  ensureColumn("plans", "chat_instructions", "chat_instructions TEXT");
-  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_one_active ON plans(tenant_id) WHERE active = 1");
+  ensureColumn("tenant_settings", "focus_sports", "focus_sports TEXT");
+  ensureColumn("tenant_settings", "chat_pending", "chat_pending INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("tenant_settings", "chat_response_id", "chat_response_id TEXT");
+  ensureColumn("tenant_settings", "chat_context_hash", "chat_context_hash TEXT");
+  ensureColumn("tenant_settings", "chat_instructions", "chat_instructions TEXT");
   ensureColumn("ai_logs", "input_tokens", "input_tokens INTEGER");
   ensureColumn("ai_logs", "output_tokens", "output_tokens INTEGER");
   ensureColumn("ai_logs", "cost", "cost REAL");
   ensureColumn("ai_logs", "currency", "currency TEXT");
   ensureColumn("ai_logs", "operation_type", "operation_type TEXT");
-  ensureColumn("ai_prompts", "role", "role TEXT NOT NULL DEFAULT 'plan'");
-  ensureColumn("tenant_settings", "focus_sports", "focus_sports TEXT");
+  ensureColumn("ai_prompts", "role", "role TEXT NOT NULL DEFAULT 'chat'");
+  ensureColumn("ai_prompts", "is_active", "is_active INTEGER NOT NULL DEFAULT 0");
   ensureColumn("ai_model_catalog", "provider_id", "provider_id TEXT");
   db.exec(`INSERT OR IGNORE INTO ai_model_catalog
     (provider, model_id, provider_id, name, enabled, input_price, output_price, currency, updated_at)
     SELECT 'opencode', model_id, provider_id, name, enabled, input_price, output_price, 'EUR', updated_at
     FROM opencode_models`);
+  migrateRemovePlans();
   migrateActivityIds();
   return db;
 }

@@ -317,7 +317,7 @@ export interface SyncResult {
 export interface Job {
   id: string;
   tenant_id: string;
-  type: "sync" | "plan_generation" | "plan_chat" | string;
+  type: "sync" | "coach_chat" | string;
   status: "pending" | "running" | "completed" | "failed" | "cancelled";
   related_resource_type?: string | null;
   related_resource_id?: string | null;
@@ -439,6 +439,15 @@ export interface AiSettingsFull extends AiSettings {
   apiKey: string;
 }
 
+export interface AiPrompt {
+  id: string;
+  role: string;
+  name: string;
+  content: string;
+  is_predefined: boolean;
+  is_active: boolean;
+}
+
 export interface OpencodeModelInfo {
   id: string;
   providerID: string;
@@ -536,61 +545,22 @@ export interface ProfileVersionFull extends ProfileVersion {
   tenant_id: string;
 }
 
-export interface AiPrompt {
+export interface ChatMessage {
   id: string;
-  name: string;
-  content: string;
-  is_predefined: number;
-}
-
-export type PlanStatus = "pending" | "generating" | "completed" | "failed";
-
-export interface GeneratePlanRequest {
-  comments: string;
-  weeks: number;
-  aiConfigId?: string;
-  promptId?: string;
-  equipment?: string[];
-}
-
-export interface Plan {
-  id: string;
-  createdAt: string;
-  comments: string;
-  weeks: number;
-  status: PlanStatus;
-  error?: string | null;
-  responseId?: string | null;
-  aiConfigId?: string | null;
-  promptId?: string;
-  promptName?: string;
-  totalSessions?: number;
-  completedSessions?: number;
-  trainingCompleted?: boolean;
-  jobId?: string;
-  chatInstructions?: string;
-  active?: boolean;
-}
-
-export interface PlanMessage {
-  id: string;
-  plan_id: string;
   role: "user" | "assistant";
   content: string;
   created_at: string;
   localStatus?: "sending" | "failed";
 }
 
-export interface PlanChat {
-  planId: string;
-  planCreatedAt: string;
+export interface CoachChat {
   canChat: boolean;
   chatPending: boolean;
-  messages: PlanMessage[];
-  chatInstructions?: string;
+  chatInstructions: string;
+  messages: ChatMessage[];
 }
 
-export interface PlanChatReply {
+export interface CoachChatReply {
   pending: boolean;
   jobId?: string;
 }

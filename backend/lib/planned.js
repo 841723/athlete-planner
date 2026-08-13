@@ -28,7 +28,7 @@ function withObjectives(session) {
 }
 
 export function listPlanned() {
-  return loadPlannedSessions({ activeOnly: true })
+  return loadPlannedSessions()
     .sort((a, b) => (a.start_date_local ?? "").localeCompare(b.start_date_local ?? ""))
     .map((s) => withObjectives(s));
 }

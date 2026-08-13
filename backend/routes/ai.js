@@ -1,6 +1,13 @@
 import { getAiSettings, getAiSettingsWithKey, saveAiSettings, chatDurationLabel } from "../lib/ai-settings.js";
 import { callAi, getProvidersList } from "../lib/ai-provider.js";
-import { getPrompts, savePrompt, deletePrompt, updatePrompt, duplicatePrompt } from "../lib/ai-prompts.js";
+import {
+  getPrompts,
+  savePrompt,
+  deletePrompt,
+  updatePrompt,
+  duplicatePrompt,
+  setActivePrompt,
+} from "../lib/ai-prompts.js";
 import { sendJson, readBody, canWrite, canManage } from "../lib/http.js";
 
 export function register(router) {
@@ -86,6 +93,14 @@ export function register(router) {
     return sendJson(c.res, 200, { ok: true });
   });
 
+  // Marca el prompt que se envía con cada mensaje del chat (solo uno activo por tenant).
+  router.put("/api/prompts/:id/active", async (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    const ok = setActivePrompt(c.params.id, c.tenantId);
+    if (!ok) return sendJson(c.res, 404, { error: "Prompt no encontrado" });
+    return sendJson(c.res, 200, { ok: true });
+  });
+
   router.post("/api/prompts/:id/duplicate", (c) => {
     if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
     try {
@@ -100,7 +115,7 @@ export function register(router) {
   router.delete("/api/prompts/:id", (c) => {
     if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
     const deleted = deletePrompt(c.params.id, c.tenantId);
-    if (!deleted)     return sendJson(c.res, 404, { error: "Prompt no encontrado o es predefinido" });
+    if (!deleted) return sendJson(c.res, 404, { error: "Prompt no encontrado o es predefinido" });
     c.res.writeHead(204);
     return c.res.end();
   });

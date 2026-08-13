@@ -2,45 +2,48 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
-process.env.DB_PATH = `/tmp/opencode/plan-chat-context-${randomUUID()}.db`;
+process.env.DB_PATH = `/tmp/opencode/coach-chat-context-${randomUUID()}.db`;
 
 const { getDb } = await import("../lib/db.js");
 const { withTenant, upsertSession, getAthleteProfile, saveAthleteProfile } = await import("../lib/sessions.js");
 const { listPlanned } = await import("../lib/planned.js");
 const { buildChatUserPrompt, getRecentSessions, computeContextHash, parseChatResponse, applyChatProfileUpdate } = await import("../lib/trainer.js");
-const { getRolePrompt } = await import("../lib/ai-prompts.js");
-const { replacePlanSessions } = await import("../lib/plan-chat.js");
-const { getPlanProgress, setChatPending, recoverStaleChat, getPlan } = await import("../lib/plans.js");
+const { getRolePrompt, getPrompts, savePrompt, setActivePrompt, getActivePrompt } = await import("../lib/ai-prompts.js");
+const {
+  addChatMessage,
+  listChatMessages,
+  getChatState,
+  setChatPending,
+  updateChatResponseId,
+  updateChatContextHash,
+  recoverStaleChat,
+  replaceFuturePlannedSessions,
+  updateChatInstructions,
+  COACH_PLAN_ID,
+} = await import("../lib/coach-chat.js");
 const { getProfileHistory } = await import("../lib/profile-history.js");
 
 const tenantId = randomUUID();
-const planId = randomUUID();
-const plannedId = randomUUID();
+const coachPlannedId = randomUUID();
+const manualPlannedId = randomUUID();
 const completedId = "garmin-completed-1";
-const completePlanId = randomUUID();
-const completePlannedId = randomUUID();
-const completeCompletedId = "garmin-completed-2";
+const manualPastId = "manual-past-session";
 const now = new Date().toISOString();
 const dateAt = (daysFromNow) => {
   const date = new Date();
   date.setDate(date.getDate() + daysFromNow);
-  return date.toISOString().slice(0, 19);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}T08:00:00`;
 };
 
 getDb().prepare(
   "INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, ?)"
 ).run(tenantId, "Test", `test-${tenantId}`, now);
-getDb().prepare(
-  "INSERT INTO plans (id, tenant_id, created_at, comments, weeks, status) VALUES (?, ?, ?, ?, ?, ?)"
-).run(planId, tenantId, now, "", 1, "completed");
-getDb().prepare(
-  "INSERT INTO plans (id, tenant_id, created_at, comments, weeks, status) VALUES (?, ?, ?, ?, ?, ?)"
-).run(completePlanId, tenantId, now, "", 1, "completed");
 
 withTenant(tenantId, () => {
   upsertSession(tenantId, "planned", {
-    id: plannedId,
-    plan_id: planId,
+    id: coachPlannedId,
+    plan_id: COACH_PLAN_ID,
     sport: "running",
     title: "Carrera Z2",
     name: "Carrera planificada",
@@ -65,7 +68,7 @@ withTenant(tenantId, () => {
     name: "Natación real anterior",
     start_date_local: `${dateAt(-2).slice(0, 10)}T07:00:00`,
     moving_time_s: 1800,
-    notes: "Actividad real fuera de este plan.",
+    notes: "Actividad real fuera del plan.",
   });
   upsertSession(tenantId, "completed", {
     id: "older-completed-1",
@@ -76,26 +79,28 @@ withTenant(tenantId, () => {
   });
   upsertSession(tenantId, "planned", {
     id: randomUUID(),
-    plan_id: planId,
+    plan_id: COACH_PLAN_ID,
     sport: "cycling",
     title: "Rodaje suave",
     name: "Rodaje suave",
-      start_date_local: `${dateAt(0).slice(0, 10)}T08:00:00`,
+    start_date_local: `${dateAt(0).slice(0, 10)}T08:00:00`,
     workout_text: "60 min suaves",
   });
   upsertSession(tenantId, "planned", {
-    id: completePlannedId,
-    plan_id: completePlanId,
-    sport: "running",
-    title: "Plan completado",
-    start_date_local: `${dateAt(-3).slice(0, 10)}T08:00:00`,
-    merged_with: completeCompletedId,
+    id: manualPlannedId,
+    sport: "swimming",
+    title: "Natación manual del atleta",
+    name: "Natación manual",
+    start_date_local: `${dateAt(3).slice(0, 10)}T07:00:00`,
+    workout_text: "Piscina 30 min",
   });
-  upsertSession(tenantId, "completed", {
-    id: completeCompletedId,
+  upsertSession(tenantId, "planned", {
+    id: manualPastId,
     sport: "running",
-    name: "Actividad completada",
-    start_date_local: `${dateAt(-3).slice(0, 10)}T08:05:00`,
+    title: "Rodaje pasado no hecho (manual)",
+    name: "Rodaje pasado",
+    start_date_local: `${dateAt(-1).slice(0, 10)}T08:00:00`,
+    workout_text: "45 min @ Z2",
   });
 });
 
@@ -114,12 +119,12 @@ test("el contexto del chat incluye solo actividades de los últimos 30 días y s
       start_date_local: `${dateAt(-31).slice(0, 10)}T07:00:00`,
     });
   });
-  const prompt = withTenant(tenantId, () => buildChatUserPrompt(planId, "Analiza mi semana"));
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt("Analiza mi semana"));
 
   assert.match(prompt, /ACTIVIDADES REALIZADAS — ÚLTIMOS 30 DÍAS/);
   assert.match(prompt, /Me encontré bien; terminé algo más rápido/);
   assert.match(prompt, /Carrera Z2 realizada/);
-  assert.match(prompt, /Actividad real fuera de este plan/);
+  assert.match(prompt, /Actividad real fuera del plan/);
   assert.match(prompt, /Actividad dentro de treinta días/);
   assert.doesNotMatch(prompt, /Actividad fuera de treinta días/);
   const completedSection = prompt.split("ACTIVIDADES REALIZADAS — ÚLTIMOS 30 DÍAS")[1].split("MENSAJE DEL ATLETA")[0];
@@ -143,31 +148,26 @@ test("el parser del chat respeta los flags de sesiones y perfil", () => {
 });
 
 test("el contexto del chat marca las planificadas realizadas como completadas", () => {
-  const prompt = withTenant(tenantId, () => buildChatUserPrompt(planId, "Analiza mi semana"));
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt("Analiza mi semana"));
   assert.match(prompt, /\[COMPLETADA\]/);
   assert.match(prompt, /\[PENDIENTE\]/);
 });
 
+test("el contexto del chat incluye las planificadas manuales del atleta", () => {
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt("Analiza mi semana"));
+  assert.match(prompt, /Natación manual del atleta/);
+});
+
 test("las planificadas fusionadas exponen la actividad completada", () => {
   const planned = withTenant(tenantId, () => listPlanned());
-  const merged = planned.find((session) => session.id === plannedId);
+  const merged = planned.find((session) => session.id === coachPlannedId);
 
   assert.equal(merged.completed_session.id, completedId);
   assert.equal(merged.completed_session.notes, "Me encontré bien; terminé algo más rápido.");
 });
 
-test("un plan parcialmente realizado no se marca como completado", () => {
-  const progress = getPlanProgress(tenantId, planId);
-  assert.deepEqual(progress, { totalSessions: 2, completedSessions: 1, trainingCompleted: false });
-});
-
-test("un plan con todas sus sesiones realizadas se marca como completado", () => {
-  const progress = getPlanProgress(tenantId, completePlanId);
-  assert.deepEqual(progress, { totalSessions: 1, completedSessions: 1, trainingCompleted: true });
-});
-
 test("el feedback del chat no borra planificadas ya realizadas", () => {
-  withTenant(tenantId, () => replacePlanSessions(planId, [
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
     {
       sport: "running",
       title: "Nueva sesión futura",
@@ -176,12 +176,26 @@ test("el feedback del chat no borra planificadas ya realizadas", () => {
     },
   ]));
   const planned = withTenant(tenantId, () => listPlanned());
-  assert.ok(planned.some((session) => session.id === plannedId));
+  assert.ok(planned.some((session) => session.id === coachPlannedId));
   assert.ok(planned.some((session) => session.title === "Nueva sesión futura"));
 });
 
+test("el feedback del chat conserva las planificadas manuales del atleta", () => {
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
+    {
+      sport: "running",
+      title: "Otra sesión futura",
+      start_date_local: `${dateAt(2).slice(0, 10)}T08:00:00`,
+      workout_text: "30 min suaves",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+  assert.ok(planned.some((session) => session.id === manualPlannedId), "la manual futura se conserva");
+  assert.ok(planned.some((session) => session.title === "Otra sesión futura"), "la futura del entrenador se crea");
+});
+
 test("el feedback del chat no crea sesiones en fechas pasadas", () => {
-  withTenant(tenantId, () => replacePlanSessions(planId, [
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
     {
       sport: "running",
       title: "Sesión en el pasado",
@@ -209,7 +223,7 @@ test("el feedback del chat no re-planifica una actividad ya realizada el mismo d
     start_date_local: `${today}T07:00:00`,
     moving_time_s: 1800,
   }));
-  withTenant(tenantId, () => replacePlanSessions(planId, [
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
     {
       sport: "running",
       title: "Rodaje duplicado de hoy",
@@ -222,17 +236,7 @@ test("el feedback del chat no re-planifica una actividad ya realizada el mismo d
 });
 
 test("el feedback del chat conserva las planificadas pasadas no realizadas", () => {
-  const pastId = randomUUID();
-  withTenant(tenantId, () => upsertSession(tenantId, "planned", {
-    id: pastId,
-    plan_id: planId,
-    sport: "running",
-    title: "Rodaje pasado no hecho",
-    name: "Rodaje pasado",
-    start_date_local: `${dateAt(-1).slice(0, 10)}T08:00:00`,
-    workout_text: "45 min @ Z2",
-  }));
-  withTenant(tenantId, () => replacePlanSessions(planId, [
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
     {
       sport: "running",
       title: "Nueva sesión futura",
@@ -241,12 +245,12 @@ test("el feedback del chat conserva las planificadas pasadas no realizadas", () 
     },
   ]));
   const planned = withTenant(tenantId, () => listPlanned());
-  assert.ok(planned.some((session) => session.id === pastId), "la pasada no realizada se conserva");
+  assert.ok(planned.some((session) => session.id === manualPastId), "la pasada no realizada se conserva");
   assert.ok(planned.some((session) => session.title === "Nueva sesión futura"), "la futura se crea");
 });
 
 test("el hash de contexto cambia cuando se registra una actividad nueva", () => {
-  const before = withTenant(tenantId, () => computeContextHash(planId));
+  const before = withTenant(tenantId, () => computeContextHash());
   const newId = "garmin-hash-change";
   withTenant(tenantId, () => upsertSession(tenantId, "completed", {
     id: newId,
@@ -255,8 +259,71 @@ test("el hash de contexto cambia cuando se registra una actividad nueva", () => 
     start_date_local: `${dateAt(0).slice(0, 10)}T07:30:00`,
     moving_time_s: 1800,
   }));
-  const after = withTenant(tenantId, () => computeContextHash(planId));
+  const after = withTenant(tenantId, () => computeContextHash());
   assert.notEqual(before, after);
+});
+
+test("el hash de contexto cambia cuando cambian las instrucciones del chat", () => {
+  const before = withTenant(tenantId, () => computeContextHash());
+  withTenant(tenantId, () => updateChatInstructions(tenantId, "Domina el ritmo en las cuestas"));
+  const after = withTenant(tenantId, () => computeContextHash());
+  assert.notEqual(before, after);
+});
+
+test("el hash de contexto cambia al activar un prompt distinto en el chat", () => {
+  const prompts = withTenant(tenantId, () => getPrompts(tenantId));
+  assert.ok(prompts.length >= 2, "deben existir los prompts predefinidos");
+  const before = withTenant(tenantId, () => computeContextHash());
+  withTenant(tenantId, () => setActivePrompt(prompts[1].id, tenantId));
+  const after = withTenant(tenantId, () => computeContextHash());
+  assert.notEqual(before, after);
+  const active = withTenant(tenantId, () => getActivePrompt(tenantId));
+  assert.equal(active.id, prompts[1].id);
+});
+
+test("solo un prompt puede estar activo por tenant al activar otro", () => {
+  const a = withTenant(tenantId, () => savePrompt(tenantId, { name: "Bajar de peso", content: "Quiere perder peso" }));
+  withTenant(tenantId, () => setActivePrompt(a, tenantId));
+  const b = withTenant(tenantId, () => savePrompt(tenantId, { name: "Ironman 70.3", content: "Quiere un Ironman" }));
+  withTenant(tenantId, () => setActivePrompt(b, tenantId));
+  const active = withTenant(tenantId, () => getActivePrompt(tenantId));
+  assert.equal(active.id, b);
+  const activeCount = withTenant(tenantId, () =>
+    getDb().prepare("SELECT COUNT(*) as c FROM ai_prompts WHERE tenant_id = ? AND is_active = 1").get(tenantId).c
+  );
+  assert.equal(activeCount, 1);
+});
+
+test("guardar un prompt personalizado sin ninguno activo lo activa por defecto", () => {
+  withTenant(tenantId, () =>
+    getDb().prepare("UPDATE ai_prompts SET is_active = 0 WHERE tenant_id = ?").run(tenantId)
+  );
+  const id = withTenant(tenantId, () => savePrompt(tenantId, { name: "Sin activo", content: "Contenido" }));
+  const active = withTenant(tenantId, () => getActivePrompt(tenantId));
+  assert.equal(active.id, id);
+});
+
+test("el prompt de Ironman triatlón se activa por defecto en primera ejecución", () => {
+  withTenant(tenantId, () =>
+    getDb().prepare("UPDATE ai_prompts SET is_active = 0 WHERE tenant_id = ?").run(tenantId)
+  );
+  const prompts = withTenant(tenantId, () => getPrompts(tenantId));
+  const ironman = prompts.find((p) => p.name === "Ironman Triatlón");
+  assert.ok(ironman, "debe existir el prompt predefinido de Ironman");
+  assert.ok(ironman.is_predefined);
+  const active = withTenant(tenantId, () => getActivePrompt(tenantId));
+  assert.equal(active.id, ironman.id);
+  assert.match(active.content, /IRONMAN/);
+});
+
+test("el estado del chat vive en tenant_settings y guarda el hilo", () => {
+  withTenant(tenantId, () => {
+    setChatPending(tenantId, true);
+    updateChatResponseId(tenantId, "thread-123");
+  });
+  const state = withTenant(tenantId, () => getChatState(tenantId));
+  assert.equal(state.chatPending, true);
+  assert.equal(state.chatResponseId, "thread-123");
 });
 
 test("el prompt de chat de un tenant existente se refresca con el seed actual", () => {
@@ -268,7 +335,7 @@ test("el prompt de chat de un tenant existente se refresca con el seed actual", 
   assert.match(refreshed.content, /NUNCA modifiques, elimines ni vuelvas a incluir sesiones planificadas en fechas pasadas/);
 });
 
-test("la ventana de sesiones recientes para generar planes sigue siendo configurable", () => {
+test("la ventana de sesiones recientes sigue siendo configurable", () => {
   const recent = withTenant(tenantId, () => getRecentSessions(4));
   assert.ok(recent.some((session) => session.id === completedId));
   assert.ok(!recent.some((session) => session.id === "older-completed-1"));
@@ -293,21 +360,32 @@ test("la actualización de perfil del chat ignora vacíos y guarda cambios con h
 });
 
 test("recoverStaleChat libera un chat atascado con mensaje antiguo", () => {
-  withTenant(tenantId, () => setChatPending(planId, true));
+  withTenant(tenantId, () => {
+    setChatPending(tenantId, true);
+    addChatMessage("user", "mensaje antiguo");
+  });
   getDb()
-    .prepare("INSERT INTO plan_messages (id, plan_id, role, content, created_at) VALUES (?, ?, 'user', ?, ?)")
-    .run(randomUUID(), planId, "mensaje antiguo", new Date(Date.now() - 11 * 60 * 1000).toISOString());
+    .prepare("UPDATE chat_messages SET created_at = ? WHERE tenant_id = ? AND content = ?")
+    .run(new Date(Date.now() - 11 * 60 * 1000).toISOString(), tenantId, "mensaje antiguo");
   const recovered = withTenant(tenantId, () => recoverStaleChat(tenantId));
   assert.equal(recovered, 1);
-  assert.equal(withTenant(tenantId, () => getPlan(tenantId, planId).chatPending), 0);
+  assert.equal(withTenant(tenantId, () => getChatState(tenantId).chatPending), false);
 });
 
 test("recoverStaleChat no libera un chat con mensaje reciente", () => {
-  withTenant(tenantId, () => setChatPending(planId, true));
-  getDb()
-    .prepare("INSERT INTO plan_messages (id, plan_id, role, content, created_at) VALUES (?, ?, 'user', ?, ?)")
-    .run(randomUUID(), planId, "mensaje reciente", new Date().toISOString());
+  withTenant(tenantId, () => {
+    setChatPending(tenantId, true);
+    addChatMessage("user", "mensaje reciente");
+  });
   const recovered = withTenant(tenantId, () => recoverStaleChat(tenantId));
   assert.equal(recovered, 0);
-  assert.equal(withTenant(tenantId, () => getPlan(tenantId, planId).chatPending), 1);
+  assert.equal(withTenant(tenantId, () => getChatState(tenantId).chatPending), true);
+});
+
+test("los mensajes del chat se listan por tenant en orden", () => {
+  const messages = withTenant(tenantId, () => listChatMessages());
+  assert.ok(messages.length >= 1);
+  assert.ok(messages.every((m) => m.content && m.role !== "system"));
+  const times = messages.map((m) => new Date(m.created_at).getTime());
+  assert.deepEqual(times, [...times].sort((a, b) => a - b));
 });

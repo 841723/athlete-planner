@@ -19,6 +19,7 @@ interface ToastContextValue {
   markNotificationsRead: () => void;
   markOneNotificationRead: (id: string) => void;
   clearNotifications: () => void;
+  removeNotification: (id: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -77,6 +78,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                       ),
                   ),
               clearNotifications: () => setNotifications([]),
+              removeNotification: (id: string) =>
+                setNotifications((items) => items.filter((item) => item.id !== id)),
           }}
       >
           {children}
@@ -158,7 +161,7 @@ export function useToast() {
 }
 
 export function NotificationsBell() {
-  const { notifications, markNotificationsRead, clearNotifications } = useToast();
+  const { notifications, markNotificationsRead, clearNotifications, removeNotification } = useToast();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const unread = notifications.filter((item) => !item.read).length;
@@ -219,7 +222,7 @@ export function NotificationsBell() {
                       </div>
                       <button
                         onClick={() => {
-                          // TODO: Implementar la eliminación de notificación individual
+                          removeNotification(item.id);
                         }}
                         className="text-gray-400 hover:text-red-400"
                         aria-label="Eliminar notificación"

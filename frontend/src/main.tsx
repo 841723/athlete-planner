@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // La app es de un solo usuario y los datos cambian a menudo (sesiones,
-      // planes, chat del entrenador): queremos ver siempre lo último sin tener
+      // chat del entrenador): queremos ver siempre lo último sin tener
       // que recargar la página, así que se refetchea en cada montaje y al
       // volver a la ventana aunque la caché esté "fresca".
       refetchOnMount: "always",

@@ -1,0 +1,273 @@
+import { useState } from "react";
+import {
+  CheckCircle2,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  ClipboardList,
+  ExternalLink,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+import { tenantPath } from "@/lib/tenant";
+import { useAuth } from "@/components/auth/auth-context";
+import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
+import { usePermissions } from "@/hooks/use-permissions";
+import { CoachChat } from "@/components/planned/coach-chat";
+import { CoachOptions } from "@/components/planned/coach-options";
+import { PlannedFormModal } from "@/components/planned/planned-form";
+import { WorkoutText } from "@/components/session/workout-text";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatTrainingDay, getSportColor, getSportLabel } from "@/lib/utils";
+import type { PlannedSessionView } from "@/types/session";
+
+export function TrainerPage() {
+  const { data: sessions, isLoading } = usePlanned();
+  const permissions = usePermissions();
+  const { activeTenantId } = useAuth();
+  const deleteMutation = useDeletePlanned();
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<PlannedSessionView | null>(null);
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+
+  const orderedSessions = [...(sessions ?? [])].sort((a, b) =>
+    a.start_date_local.localeCompare(b.start_date_local)
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-48 rounded-xl" />
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,30rem)_minmax(0,1fr)_minmax(15rem,18rem)]">
+          <Skeleton className="h-96 rounded-2xl" />
+          <Skeleton className="h-96 rounded-2xl" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto space-y-5 animate-fade-in">
+      <header className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Entrenador</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Tu planificación continua y conversación con el entrenador.
+          </p>
+        </div>
+        {permissions.canEdit && (
+          <button
+            type="button"
+            onClick={() => setFormOpen(true)}
+            className="btn btn-primary inline-flex items-center gap-1.5 text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Añadir manual
+          </button>
+        )}
+      </header>
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,30rem)_minmax(0,1fr)_minmax(15rem,30rem)]">
+        <div className="min-w-0 space-y-5">
+          <PlannedSessions
+            sessions={orderedSessions}
+            canEdit={permissions.canEdit}
+            activeTenantId={activeTenantId}
+            expandedSessions={expandedSessions}
+            setExpandedSessions={setExpandedSessions}
+            onEditSession={permissions.canEdit ? setEditingSession : undefined}
+            onDeleteSession={
+              permissions.canEdit
+                ? (id) => {
+                    if (window.confirm("¿Eliminar esta sesión planificada?")) {
+                      deleteMutation.mutate(id);
+                    }
+                  }
+                : undefined
+            }
+          />
+        </div>
+
+        <div className="min-w-0">
+          <CoachChat />
+        </div>
+
+        <div className="min-w-0">
+          <CoachOptions />
+        </div>
+      </div>
+
+      <PlannedFormModal
+        open={formOpen}
+        session={null}
+        defaultDate={new Date().toISOString().slice(0, 10)}
+        onClose={() => setFormOpen(false)}
+      />
+      {editingSession && (
+        <PlannedFormModal
+          open
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface PlannedSessionsProps {
+  sessions: PlannedSessionView[];
+  canEdit: boolean;
+  activeTenantId: string | null;
+  expandedSessions: Set<string>;
+  setExpandedSessions: (next: (prev: Set<string>) => Set<string>) => void;
+  onEditSession?: (session: PlannedSessionView) => void;
+  onDeleteSession?: (id: string) => void;
+}
+
+function PlannedSessions({
+  sessions,
+  canEdit,
+  activeTenantId,
+  expandedSessions,
+  setExpandedSessions,
+  onEditSession,
+  onDeleteSession,
+}: PlannedSessionsProps) {
+  const expandAll = () =>
+    setExpandedSessions(() => new Set(sessions.map((s) => s.id)));
+  const collapseAll = () => setExpandedSessions(() => new Set());
+
+  return (
+    <section className="card p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-accent-light" />
+          <h2 className="text-lg font-bold">Entrenamientos</h2>
+          <span className="text-xs text-gray-500">{sessions.length} sesiones</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-dark-300 hover:text-gray-200"
+            onClick={expandAll}
+            title="Extender todo"
+            aria-label="Extender todo"
+          >
+            <ChevronsUpDown className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-dark-300 hover:text-gray-200"
+            onClick={collapseAll}
+            title="Colapsar todo"
+            aria-label="Colapsar todo"
+          >
+            <ChevronsDownUp className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {sessions.length === 0 ? (
+        <div className="p-6 text-center text-sm text-gray-500">
+          Todavía no hay sesiones planificadas.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3">
+          {sessions.map((session) => {
+            const open = expandedSessions.has(session.id);
+            return (
+              <details
+                key={session.id}
+                open={open}
+                onToggle={(event) => {
+                  const open = event.currentTarget.open;
+                  setExpandedSessions((prev) => {
+                    const next = new Set(prev);
+                    if (open) next.add(session.id);
+                    else next.delete(session.id);
+                    return next;
+                  });
+                }}
+                className="rounded-xl border border-dark-400 bg-dark-300/30 p-4"
+              >
+                <summary className="cursor-pointer list-none">
+                  <div className="flex items-start gap-2">
+                    <span
+                      className="mt-1 h-3 w-3 rounded-full"
+                      style={{ backgroundColor: getSportColor(session.category) }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold">
+                        {session.title ?? session.name}
+                      </h3>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {getSportLabel(session.category)} ·{" "}
+                        {formatTrainingDay(session.start_date_local, session.weekNumber)}
+                      </p>
+                    </div>
+                    {session.merged_with && (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />
+                    )}
+                    {!session.merged_with && canEdit && onEditSession && (
+                      <button
+                        onClick={() => onEditSession(session)}
+                        title="Editar sesión (fecha, título, texto)"
+                        aria-label={`Editar ${session.title ?? session.name}`}
+                        className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-gray-200"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {!session.merged_with && canEdit && onDeleteSession && (
+                      <button
+                        onClick={() => onDeleteSession(session.id)}
+                        title="Eliminar sesión"
+                        aria-label={`Eliminar ${session.title ?? session.name}`}
+                        className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-red-500"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </summary>
+
+                {session.completed_session && (
+                  <Link
+                    to={tenantPath(activeTenantId, `/session/${session.completed_session.id}`)}
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-green-400 hover:text-green-300"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Ver actividad realizada
+                  </Link>
+                )}
+
+                <div className="mt-3">
+                  {session.workout_text ? (
+                    <WorkoutText text={session.workout_text} />
+                  ) : (
+                    <div className="space-y-1">
+                      {(session.objectives ?? []).map((objective, index) => (
+                        <p key={index} className="text-sm text-gray-300">
+                          {objective.label && (
+                            <span className="mr-2 text-[10px] uppercase text-accent-light">
+                              {objective.label}
+                            </span>
+                          )}
+                          {objective.text}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}

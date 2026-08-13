@@ -111,7 +111,11 @@ CREATE TABLE IF NOT EXISTS tenant_settings (
   goal_date TEXT,
   training_week_one_start TEXT,
   min_date TEXT,
-  focus_sports TEXT
+  focus_sports TEXT,
+  chat_pending INTEGER NOT NULL DEFAULT 0,
+  chat_response_id TEXT,
+  chat_context_hash TEXT,
+  chat_instructions TEXT
 );
 
 CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -154,37 +158,15 @@ CREATE TABLE IF NOT EXISTS ai_prompts (
 );
 CREATE INDEX IF NOT EXISTS idx_ai_prompts_tenant ON ai_prompts(tenant_id);
 
-CREATE TABLE IF NOT EXISTS plans (
+-- Conversación con el entrenador IA a nivel de tenant (stateful vía response_id).
+CREATE TABLE IF NOT EXISTS chat_messages (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL,
-  comments TEXT,
-  weeks INTEGER DEFAULT 1,
-  profile_version_id TEXT,
-  prompt_id TEXT,
-  prompt_name TEXT,
-  response_id TEXT,
-  status TEXT NOT NULL DEFAULT 'completed',
-  error TEXT,
-  request_comments TEXT,
-  started_at TEXT,
-  finished_at TEXT,
-  chat_pending INTEGER NOT NULL DEFAULT 0,
-  context_hash TEXT,
-  active INTEGER NOT NULL DEFAULT 0,
-  chat_instructions TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_plans_tenant ON plans(tenant_id, created_at DESC);
-
--- Mensajes del chat de un plan generado con IA (conversación stateful vía response_id).
-CREATE TABLE IF NOT EXISTS plan_messages (
-  id TEXT PRIMARY KEY,
-  plan_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_plan_messages_plan ON plan_messages(plan_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_tenant ON chat_messages(tenant_id, created_at);
 
 -- Configuraciones de IA por tenant (proveedor + key + modelo + duración chat + precios).
 CREATE TABLE IF NOT EXISTS ai_configs (

@@ -29,7 +29,7 @@ export function AdminObservability() {
       <div className="card grid gap-2 p-4 sm:grid-cols-3 lg:grid-cols-6">
         <input className="input text-xs" placeholder="Tenant" value={filter.tenant} onChange={(e) => setFilter({ ...filter, tenant: e.target.value })} />
         <select className="input text-xs" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}><option value="">Estado</option><option value="completed">completed</option><option value="running">running</option><option value="failed">failed</option></select>
-        <select className="input text-xs" value={filter.type} onChange={(e) => setFilter({ ...filter, type: e.target.value })}><option value="">Tipo job</option><option value="sync">sync</option><option value="plan_generation">plan_generation</option><option value="plan_chat">plan_chat</option></select>
+        <select className="input text-xs" value={filter.type} onChange={(e) => setFilter({ ...filter, type: e.target.value })}><option value="">Tipo job</option><option value="sync">sync</option><option value="coach_chat">coach_chat</option></select>
         <input className="input text-xs" placeholder="Proveedor" value={filter.provider} onChange={(e) => setFilter({ ...filter, provider: e.target.value })} />
         <input className="input text-xs" type="date" value={filter.from} onChange={(e) => setFilter({ ...filter, from: e.target.value })} />
         <input className="input text-xs" type="date" value={filter.to} onChange={(e) => setFilter({ ...filter, to: e.target.value })} />

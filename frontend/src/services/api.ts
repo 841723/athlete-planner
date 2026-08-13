@@ -25,6 +25,7 @@ import type {
   AiLogsPage,
   EquipmentResponse,
   EquipmentCategory,
+  AiPrompt,
 } from "@/types/session";
 import type { MeResponse, Member, User, TenantRole } from "@/types/auth";
 
@@ -438,4 +439,31 @@ export function saveEquipment(
   payload: { items: { item: string; category: string; quantity: number }[]; catalog?: EquipmentCategory[] }
 ): Promise<{ ok: boolean }> {
   return send("/equipment", "PUT", payload);
+}
+
+export function fetchPrompts(): Promise<AiPrompt[]> {
+  return get("/prompts");
+}
+
+export function createPrompt(payload: { name: string; content: string }): Promise<{ id: string }> {
+  return send("/prompts", "POST", payload);
+}
+
+export function updatePrompt(
+  promptId: string,
+  payload: { name: string; content: string }
+): Promise<{ ok: boolean }> {
+  return send(`/prompts/${encodeURIComponent(promptId)}`, "PUT", payload);
+}
+
+export function setActivePrompt(promptId: string): Promise<{ ok: boolean }> {
+  return send(`/prompts/${encodeURIComponent(promptId)}/active`, "PUT");
+}
+
+export function duplicatePrompt(promptId: string): Promise<{ id: string }> {
+  return send(`/prompts/${encodeURIComponent(promptId)}/duplicate`, "POST");
+}
+
+export function deletePrompt(promptId: string): Promise<void> {
+  return send(`/prompts/${encodeURIComponent(promptId)}`, "DELETE");
 }

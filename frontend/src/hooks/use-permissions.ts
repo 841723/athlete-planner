@@ -10,6 +10,5 @@ export function usePermissions() {
     canEdit: role !== null && role !== "visitor",
     canSync: role !== null && role !== "visitor",
     canManageUsers: role === "admin" || role === "athlete",
-    canGeneratePlan: role !== null && role !== "visitor",
   };
 }

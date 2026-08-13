@@ -1,17 +1,35 @@
 import { useEffect, useState } from "react";
-import { Brain, ChevronDown, ChevronRight, Loader2, Plus, Save, Trash2, XCircle } from "lucide-react";
-import { usePrompts, useSavePrompt, useUpdatePrompt, useDeletePrompt } from "@/hooks/use-prompts";
+import {
+  Brain,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Loader2,
+  Plus,
+  Save,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import {
+  usePrompts,
+  useCreatePrompt,
+  useUpdatePrompt,
+  useDeletePrompt,
+  useSetActivePrompt,
+  useDuplicatePrompt,
+} from "@/hooks/use-prompts";
 import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import type { AiPrompt } from "@/types/session";
 
 export function PromptsTab() {
   const { data: prompts, isLoading } = usePrompts();
-  const saveMutation = useSavePrompt();
+  const saveMutation = useCreatePrompt();
   const updateMutation = useUpdatePrompt();
   const deleteMutation = useDeletePrompt();
+  const setActiveMutation = useSetActivePrompt();
+  const duplicateMutation = useDuplicatePrompt();
   const [edits, setEdits] = useState<Record<string, { name: string; content: string }>>({});
   const [newPrompts, setNewPrompts] = useState<{ id: string; name: string; content: string }[]>([]);
   const [newCounter, setNewCounter] = useState(0);
@@ -40,6 +58,8 @@ export function PromptsTab() {
     setEdits((e) => ({ ...e, [id]: { ...(e[id] ?? { name: "", content: "" }), ...patch } }));
   }
 
+  const active = prompts?.find((p) => p.is_active);
+
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
@@ -57,6 +77,17 @@ export function PromptsTab() {
           <Plus className="w-3.5 h-3.5" /> Nuevo prompt
         </Button>
       </div>
+
+      <p className="text-xs text-gray-500 bg-dark-400/40 rounded-lg p-3 mb-4">
+        Describe qué busca el atleta (perder peso, Ironman, 5K…). El prompt activo
+        {active ? (
+          <> — <span className="font-semibold text-accent">{active.name}</span> — </>
+        ) : (
+          " — "
+        )}
+        se envía con cada mensaje del chat del entrenador para que el modelo sepa el objetivo.
+      </p>
+
       {isLoading ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : (
@@ -65,8 +96,9 @@ export function PromptsTab() {
             const val = valueFor(p);
             const predefined = !!p.is_predefined;
             const dirty = val.name !== p.name || val.content !== p.content;
+            const isActive = !!p.is_active;
             return (
-              <div key={p.id} className="p-3 rounded-xl bg-dark-300/50 space-y-2">
+              <div key={p.id} className={`p-3 rounded-xl bg-dark-300/50 space-y-2 ${isActive ? "border border-accent/40" : ""}`}>
                 <div className="flex items-center gap-2">
                   <button
                     className="flex items-center gap-1.5 text-left shrink-0"
@@ -93,10 +125,32 @@ export function PromptsTab() {
                       Predefinido
                     </span>
                   )}
+                  {!isActive && (
+                    <Button
+                      variant="outline"
+                      className="text-xs px-2 py-1 shrink-0"
+                      onClick={() => setActiveMutation.mutate(p.id)}
+                      disabled={setActiveMutation.isPending}
+                    >
+                      {setActiveMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                      Usar en el chat
+                    </Button>
+                  )}
+                  {isActive && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-accent/20 text-accent-light shrink-0">
+                      Activo en el chat
+                    </span>
+                  )}
                   <span className="text-xs text-gray-500 truncate max-w-[12rem] hidden sm:block">
                     {!expanded[p.id] && val.content.trim()}
                   </span>
-                  <CopyButton text={val.content} title="Copiar contenido del prompt" className="shrink-0 ml-auto" />
+                  <button
+                    className="ml-auto shrink-0 text-gray-500 hover:text-gray-300 p-1"
+                    onClick={() => navigator.clipboard.writeText(val.content)}
+                    title="Copiar contenido del prompt"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 {expanded[p.id] && (
                   <>
@@ -110,6 +164,14 @@ export function PromptsTab() {
                     />
                     {!predefined && (
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          className="text-xs px-2 py-1 text-gray-400 hover:text-gray-300"
+                          onClick={() => duplicateMutation.mutate(p.id)}
+                          disabled={duplicateMutation.isPending}
+                        >
+                          <Copy className="w-3.5 h-3.5" /> Duplicar
+                        </Button>
                         <Button
                           variant="ghost"
                           className="text-xs px-2 py-1 text-red-400 hover:text-red-300"
@@ -178,7 +240,8 @@ export function PromptsTab() {
             </div>
           ))}
           <p className="text-xs text-gray-500">
-            Los prompts predefinidos son de solo lectura. Los personalizados puedes editarlos y usarlos al generar un plan.
+            Los prompts predefinidos son de solo lectura. El prompt marcado como activo se envía en cada
+            mensaje del chat del entrenador; puedes activar uno predefinido o uno personalizado.
           </p>
         </div>
       )}

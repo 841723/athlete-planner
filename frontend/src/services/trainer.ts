@@ -1,51 +1,25 @@
 import type {
-  GeneratePlanRequest,
-  Plan,
-  PlanChat,
-  PlanChatReply,
-  AiPrompt,
+  CoachChat,
+  CoachChatReply,
   ProfileVersion,
   ProfileVersionFull,
-  PlannedSessionView,
 } from "@/types/session";
 import { get, send } from "./api";
 
-export function generatePlan(payload: GeneratePlanRequest): Promise<Plan> {
-  return send("/generate-plan", "POST", payload);
+export function fetchCoachChat(): Promise<CoachChat> {
+  return get("/chat");
 }
 
-export function regeneratePlan(planId: string): Promise<Plan> {
-  return send(`/plans/${encodeURIComponent(planId)}/generate`, "POST");
+export function sendCoachChat(message: string): Promise<CoachChatReply> {
+  return send("/chat", "POST", { message });
 }
 
-export function fetchPlans(): Promise<Plan[]> {
-  return get("/plans");
+export function cancelCoachChat(): Promise<{ cancelled: boolean }> {
+  return send("/chat/cancel", "POST");
 }
 
-export function fetchPlanDetail(
-  planId: string
-): Promise<Plan & { plannedSessions: PlannedSessionView[] }> {
-  return get(`/plans/${encodeURIComponent(planId)}`);
-}
-
-export function fetchPlanChat(planId: string): Promise<PlanChat> {
-  return get(`/plans/${encodeURIComponent(planId)}/chat`);
-}
-
-export function sendPlanChat(planId: string, message: string): Promise<PlanChatReply> {
-  return send(`/plans/${encodeURIComponent(planId)}/chat`, "POST", { message });
-}
-
-export function updatePlanChatInstructions(planId: string, instructions: string): Promise<{ instructions: string }> {
-  return send(`/plans/${encodeURIComponent(planId)}/chat/settings`, "PUT", { instructions });
-}
-
-export function cancelPlanChat(planId: string): Promise<{ cancelled: boolean }> {
-  return send(`/plans/${encodeURIComponent(planId)}/chat/cancel`, "POST");
-}
-
-export function deletePlanChat(planId: string): Promise<void> {
-  return send(`/plans/${encodeURIComponent(planId)}/chat`, "DELETE");
+export function updateCoachChatInstructions(instructions: string): Promise<{ instructions: string }> {
+  return send("/chat/settings", "PUT", { instructions });
 }
 
 export function fetchProfile(): Promise<Record<string, unknown>> {
@@ -66,30 +40,4 @@ export function fetchProfileVersion(versionId: string): Promise<ProfileVersionFu
 
 export function setActiveProfileVersion(versionId: string): Promise<{ ok: boolean }> {
   return send("/profile/active", "PUT", { versionId });
-}
-
-export function fetchPrompts(): Promise<AiPrompt[]> {
-  return get("/prompts");
-}
-
-export function fetchPrompt(promptId: string): Promise<AiPrompt> {
-  return get(`/prompts/${encodeURIComponent(promptId)}`);
-}
-
-export function savePrompt(payload: {
-  name: string;
-  content: string;
-}): Promise<{ id: string }> {
-  return send("/prompts", "POST", payload);
-}
-
-export function updatePrompt(
-  promptId: string,
-  payload: { name: string; content: string }
-): Promise<{ ok: boolean }> {
-  return send(`/prompts/${encodeURIComponent(promptId)}`, "PUT", payload);
-}
-
-export function deletePrompt(promptId: string): Promise<void> {
-  return send(`/prompts/${encodeURIComponent(promptId)}`, "DELETE");
 }

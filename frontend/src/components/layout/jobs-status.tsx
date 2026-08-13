@@ -7,8 +7,7 @@ import { invalidateMany } from "@/lib/invalidate";
 
 function label(type: string) {
   if (type === "sync") return "Sincronizando actividades...";
-  if (type === "plan_generation") return "Generando plan...";
-  if (type === "plan_chat") return "El entrenador está preparando una respuesta...";
+  if (type === "coach_chat") return "El entrenador está preparando una respuesta...";
   return "Procesando tarea...";
 }
 
@@ -26,7 +25,7 @@ export function JobsStatus() {
       if (old && old !== job.status && ["completed", "failed", "cancelled"].includes(job.status)) {
         const title = job.status === "completed" ? "Tarea completada" : job.status === "cancelled" ? "Tarea cancelada" : "Error en la tarea";
         toast({ type: job.status === "completed" ? "success" : "error", title, description: job.error ?? undefined });
-        invalidateMany(queryClient, ["sessions", "weekly", "stats", "charts", "planned", "plans", "plan-detail"]);
+        invalidateMany(queryClient, ["sessions", "weekly", "stats", "charts", "planned"]);
       }
       previous.current.set(job.id, job.status);
     }

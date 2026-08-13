@@ -267,7 +267,7 @@ export async function runConversation({ baseUrl, modelId, modelProviderId, syste
     if (!sessionId || err.status !== 404) throw err;
     // La sesión se perdió (p.ej. opencode reiniciado). No la recreamos aquí:
     // en un turno encadenado solo enviaríamos el mensaje sin contexto. El
-    // chat (chatWithPlan) captura este error y reintenta con el contexto
+    // chat (chatWithCoach) captura este error y reintenta con el contexto
     // completo en una sesión nueva.
     throw new Error("opencode: la sesión de chat caducó o ya no existe");
   }

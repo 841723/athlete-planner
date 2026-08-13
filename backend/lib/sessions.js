@@ -205,22 +205,20 @@ export function cleanupOldPlanned() {
   return 0;
 }
 
-export function loadPlannedSessions({ activeOnly = false } = {}) {
+export function loadPlannedSessions() {
   cleanupOldPlanned();
   const tenantId = getTenantId();
   if (!tenantId) return [];
-  const activeClause = activeOnly
-    ? "AND (json_extract(data, '$.plan_id') IS NULL OR json_extract(data, '$.plan_id') = COALESCE((SELECT id FROM plans WHERE tenant_id = ? AND active = 1 LIMIT 1), (SELECT id FROM plans WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1)))"
-    : "";
-  const params = activeOnly ? [tenantId, tenantId, tenantId] : [tenantId];
   const rows = getDb()
-    .prepare(`SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' ${activeClause} ORDER BY start_date_local`)
-    .all(...params);
+    .prepare(
+      "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' ORDER BY start_date_local"
+    )
+    .all(tenantId);
   return rowsToSessions(rows);
 }
 
 export function loadAllSessions() {
-  return { completed: loadCompletedSessions(), planned: loadPlannedSessions({ activeOnly: true }) };
+  return { completed: loadCompletedSessions(), planned: loadPlannedSessions() };
 }
 
 export function getSession(id) {

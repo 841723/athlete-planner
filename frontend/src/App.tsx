@@ -5,8 +5,7 @@ import { HomePage } from "@/pages/home";
 import { CalendarPage } from "@/pages/calendar";
 import { WeeklyPage } from "@/pages/weekly";
 import { StatsPage } from "@/pages/stats";
-import { TrainerPage } from "@/pages/planned";
-import { PlanDetailPage } from "@/pages/plan-detail";
+import { TrainerPage } from "@/pages/trainer";
 import { SessionDetailPage } from "@/pages/session-detail";
 import { ConfigLayout } from "@/components/config/config-layout";
 import { GeneralTab } from "@/components/config/general-tab";
@@ -22,7 +21,6 @@ import { AdminTenants } from "@/components/admin/admin-tenants";
 import { AdminObservability } from "@/components/admin/admin-observability";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
-import { usePlanGenerationWatcher } from "@/hooks/use-plan-generation-watcher";
 
 function HomeRedirect() {
   const { activeTenantId } = useAuth();
@@ -30,7 +28,6 @@ function HomeRedirect() {
 }
 
 function App() {
-  usePlanGenerationWatcher();
   return (
     <Shell>
       <Routes>
@@ -40,10 +37,7 @@ function App() {
           <Route path="/:tenantId/calendar" element={<CalendarPage />} />
           <Route path="/:tenantId/weekly" element={<WeeklyPage />} />
           <Route path="/:tenantId/stats" element={<StatsPage />} />
-          <Route path="/:tenantId/planned" element={<Navigate to="../trainer" replace />} />
-          <Route path="/:tenantId/planned/:planId" element={<PlanDetailPage />} />
           <Route path="/:tenantId/trainer" element={<TrainerPage />} />
-          <Route path="/:tenantId/trainer/:planId" element={<PlanDetailPage />} />
           <Route path="/:tenantId/session/:id" element={<SessionDetailPage />} />
           <Route path="/:tenantId/config" element={<ConfigLayout />}>
             <Route index element={<Navigate to="general" replace />} />
