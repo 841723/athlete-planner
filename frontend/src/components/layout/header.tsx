@@ -28,7 +28,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass border-b border-white/5 px-3 py-3 flex items-center justify-between sm:px-4">
+      <header className="sticky top-0 z-40 h-[64px]md:h-[74px] glass border-b border-white/5 px-3 py-3 flex items-center justify-between sm:px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             className="btn-icon shrink-0 md:hidden"
