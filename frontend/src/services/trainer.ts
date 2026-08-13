@@ -36,6 +36,10 @@ export function sendPlanChat(planId: string, message: string): Promise<PlanChatR
   return send(`/plans/${encodeURIComponent(planId)}/chat`, "POST", { message });
 }
 
+export function updatePlanChatInstructions(planId: string, instructions: string): Promise<{ instructions: string }> {
+  return send(`/plans/${encodeURIComponent(planId)}/chat/settings`, "PUT", { instructions });
+}
+
 export function cancelPlanChat(planId: string): Promise<{ cancelled: boolean }> {
   return send(`/plans/${encodeURIComponent(planId)}/chat/cancel`, "POST");
 }

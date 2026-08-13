@@ -8,6 +8,14 @@ import { ToastProvider } from "@/components/ui/toast";
 import App from "./App";
 import "./index.css";
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Push is optional and must not prevent the application from loading.
+    });
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

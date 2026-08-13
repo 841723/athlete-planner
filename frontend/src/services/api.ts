@@ -12,6 +12,7 @@ import type {
   SyncResult,
   SyncSourcesResponse,
   SyncSource,
+  Job,
   AiSettings,
   AiConfigsResponse,
   AiConfigPayload,
@@ -124,8 +125,28 @@ export function deletePlanned(id: string): Promise<void> {
   return send(`/planned/${encodeURIComponent(id)}`, "DELETE");
 }
 
-export function syncGarmin(): Promise<SyncResult> {
+export function syncGarmin(): Promise<Job> {
   return send("/sync", "POST");
+}
+
+export function fetchJobs(active = false): Promise<Job[]> {
+  return get(`/jobs${active ? "?active=true" : ""}`);
+}
+
+export function cancelJob(id: string): Promise<Job> {
+  return send(`/jobs/${encodeURIComponent(id)}/cancel`, "POST");
+}
+
+export function fetchAdminSyncJobs(): Promise<Record<string, unknown>[]> {
+  return get("/admin/sync/jobs");
+}
+
+export function fetchAdminAiUsage(): Promise<Record<string, unknown>[]> {
+  return get("/admin/ai-usage/summary");
+}
+
+export function fetchAdminAiLogs(): Promise<Record<string, unknown>[]> {
+  return get("/admin/ai-logs");
 }
 
 export function fetchSyncSources(): Promise<SyncSourcesResponse> {
@@ -394,6 +415,23 @@ export function fetchAiLogs(options: {
 
 export function fetchEquipment(): Promise<EquipmentResponse> {
   return get("/equipment");
+}
+
+export interface PushConfig {
+  enabled: boolean;
+  publicKey: string | null;
+}
+
+export function fetchPushConfig(): Promise<PushConfig> {
+  return get("/push/config");
+}
+
+export function savePushSubscription(subscription: PushSubscriptionJSON): Promise<{ ok: boolean }> {
+  return send("/push/subscriptions", "POST", subscription);
+}
+
+export function deletePushSubscription(endpoint: string): Promise<void> {
+  return send("/push/subscriptions", "DELETE", { endpoint });
 }
 
 export function saveEquipment(

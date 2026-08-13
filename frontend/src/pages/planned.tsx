@@ -8,7 +8,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 import { formatTrainingDay } from "@/lib/utils";
 import { tenantPath } from "@/lib/tenant";
@@ -58,7 +58,7 @@ function PlanCard({
 
   return (
     <Link
-      to={tenantPath(activeTenantId, `/planned/${plan.id}`)}
+      to={tenantPath(activeTenantId, `/trainer/${plan.id}`)}
       className="card group flex items-center gap-4 p-5 transition-colors hover:border-accent/40"
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15">
@@ -172,8 +172,8 @@ export function PlannedPage() {
     <div className="mx-auto max-w-5xl animate-fade-in">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Planificadas</h1>
-          <p className="mt-1 text-sm text-gray-500">Elige un plan para ver sus sesiones, análisis y conversación.</p>
+          <h1 className="text-3xl font-bold">Entrenador</h1>
+          <p className="mt-1 text-sm text-gray-500">Tu planificación continua y conversación con el entrenador.</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -224,4 +224,15 @@ export function PlannedPage() {
       <GeneratePlanModal open={generateOpen} onClose={() => setGenerateOpen(false)} />
     </div>
   );
+}
+
+export function TrainerPage() {
+  const { data: plans, isLoading } = usePlans();
+  const { activeTenantId } = useAuth();
+  if (isLoading) return <Skeleton className="mx-auto h-64 max-w-5xl rounded-2xl" />;
+  const plan = plans?.[0];
+  if (!plan) {
+    return <PlannedPage />;
+  }
+  return <Navigate to={tenantPath(activeTenantId, `/trainer/${plan.id}`)} replace />;
 }

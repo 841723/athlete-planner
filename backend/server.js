@@ -10,6 +10,7 @@ import { AUTH_COOKIE, TENANT_COOKIE, getUserByToken, getMembership } from "./lib
 import { getApiKeyContext } from "./lib/api-keys.js";
 import { withTenant } from "./lib/sessions.js";
 import { migrate } from "./lib/migrate.js";
+import { startWorker } from "./worker.js";
 import { serveStatic, parseCookies, sendJson, sendError } from "./lib/http.js";
 import { buildPublicRouter, buildUserRouter, buildTenantRouter } from "./routes/index.js";
 import { pruneAiLogContent } from "./lib/ai-logs.js";
@@ -123,6 +124,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
   const migrated = migrate();
+  startWorker();
   pruneAiLogContent();
   const logCleanup = setInterval(pruneAiLogContent, 24 * 60 * 60 * 1000);
   logCleanup.unref?.();

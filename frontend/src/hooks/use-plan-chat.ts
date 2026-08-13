@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchPlanChat, sendPlanChat, deletePlanChat, cancelPlanChat } from "@/services/trainer";
+import { fetchPlanChat, sendPlanChat, deletePlanChat, cancelPlanChat, updatePlanChatInstructions } from "@/services/trainer";
 import { useToast } from "@/components/ui/toast";
 import { invalidateMany } from "@/lib/invalidate";
 import type { PlanChat, PlanChatReply, PlanMessage } from "@/types/session";
@@ -82,6 +82,20 @@ export function useCancelPlanChat() {
     onError: (err) => {
       toast({ type: "error", title: "Error al cancelar la respuesta", description: err.message });
     },
+  });
+}
+
+export function useUpdatePlanChatInstructions() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ planId, instructions }: { planId: string; instructions: string }) => updatePlanChatInstructions(planId, instructions),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: planChatKey(vars.planId) });
+      void qc.invalidateQueries({ queryKey: ["plan-detail"] });
+      toast({ type: "success", title: "Instrucciones del chat guardadas" });
+    },
+    onError: (err: Error) => toast({ type: "error", title: "No se pudieron guardar las instrucciones", description: err.message }),
   });
 }
 

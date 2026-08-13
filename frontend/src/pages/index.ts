@@ -2,4 +2,4 @@ export { HomePage } from "./home";
 export { CalendarPage } from "./calendar";
 export { WeeklyPage } from "./weekly";
 export { StatsPage } from "./stats";
-export { PlannedPage } from "./planned";
+export { PlannedPage, TrainerPage } from "./planned";

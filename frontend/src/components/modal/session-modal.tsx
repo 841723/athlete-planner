@@ -216,7 +216,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
             <ExternalLink className="w-4 h-4" /> Ver página completa
           </button>
           <a
-            href={`https://connect.garmin.com/modern/activity/${session.id}`}
+            href={`https://connect.garmin.com/modern/activity/${session.external_id ?? session.id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-ghost text-sm"

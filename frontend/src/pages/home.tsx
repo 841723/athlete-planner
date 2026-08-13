@@ -4,14 +4,11 @@ import { StreakCard } from "@/components/home/streak-card";
 import { RecentActivity } from "@/components/home/recent-activity";
 import { WeeklyVolume } from "@/components/home/weekly-volume";
 import { UpcomingGoals } from "@/components/home/upcoming-goals";
-import { SyncButton } from "@/components/layout/sync-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSessions } from "@/hooks/use-sessions";
-import { usePermissions } from "@/hooks/use-permissions";
 
 export function HomePage() {
   const { data, isLoading } = useSessions();
-  const perms = usePermissions();
 
   if (isLoading) {
     return (
@@ -35,7 +32,6 @@ export function HomePage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inicio</h1>
-        {perms.canSync && <SyncButton />}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">

@@ -16,14 +16,16 @@ const PLAN_COLUMNS = `id, created_at, comments, weeks, response_id,
               request_comments AS requestComments,
               started_at AS startedAt,
               finished_at AS finishedAt,
-              chat_pending AS chatPending`;
+              chat_pending AS chatPending,
+              active,
+              chat_instructions AS chatInstructions`;
 
-export function savePlan(tenantId, { comments, weeks, aiConfigId = null, promptId, promptName, responseId = null, status = "completed", requestComments = null }) {
+export function savePlan(tenantId, { comments, weeks, aiConfigId = null, promptId, promptName, responseId = null, status = "completed", requestComments = null, active = false }) {
   const id = randomUUID();
   getDb()
     .prepare(
-      `INSERT INTO plans (id, tenant_id, created_at, comments, weeks, prompt_id, prompt_name, ai_config_id, response_id, status, request_comments, started_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO plans (id, tenant_id, created_at, comments, weeks, prompt_id, prompt_name, ai_config_id, response_id, status, request_comments, started_at, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       id,
@@ -37,9 +39,37 @@ export function savePlan(tenantId, { comments, weeks, aiConfigId = null, promptI
       responseId,
       status,
       requestComments,
-      new Date().toISOString()
+      new Date().toISOString(),
+      active ? 1 : 0,
     );
   return id;
+}
+
+export function activatePlan(tenantId, planId) {
+  const db = getDb();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const exists = db.prepare("SELECT id FROM plans WHERE tenant_id = ? AND id = ?").get(tenantId, planId);
+    if (!exists) throw new Error("Plan no encontrado");
+    db.prepare("UPDATE plans SET active = 0 WHERE tenant_id = ?").run(tenantId);
+    db.prepare("UPDATE plans SET active = 1 WHERE tenant_id = ? AND id = ?").run(tenantId, planId);
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* ignore */ }
+    throw error;
+  }
+}
+
+export function getActivePlan(tenantId) {
+  recoverStalePlans(tenantId);
+  recoverStaleChat(tenantId);
+  const db = getDb();
+  let row = db.prepare(`SELECT ${PLAN_COLUMNS} FROM plans WHERE tenant_id = ? AND active = 1 LIMIT 1`).get(tenantId);
+  if (!row) {
+    row = db.prepare(`SELECT ${PLAN_COLUMNS} FROM plans WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1`).get(tenantId);
+    if (row) activatePlan(tenantId, row.id);
+  }
+  return row ? { ...row, active: true, ...getPlanProgress(tenantId, row.id) } : null;
 }
 
 export function updatePlanStatus(planId, status, error = null) {
@@ -54,6 +84,18 @@ export function updatePlanStatus(planId, status, error = null) {
       .prepare("UPDATE plans SET status = ?, error = ? WHERE id = ?")
       .run(status, error, planId);
   }
+}
+
+export function updatePlanRequest(planId, { weeks, aiConfigId, promptId, promptName, requestComments }) {
+  getDb().prepare(
+    "UPDATE plans SET weeks = ?, ai_config_id = ?, prompt_id = ?, prompt_name = ?, request_comments = ?, error = NULL WHERE id = ?"
+  ).run(weeks, aiConfigId ?? null, promptId ?? null, promptName ?? null, requestComments ?? "", planId);
+}
+
+export function updatePlanChatInstructions(tenantId, planId, instructions) {
+  return getDb().prepare(
+    "UPDATE plans SET chat_instructions = ? WHERE tenant_id = ? AND id = ?"
+  ).run(instructions?.trim() || null, tenantId, planId).changes > 0;
 }
 
 export function updatePlanResult(planId, { comments, responseId }) {
@@ -155,15 +197,8 @@ export function getPlanProgress(tenantId, planId) {
 }
 
 export function listPlans(tenantId) {
-  recoverStalePlans(tenantId);
-  recoverStaleChat(tenantId);
-  return getDb()
-    .prepare(
-      `SELECT ${PLAN_COLUMNS}
-       FROM plans WHERE tenant_id = ? ORDER BY created_at DESC`
-    )
-    .all(tenantId)
-    .map((plan) => ({ ...plan, ...getPlanProgress(tenantId, plan.id) }));
+  const active = getActivePlan(tenantId);
+  return active ? [active] : [];
 }
 
 export function getPlan(tenantId, planId) {

@@ -29,11 +29,10 @@ export function SyncButton() {
       </button>
 
       <SyncProgressModal
-        open={mutation.isPending || mutation.isSuccess || mutation.isError}
+        open={mutation.isPending || mutation.isError}
         isPending={mutation.isPending}
-        isSuccess={mutation.isSuccess}
+        isSuccess={false}
         isError={mutation.isError}
-        data={mutation.data}
         error={mutation.error}
         onClose={() => mutation.reset()}
       />

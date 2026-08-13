@@ -12,7 +12,7 @@ const baseNavItems = [
   { path: "/calendar", label: "Calendario", icon: Calendar },
   { path: "/weekly", label: "Semanal", icon: ChartBar },
   { path: "/stats", label: "Estadísticas", icon: Trophy },
-  { path: "/planned", label: "Planificadas", icon: ClipboardList },
+  { path: "/trainer", label: "Entrenador", icon: ClipboardList },
 ];
 
 export function Header() {

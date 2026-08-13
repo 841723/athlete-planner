@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileForm } from "@/components/config/profile-form";
 import type { FocusSport } from "@/types/session";
+import { PushNotifications } from "@/components/config/push-notifications";
 
 const FOCUS_OPTIONS: { id: FocusSport; label: string; emoji: string }[] = [
   { id: "running", label: "Running", emoji: "🏃" },
@@ -122,6 +123,8 @@ export function GeneralTab() {
         </h2>
         <ProfileForm canManage={perms.canManageUsers} />
       </div>
+
+      <PushNotifications />
     </>
   );
 }

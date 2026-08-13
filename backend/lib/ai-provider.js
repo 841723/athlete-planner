@@ -189,6 +189,7 @@ async function callOpencode(settings, { systemPrompt, input, sessionId = null },
   } finally {
     await logAiRequest({
       ...logFields(actor),
+      operationType: "chat",
       provider: providerId,
       model,
       endpoint: baseUrl,
@@ -227,6 +228,7 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
     const { inputTokens, outputTokens, cost } = computeCost(providerId, usage, settings?.pricing);
     await logAiRequest({
       ...logFields(actor),
+      operationType: "chat",
       provider: providerId,
       model: base.defaultModel,
       endpoint: "mock://callAiChat",
@@ -310,6 +312,7 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
   } finally {
     logAiRequest({
       ...logFields(actor),
+      operationType: "chat",
       provider: providerId,
       model,
       endpoint,
@@ -349,6 +352,7 @@ export async function callAi(settings, { systemPrompt, userPrompt }, actor = nul
     const { inputTokens, outputTokens, cost } = computeCost(providerId, usage, settings?.pricing);
     await logAiRequest({
       ...logFields(actor),
+      operationType: "generation",
       provider: providerId,
       model: provider.defaultModel,
       endpoint: "mock://callAi",
@@ -421,6 +425,7 @@ export async function callAi(settings, { systemPrompt, userPrompt }, actor = nul
   } finally {
     logAiRequest({
       ...logFields(actor),
+      operationType: "generation",
       provider: providerId,
       model,
       endpoint,

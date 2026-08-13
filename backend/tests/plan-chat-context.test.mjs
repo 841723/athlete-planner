@@ -99,30 +99,30 @@ withTenant(tenantId, () => {
   });
 });
 
-test("el contexto del chat incluye solo actividades de las últimas 2 semanas y sus notas", () => {
+test("el contexto del chat incluye solo actividades de los últimos 30 días y sus notas", () => {
   withTenant(tenantId, () => {
     upsertSession(tenantId, "completed", {
-      id: "completed-within-two-weeks",
+      id: "completed-within-thirty-days",
       sport: "cycling",
-      name: "Actividad dentro de dos semanas",
-      start_date_local: `${dateAt(-13).slice(0, 10)}T07:00:00`,
+      name: "Actividad dentro de treinta días",
+      start_date_local: `${dateAt(-29).slice(0, 10)}T07:00:00`,
     });
     upsertSession(tenantId, "completed", {
-      id: "completed-outside-two-weeks",
+      id: "completed-outside-thirty-days",
       sport: "cycling",
-      name: "Actividad fuera de dos semanas",
-      start_date_local: `${dateAt(-15).slice(0, 10)}T07:00:00`,
+      name: "Actividad fuera de treinta días",
+      start_date_local: `${dateAt(-31).slice(0, 10)}T07:00:00`,
     });
   });
   const prompt = withTenant(tenantId, () => buildChatUserPrompt(planId, "Analiza mi semana"));
 
-  assert.match(prompt, /ACTIVIDADES REALIZADAS — ÚLTIMAS 2 SEMANAS/);
+  assert.match(prompt, /ACTIVIDADES REALIZADAS — ÚLTIMOS 30 DÍAS/);
   assert.match(prompt, /Me encontré bien; terminé algo más rápido/);
   assert.match(prompt, /Carrera Z2 realizada/);
   assert.match(prompt, /Actividad real fuera de este plan/);
-  assert.match(prompt, /Actividad dentro de dos semanas/);
-  assert.doesNotMatch(prompt, /Actividad fuera de dos semanas/);
-  const completedSection = prompt.split("ACTIVIDADES REALIZADAS — ÚLTIMAS 2 SEMANAS")[1].split("MENSAJE DEL ATLETA")[0];
+  assert.match(prompt, /Actividad dentro de treinta días/);
+  assert.doesNotMatch(prompt, /Actividad fuera de treinta días/);
+  const completedSection = prompt.split("ACTIVIDADES REALIZADAS — ÚLTIMOS 30 DÍAS")[1].split("MENSAJE DEL ATLETA")[0];
   assert.doesNotMatch(completedSection, /60 min suaves/);
   assert.doesNotMatch(completedSection, /Actividad antigua/);
 });

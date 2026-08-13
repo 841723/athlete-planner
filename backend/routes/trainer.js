@@ -1,8 +1,7 @@
-import { generatePlan } from "../lib/trainer.js";
-import { listPlans, getPlan, getPlanDto, savePlan, hasActiveGeneration, updatePlanStatus } from "../lib/plans.js";
+import { listPlans, getPlan, getPlanDto, getActivePlan, savePlan, updatePlanRequest, hasActiveGeneration, updatePlanStatus } from "../lib/plans.js";
 import { getPrompt } from "../lib/ai-prompts.js";
 import { getAiConfigWithKey, getDefaultAiConfig } from "../lib/ai-configs.js";
-import { withTenant } from "../lib/sessions.js";
+import { createJob } from "../lib/jobs.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 function toPlanDto(p) {
@@ -20,22 +19,9 @@ function toPlanDto(p) {
     totalSessions: p.totalSessions ?? 0,
     completedSessions: p.completedSessions ?? 0,
     trainingCompleted: p.trainingCompleted ?? false,
+    active: Boolean(p.active),
+    chatInstructions: p.chatInstructions ?? "",
   };
-}
-
-function startBackgroundGeneration({ planId, comments, weeks, aiConfigId, promptId, equipment, settings, actor, tenantId }) {
-  withTenant(tenantId, () =>
-    generatePlan({
-      comments,
-      weeks,
-      aiConfigId,
-      promptId,
-      equipment,
-      settings,
-      actor,
-      planId,
-    }).catch((err) => console.error("Generación asíncrona del plan falló:", err.message))
-  );
 }
 
 function resolveConfig(c, aiConfigId) {
@@ -56,7 +42,8 @@ export function register(router) {
 
   router.post("/api/generate-plan", async (c) => {
     if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
-    if (hasActiveGeneration(c.tenantId)) {
+    const activePlan = getActivePlan(c.tenantId);
+    if (activePlan?.status === "pending" || activePlan?.status === "generating" || hasActiveGeneration(c.tenantId)) {
       return sendJson(c.res, 409, { error: "Ya hay un plan en generación. Espera a que termine antes de generar otro." });
     }
     const body = await readBody(c.req);
@@ -79,29 +66,35 @@ export function register(router) {
     if (promptId && (!prompt || prompt.tenant_id !== c.tenantId)) {
       return sendJson(c.res, 404, { error: "Prompt no encontrado" });
     }
-    const planId = savePlan(c.tenantId, {
-      comments: "",
-      weeks,
-      aiConfigId: settings.id,
-      promptId,
-      promptName: prompt?.name ?? null,
-      status: "pending",
-      requestComments: comments,
-    });
+    let planId = activePlan?.id;
+    if (planId) {
+      updatePlanRequest(planId, { weeks, aiConfigId: settings.id, promptId, promptName: prompt?.name ?? null, requestComments: comments });
+      updatePlanStatus(planId, "pending");
+    } else {
+      planId = savePlan(c.tenantId, {
+        comments: "",
+        weeks,
+        aiConfigId: settings.id,
+        promptId,
+        promptName: prompt?.name ?? null,
+        status: "pending",
+        requestComments: comments,
+        active: true,
+      });
+    }
 
-    startBackgroundGeneration({
-      planId,
-      comments,
-      weeks,
-      aiConfigId: settings.id,
-      promptId,
-      equipment,
-      settings,
-      actor: c.actor,
+    const job = createJob({
       tenantId: c.tenantId,
+      userId: c.actor?.userId ?? null,
+      type: "plan_generation",
+      dedupeKey: `plan-generation:${planId}`,
+      payload: { comments, weeks, aiConfigId: settings.id, promptId, equipment },
+      relatedResourceType: "plan",
+      relatedResourceId: planId,
+      deepLink: `/${c.tenantId}/planned/${planId}`,
     });
 
-    return sendJson(c.res, 202, toPlanDto(getPlan(c.tenantId, planId)));
+    return sendJson(c.res, 202, { ...toPlanDto(getPlan(c.tenantId, planId)), jobId: job.id });
   });
 
   router.post("/api/plans/:id/generate", async (c) => {
@@ -121,18 +114,23 @@ export function register(router) {
 
     updatePlanStatus(plan.id, "pending");
 
-    startBackgroundGeneration({
-      planId: plan.id,
-      comments: plan.requestComments ?? "",
-      weeks: plan.weeks ?? 1,
-      aiConfigId: settings.id,
-      promptId: plan.promptId ?? null,
-      equipment: null,
-      settings,
-      actor: c.actor,
+    const job = createJob({
       tenantId: c.tenantId,
+      userId: c.actor?.userId ?? null,
+      type: "plan_generation",
+      dedupeKey: `plan-generation:${plan.id}`,
+      payload: {
+        comments: plan.requestComments ?? "",
+        weeks: plan.weeks ?? 1,
+        aiConfigId: settings.id,
+        promptId: plan.promptId ?? null,
+        equipment: null,
+      },
+      relatedResourceType: "plan",
+      relatedResourceId: plan.id,
+      deepLink: `/${c.tenantId}/planned/${plan.id}`,
     });
 
-    return sendJson(c.res, 202, toPlanDto(getPlan(c.tenantId, plan.id)));
+    return sendJson(c.res, 202, { ...toPlanDto(getPlan(c.tenantId, plan.id)), jobId: job.id });
   });
 }

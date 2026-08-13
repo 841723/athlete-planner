@@ -380,7 +380,7 @@ export function SessionDetailPage() {
       {/* Enlaces externos */}
       <div className="flex gap-2 mb-8">
         <a
-          href={`https://connect.garmin.com/modern/activity/${session.id}`}
+          href={`https://connect.garmin.com/modern/activity/${session.external_id ?? session.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-primary text-sm inline-flex items-center gap-1.5"

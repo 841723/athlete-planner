@@ -33,6 +33,8 @@ export const SPORT_LABELS: Record<SportCategory, string> = {
 export interface Session {
   schema_version: number;
   id: string;
+  source?: string;
+  external_id?: string;
   sport: string;
   name: string;
   title?: string;
@@ -312,6 +314,22 @@ export interface SyncResult {
   message?: string;
 }
 
+export interface Job {
+  id: string;
+  tenant_id: string;
+  type: "sync" | "plan_generation" | "plan_chat" | string;
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
+  related_resource_type?: string | null;
+  related_resource_id?: string | null;
+  deep_link?: string | null;
+  error?: string | null;
+  progress?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null;
+  created_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+}
+
 export interface SyncSource {
   provider: "garmin" | "strava";
   name: string;
@@ -549,6 +567,9 @@ export interface Plan {
   totalSessions?: number;
   completedSessions?: number;
   trainingCompleted?: boolean;
+  jobId?: string;
+  chatInstructions?: string;
+  active?: boolean;
 }
 
 export interface PlanMessage {
@@ -566,10 +587,12 @@ export interface PlanChat {
   canChat: boolean;
   chatPending: boolean;
   messages: PlanMessage[];
+  chatInstructions?: string;
 }
 
 export interface PlanChatReply {
   pending: boolean;
+  jobId?: string;
 }
 
 export interface EquipmentItem {

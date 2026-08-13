@@ -1,0 +1,13 @@
+{
+  "name": "edasi for athletes",
+  "short_name": "edasi",
+  "description": "Dashboard de entrenamiento para atletas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10151f",
+  "theme_color": "#10151f",
+  "icons": [
+    { "src": "/edasi-square.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/edasi-square-margin.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

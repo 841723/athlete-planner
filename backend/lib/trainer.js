@@ -23,7 +23,7 @@ import { listPlanMessages, addPlanMessage, replacePlanSessions } from "./plan-ch
 import { getEquipmentLabels } from "./equipment.js";
 import { getGoals } from "./goals.js";
 import { getFocusSports } from "./meta.js";
-import { subWeeks, format, parseISO, differenceInCalendarDays, startOfWeek } from "date-fns";
+import { subDays, subWeeks, format, parseISO, differenceInCalendarDays, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
 function requireRolePrompt(role) {
@@ -83,6 +83,13 @@ export function getRecentSessions(weeks = 8) {
       const sessionDate = new Date(s.start_date_local);
       return sessionDate >= cutoffDate;
     })
+    .sort((a, b) => (a.start_date_local ?? "").localeCompare(b.start_date_local ?? ""));
+}
+
+export function getRecentSessionsDays(days = 30) {
+  const cutoffDate = subDays(new Date(), days);
+  return loadCompletedSessions()
+    .filter((s) => s.start_date_local && new Date(s.start_date_local) >= cutoffDate)
     .sort((a, b) => (a.start_date_local ?? "").localeCompare(b.start_date_local ?? ""));
 }
 
@@ -334,7 +341,7 @@ function formatCoachInstructions(profile) {
 }
 
 function buildUserPrompt(comments, weeks, profile, metrics, equipment = null) {
-  const sessions = getRecentSessions(4);
+  const sessions = getRecentSessionsDays(30);
 
   const sessionsText = sessions.map(formatSessionForPrompt).join("\n");
 
@@ -360,12 +367,12 @@ function buildUserPrompt(comments, weeks, profile, metrics, equipment = null) {
   ].join("\n");
 
   const metricsLines = [];
-  if (metrics?.running?.current) metricsLines.push(`- Running Z2 (últimas 8 semanas): ${metrics.running.current}`);
-  if (metrics?.cycling?.current_power) metricsLines.push(`- Ciclismo (últimas 8 semanas): ${metrics.cycling.current_power}`);
-  if (metrics?.swimming?.current_pace) metricsLines.push(`- Natación (últimas 8 semanas): ${metrics.swimming.current_pace}`);
+  if (metrics?.running?.current) metricsLines.push(`- Running Z2 (últimos 30 días): ${metrics.running.current}`);
+  if (metrics?.cycling?.current_power) metricsLines.push(`- Ciclismo (últimos 30 días): ${metrics.cycling.current_power}`);
+  if (metrics?.swimming?.current_pace) metricsLines.push(`- Natación (últimos 30 días): ${metrics.swimming.current_pace}`);
   const metricsText =
     metricsLines.length > 0
-      ? `\nÚLTIMOS DATOS OBTENIDOS (derivados de tus sesiones de las últimas 8 semanas):\n${metricsLines.join("\n")}\n`
+      ? `\nÚLTIMOS DATOS OBTENIDOS (derivados de tus sesiones de los últimos 30 días):\n${metricsLines.join("\n")}\n`
       : "";
 
   const profileText =
@@ -402,7 +409,7 @@ CONTEXTO ACTUAL:
 - Hoy es: ${today}
 - Semana actual de entrenamiento: ${weekLabel} (contadas desde el inicio del plan)
 - El plan empieza HOY: ${today}. Programa las sesiones a partir de hoy (hoy incluido), no en el futuro ni esperando al lunes.
-- Sesiones de las últimas 8 semanas (incluye las notas que escribió el atleta tras cada sesión):
+- Sesiones de los últimos 30 días (incluye las notas que escribió el atleta tras cada sesión):
 
 ${sessionsText}
 ${metricsText}
@@ -475,7 +482,7 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
 
   const profile = getAthleteProfile() ?? {};
 
-  const recentSessions = getRecentSessions(4);
+  const recentSessions = getRecentSessionsDays(30);
   const metrics = deriveProfileMetrics(recentSessions);
   const updatedProfile = mergeProfileMetrics(profile, metrics);
 
@@ -520,18 +527,13 @@ export async function generatePlan({ comments = "", weeks = 1, aiConfigId = null
         promptName: prompt?.name ?? null,
         responseId,
         status: "completed",
+        active: true,
       });
     }
 
-    const createdSessions = [];
-    for (const rawSession of rawSessions) {
-      try {
-        const created = createPlannedSession(rawSession, id);
-        createdSessions.push(created);
-      } catch (err) {
-        console.error("Error creando sesión planificada:", err.message);
-      }
-    }
+    const createdSessions = planId
+      ? replacePlanSessions(id, rawSessions)
+      : rawSessions.map((rawSession) => createPlannedSession(rawSession, id));
 
     let profileUpdated = false;
     if (updated_profile && typeof updated_profile === "object") {
@@ -590,11 +592,11 @@ export function buildChatUserPrompt(planId, message, options = {}) {
     planned.length > 0
       ? planned.map(formatPlannedSessionForPrompt).join("\n")
       : "(no hay sesiones planificadas para este plan)";
-  const cutoff = format(subWeeks(new Date(), 2), "yyyy-MM-dd");
+  const cutoff = format(subDays(new Date(), 30), "yyyy-MM-dd");
   const completed = loadCompletedSessionsSince(cutoff);
   const completedText = completed.length > 0
     ? completed.map(formatCompletedSessionForPrompt).join("\n")
-    : "(no hay actividades realizadas en las últimas 2 semanas)";
+    : "(no hay actividades realizadas en los últimos 30 días)";
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
@@ -619,7 +621,8 @@ export function buildChatUserPrompt(planId, message, options = {}) {
 
   let historyText = "";
   if (options.includeHistory) {
-    const messages = listPlanMessages(planId);
+    const chatCutoff = subDays(new Date(), 30).toISOString();
+    const messages = listPlanMessages(planId).filter((m) => m.created_at >= chatCutoff);
     historyText =
       messages.length > 0
         ? `\nHISTORIAL DE LA CONVERSACIÓN (preguntas y respuestas anteriores del chat con este plan):\n${messages
@@ -644,7 +647,7 @@ El atleta quiere mejorar principalmente en estos deportes; el plan y tus propues
 PLAN ACTUAL (sesiones planeadas de este plan; [COMPLETADA] = ya realizada y fusionada con la actividad real, [PENDIENTE] = aún por hacer):
 ${planText}
 
-ACTIVIDADES REALIZADAS — ÚLTIMAS 2 SEMANAS (incluyen las fusionadas con sesiones planeadas de este plan y cualquier otra actividad registrada):
+ACTIVIDADES REALIZADAS — ÚLTIMOS 30 DÍAS (incluyen las fusionadas con sesiones planeadas de este plan y cualquier otra actividad registrada):
 ${completedText}
 ${historyText}
 MENSAJE DEL ATLETA:
@@ -676,14 +679,14 @@ export function parseChatResponse(response) {
 
 // Huella del contexto que se le envía al entrenador: perfil del atleta,
 // configuración relevante, equipamiento, sesiones del plan (con estado de
-// merge) y actividades completadas de las últimas 2 semanas. Si nada de esto
+// merge) y actividades completadas de los últimos 30 días. Si nada de esto
 // cambia, el contexto que ya conoce el proveedor sigue siendo válido y el chat
 // puede reutilizar el hilo anterior enviando solo el mensaje nuevo.
 export function computeContextHash(planId) {
   const profile = getAthleteProfile();
   const settings = getTenantSettings();
   const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
-  const cutoff = format(subWeeks(new Date(), 2), "yyyy-MM-dd");
+  const cutoff = format(subDays(new Date(), 30), "yyyy-MM-dd");
   const completed = loadCompletedSessionsSince(cutoff);
   const state = {
     today: format(new Date(), "yyyy-MM-dd"),
@@ -695,6 +698,7 @@ export function computeContextHash(planId) {
       trainingWeekOneStart: settings?.training_week_one_start ?? null,
     },
     equipment: getEquipmentLabels(getTenantId()),
+    chatInstructions: getPlan(getTenantId(), planId)?.chatInstructions ?? null,
     planned: planned.map((s) => ({
       id: s.id,
       date: (s.start_date_local ?? "").slice(0, 10),
@@ -757,7 +761,11 @@ export function applyChatProfileUpdate(tenantId, updatedProfile) {
 
 export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
   const tenantId = getTenantId();
-  const systemPrompt = requireRolePrompt("chat");
+  const plan = getPlan(tenantId, planId);
+  const baseSystemPrompt = requireRolePrompt("chat");
+  const systemPrompt = plan?.chatInstructions
+    ? `${baseSystemPrompt}\n\nINSTRUCCIONES PERSONALIZADAS DEL ENTRENADOR/ATLETA:\n${plan.chatInstructions}`
+    : baseSystemPrompt;
 
   // El contexto completo (perfil, plan, actividades recientes) solo se reenvía
   // cuando cambia de verdad: nueva actividad realizada, perfil editado, plan
@@ -766,7 +774,6 @@ export async function chatWithPlan({ planId, message, previousResponseId, settin
   // se reutiliza la interacción anterior enviando SOLO el mensaje nuevo. El
   // mock no mantiene un hilo real, así que siempre recibe el contexto completo.
   const currentHash = computeContextHash(planId);
-  const plan = getPlan(tenantId, planId);
   const contextChanged = currentHash !== plan?.contextHash;
 
   const threaded =

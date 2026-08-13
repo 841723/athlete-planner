@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, MessageCircle, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle2, ChevronsDownUp, ChevronsUpDown, ExternalLink, MessageCircle, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import { tenantPath } from "@/lib/tenant";
@@ -8,9 +8,9 @@ import { usePlanDetail } from "@/hooks/use-plan-detail";
 import { useDeletePlanned } from "@/hooks/use-planned";
 import { usePermissions } from "@/hooks/use-permissions";
 import { PlanChat } from "@/components/planned/plan-chat";
+import { PlanContextPanel } from "@/components/planned/plan-context-panel";
 import { SessionTextModal } from "@/components/planned/session-text-modal";
 import { WorkoutText } from "@/components/session/workout-text";
-import { Markdown } from "@/components/ui/markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTrainingDay, getSportColor, getSportLabel } from "@/lib/utils";
 import type { PlannedSessionView } from "@/types/session";
@@ -22,6 +22,12 @@ export function PlanDetailPage() {
   const permissions = usePermissions();
   const deleteMutation = useDeletePlanned();
   const [editingSession, setEditingSession] = useState<PlannedSessionView | null>(null);
+
+  const sessions = query.data?.plannedSessions ?? [];
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setExpandedSessions(new Set(sessions.map((session) => session.id)));
+  }, [query.data?.id, sessions.length]);
 
   if (query.isLoading) {
     return (
@@ -38,24 +44,27 @@ export function PlanDetailPage() {
     return (
       <div className="card p-10 text-center">
         <p className="text-gray-400">No se pudo cargar este plan.</p>
-        <Link to={tenantPath(activeTenantId, "/planned")} className="btn btn-primary mt-4 inline-flex">
-          Volver a planificadas
+        <Link to={tenantPath(activeTenantId, "/trainer")} className="btn btn-primary mt-4 inline-flex">
+          Volver al entrenador
         </Link>
       </div>
     );
   }
 
-  const sessions = plan.plannedSessions ?? [];
-  const orderedSessions = [...sessions].sort((a, b) => a.start_date_local.localeCompare(b.start_date_local));
+  const disciplineOrder = ["swimming", "cycling", "running", "strength", "hiking", "walking", "other"];
+  const orderedSessions = [...sessions].sort((a, b) => {
+    const discipline = disciplineOrder.indexOf(a.category) - disciplineOrder.indexOf(b.category);
+    return discipline || a.start_date_local.localeCompare(b.start_date_local);
+  });
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 animate-fade-in">
       <Link
-        to={tenantPath(activeTenantId, "/planned")}
+        to={tenantPath(activeTenantId, "/trainer")}
         className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200"
       >
         <ArrowLeft className="h-4 w-4" />
-        Planificadas
+        Entrenador
       </Link>
 
       <header className="card bg-gradient-to-br from-accent/10 via-dark-200 to-dark-200 p-5 sm:p-7">
@@ -63,50 +72,18 @@ export function PlanDetailPage() {
           <div className="flex-1">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent-light">
               <Sparkles className="h-4 w-4" />
-              Plan de entrenamiento
+              Entrenador
             </div>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
-              Plan de entrenamiento
+              Tu entrenador personal
             </h1>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5" />
-                  {orderedSessions.length > 0
-                   ? `${formatTrainingDay(orderedSessions[0].start_date_local, orderedSessions[0].weekNumber)} - ${formatTrainingDay(orderedSessions[orderedSessions.length - 1].start_date_local, orderedSessions[orderedSessions.length - 1].weekNumber)}`
-                  : `${plan.weeks} semanas`}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="h-3.5 w-3.5" />
-                {plan.completedSessions ?? 0}/{sessions.length} realizados
-              </span>
-            </div>
+            <p className="mt-2 text-sm text-gray-400">Recomendaciones que evolucionan con tu entrenamiento.</p>
           </div>
-
-          <span className={`badge ${plan.status === "failed" ? "bg-red-500/15 text-red-400" : plan.trainingCompleted ? "badge-completed" : "bg-amber-500/15 text-amber-400"}`}>
-            {plan.status === "failed"
-              ? "Error"
-              : plan.status === "generating"
-              ? "Generando"
-              : plan.status === "pending"
-              ? "Pendiente"
-              : plan.trainingCompleted
-              ? "Completado"
-              : "Activo"}
-          </span>
         </div>
       </header>
 
-      {plan.comments && (
-        <section className="card p-5">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-accent-light">
-            <Sparkles className="h-4 w-4" />
-            Análisis del entrenador
-          </div>
-          <Markdown text={plan.comments} />
-        </section>
-      )}
-
-      <section className="card p-5">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(15rem,18rem)]">
+      <section className="card p-5 lg:col-start-1 lg:row-start-1">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold">Entrenamientos</h2>
@@ -114,12 +91,23 @@ export function PlanDetailPage() {
               Las sesiones que pertenecen a este plan.
             </p>
           </div>
-          <span className="text-xs text-gray-500">{sessions.length} sesiones</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">{sessions.length} sesiones</span>
+            <button type="button" className="rounded-lg p-1.5 text-gray-500 hover:bg-dark-300 hover:text-gray-200" onClick={() => setExpandedSessions(new Set(sessions.map((session) => session.id)))} title="Extender todo" aria-label="Extender todo"><ChevronsUpDown className="h-4 w-4" /></button>
+            <button type="button" className="rounded-lg p-1.5 text-gray-500 hover:bg-dark-300 hover:text-gray-200" onClick={() => setExpandedSessions(new Set())} title="Colapsar todo" aria-label="Colapsar todo"><ChevronsDownUp className="h-4 w-4" /></button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {sessions.map((session) => (
-            <article key={session.id} className="rounded-xl border border-dark-400 bg-dark-300/30 p-4">
+        <div className="grid grid-cols-1 gap-3">
+          {orderedSessions.map((session, index) => (
+            <Fragment key={session.id}>
+            {(index === 0 || orderedSessions[index - 1].category !== session.category) && <h3 className="pt-2 text-xs font-semibold uppercase tracking-wider text-accent-light">{getSportLabel(session.category)}</h3>}
+            <details open={expandedSessions.has(session.id)} onToggle={(event) => {
+              const next = new Set(expandedSessions);
+              if (event.currentTarget.open) next.add(session.id); else next.delete(session.id);
+              setExpandedSessions(next);
+            }} className="rounded-xl border border-dark-400 bg-dark-300/30 p-4">
+              <summary className="cursor-pointer list-none">
               <div className="flex items-start gap-2">
                 <span className="mt-1 h-3 w-3 rounded-full" style={{ backgroundColor: getSportColor(session.category) }} />
                 <div className="min-w-0 flex-1">
@@ -154,6 +142,7 @@ export function PlanDetailPage() {
                   </button>
                 )}
               </div>
+              </summary>
 
               {session.completed_session && (
                 <Link
@@ -179,18 +168,24 @@ export function PlanDetailPage() {
                   </div>
                 )}
               </div>
-            </article>
+            </details>
+            </Fragment>
           ))}
         </div>
       </section>
 
-      <section>
+      <section className="min-w-0 lg:col-start-2 lg:row-start-1">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-accent-light">
           <MessageCircle className="h-4 w-4" />
           Conversación
         </div>
         <PlanChat plan={plan} />
       </section>
+
+      <div className="lg:col-start-3 lg:row-start-1">
+        <PlanContextPanel plan={plan} />
+      </div>
+      </div>
 
       {editingSession && (
         <SessionTextModal

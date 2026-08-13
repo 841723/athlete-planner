@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { getDb } from "./db.js";
-import { getTenantId, getTenantSettings, upsertSession } from "./sessions.js";
+import { getTenantId, getTenantSettings, upsertExternalSession } from "./sessions.js";
 import { mergePlannedWithCompleted } from "./merge.js";
 import { runPython, runNode, GARMIN_FETCH, SYNC_SESSIONS } from "./sync-run.js";
 import { getSyncSource, getSyncTokensRaw } from "./sync-sources.js";
@@ -26,9 +26,9 @@ function effectiveMinDate(config) {
 
 function existingIds() {
   const rows = getDb()
-    .prepare("SELECT id FROM sessions WHERE tenant_id = ? AND kind = 'completed'")
+    .prepare("SELECT external_activity_id FROM activity_sources WHERE tenant_id = ? AND source = 'garmin'")
     .all(getTenantId());
-  return new Set(rows.map((r) => String(r.id)));
+  return new Set(rows.map((r) => String(r.external_activity_id)));
 }
 
 async function fetchAllIds(tokensFile, dateArgs = []) {
@@ -56,8 +56,9 @@ function importNormalizedSessions(dir, ids) {
     if (!m || !ids.includes(m[1])) continue;
     try {
       const session = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
-      if (!session?.id) continue;
-      upsertSession(getTenantId(), "completed", session);
+      const externalId = m[1] ?? session?.external_id ?? session?.id;
+      if (!externalId || !session) continue;
+      upsertExternalSession(getTenantId(), "garmin", externalId, session);
       imported++;
     } catch {
       /* ignorar JSON inválido */

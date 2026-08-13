@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
 import { differenceInDays, parseISO, startOfWeek } from "date-fns";
 import { getDb } from "./db.js";
 
@@ -128,6 +129,41 @@ export function upsertSession(tenantId, kind, session) {
   );
 }
 
+export function upsertExternalSession(tenantId, source, externalId, incoming) {
+  const db = getDb();
+  const external = String(externalId);
+  const mapping = db.prepare(
+    "SELECT activity_id FROM activity_sources WHERE tenant_id = ? AND source = ? AND external_activity_id = ?"
+  ).get(tenantId, source, external);
+  let id = mapping?.activity_id ?? randomUUID();
+  let existing = null;
+  if (mapping) {
+    const row = db.prepare("SELECT data FROM sessions WHERE tenant_id = ? AND id = ? AND kind = 'completed'").get(tenantId, id);
+    if (row) {
+      try { existing = JSON.parse(row.data); } catch { existing = null; }
+    }
+  }
+  const session = {
+    ...(incoming ?? {}),
+    ...(existing ?? {}),
+    ...incoming,
+    id,
+    source,
+    external_id: external,
+    // Local edits remain authoritative when the source is synced again.
+    title: existing?.title ?? incoming?.title,
+    notes: existing?.notes ?? incoming?.notes,
+  };
+  upsertSession(tenantId, "completed", session);
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO activity_sources (activity_id, tenant_id, source, external_activity_id, metadata, created_at, updated_at)
+     VALUES (?, ?, ?, ?, NULL, ?, ?)
+     ON CONFLICT(tenant_id, source, external_activity_id) DO UPDATE SET activity_id = excluded.activity_id, updated_at = excluded.updated_at`
+  ).run(id, tenantId, source, external, now, now);
+  return session;
+}
+
 export function deleteSession(id) {
   const db = getDb();
   db.prepare("DELETE FROM sessions WHERE tenant_id = ? AND id = ?").run(
@@ -164,37 +200,27 @@ export function loadCompletedSessionsSince(cutoffDate) {
 }
 
 export function cleanupOldPlanned() {
-  const tenantId = getTenantId();
-  if (!tenantId) return 0;
-  const d = new Date();
-  d.setDate(d.getDate() - 5);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const cutoff = `${y}-${m}-${day}`;
-  return getDb()
-    .prepare(
-      `DELETE FROM sessions WHERE tenant_id = ? AND kind = 'planned'
-       AND substr(start_date_local, 1, 10) < ?
-       AND (json_extract(data, '$.merged_with') IS NULL OR json_extract(data, '$.merged_with') = '')`
-    )
-    .run(tenantId, cutoff).changes;
+  // El histórico del plan rolling no se elimina automáticamente. Las sesiones
+  // antiguas se conservan para análisis, contexto y trazabilidad.
+  return 0;
 }
 
-export function loadPlannedSessions() {
+export function loadPlannedSessions({ activeOnly = false } = {}) {
   cleanupOldPlanned();
   const tenantId = getTenantId();
   if (!tenantId) return [];
+  const activeClause = activeOnly
+    ? "AND (json_extract(data, '$.plan_id') IS NULL OR json_extract(data, '$.plan_id') = COALESCE((SELECT id FROM plans WHERE tenant_id = ? AND active = 1 LIMIT 1), (SELECT id FROM plans WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1)))"
+    : "";
+  const params = activeOnly ? [tenantId, tenantId, tenantId] : [tenantId];
   const rows = getDb()
-    .prepare(
-      "SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' ORDER BY start_date_local"
-    )
-    .all(tenantId);
+    .prepare(`SELECT data FROM sessions WHERE tenant_id = ? AND kind = 'planned' ${activeClause} ORDER BY start_date_local`)
+    .all(...params);
   return rowsToSessions(rows);
 }
 
 export function loadAllSessions() {
-  return { completed: loadCompletedSessions(), planned: loadPlannedSessions() };
+  return { completed: loadCompletedSessions(), planned: loadPlannedSessions({ activeOnly: true }) };
 }
 
 export function getSession(id) {

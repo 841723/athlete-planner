@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS tenants (
   slug TEXT NOT NULL UNIQUE,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  name TEXT PRIMARY KEY,
+  applied_at TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS tenant_members (
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -41,6 +45,46 @@ CREATE TABLE IF NOT EXISTS sessions (
   PRIMARY KEY (tenant_id, id)
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_tenant_date ON sessions(tenant_id, kind, start_date_local);
+
+CREATE TABLE IF NOT EXISTS jobs (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+  dedupe_key TEXT NOT NULL,
+  payload TEXT,
+  result TEXT,
+  related_resource_type TEXT,
+  related_resource_id TEXT,
+  deep_link TEXT,
+  progress TEXT,
+  error TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  started_at TEXT,
+  finished_at TEXT,
+  heartbeat_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_tenant_created ON jobs(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON jobs(status, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_active_dedupe
+  ON jobs(tenant_id, dedupe_key)
+  WHERE status IN ('pending', 'running');
+
+CREATE TABLE IF NOT EXISTS activity_sources (
+  activity_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  external_activity_id TEXT NOT NULL,
+  metadata TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (tenant_id, source, external_activity_id),
+  FOREIGN KEY (tenant_id, activity_id) REFERENCES sessions(tenant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_activity_sources_lookup
+  ON activity_sources(tenant_id, source, external_activity_id);
 
 CREATE TABLE IF NOT EXISTS athlete_profiles (
   tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
@@ -126,7 +170,9 @@ CREATE TABLE IF NOT EXISTS plans (
   started_at TEXT,
   finished_at TEXT,
   chat_pending INTEGER NOT NULL DEFAULT 0,
-  context_hash TEXT
+  context_hash TEXT,
+  active INTEGER NOT NULL DEFAULT 0,
+  chat_instructions TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_plans_tenant ON plans(tenant_id, created_at DESC);
 
@@ -213,6 +259,7 @@ CREATE TABLE IF NOT EXISTS ai_logs (
   api_key_id TEXT,
   auth_method TEXT NOT NULL,
   actor TEXT,
+  operation_type TEXT,
   provider TEXT NOT NULL,
   model TEXT,
   endpoint TEXT,
@@ -275,3 +322,19 @@ CREATE TABLE IF NOT EXISTS ai_model_catalog (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (provider, model_id)
 );
+
+-- Suscripciones Web Push por tenant y usuario/dispositivo.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  expiration_time INTEGER,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subscriptions_tenant_endpoint
+  ON push_subscriptions(tenant_id, endpoint);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_tenant ON push_subscriptions(tenant_id);

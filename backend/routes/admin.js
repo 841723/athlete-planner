@@ -49,6 +49,87 @@ export function registerAdmin(router) {
     });
   });
 
+  router.get("/api/admin/sync/jobs", (c) => {
+    gate(c);
+    const params = [];
+    const filters = [];
+    const tenant = c.url.searchParams.get("tenant");
+    const status = c.url.searchParams.get("status");
+    const type = c.url.searchParams.get("type");
+    const from = c.url.searchParams.get("from");
+    const to = c.url.searchParams.get("to");
+    if (tenant) { filters.push("j.tenant_id = ?"); params.push(tenant); }
+    if (status) { filters.push("j.status = ?"); params.push(status); }
+    if (type) { filters.push("j.type = ?"); params.push(type); }
+    if (from) { filters.push("j.created_at >= ?"); params.push(from); }
+    if (to) { filters.push("j.created_at <= ?"); params.push(to); }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+    const rows = getDb().prepare(
+      `SELECT j.*, t.name AS tenant_name, t.slug AS tenant_slug
+       FROM jobs j JOIN tenants t ON t.id = j.tenant_id
+       ${where} ORDER BY j.created_at DESC LIMIT 200`
+    ).all(...params);
+    return sendJson(c.res, 200, rows.map((row) => ({
+      ...row,
+      payload: null,
+      result: row.result ? JSON.parse(row.result) : null,
+      progress: row.progress ? JSON.parse(row.progress) : null,
+    })));
+  });
+
+  router.get("/api/admin/ai-usage/summary", (c) => {
+    gate(c);
+    const params = [];
+    const filters = [];
+    const tenant = c.url.searchParams.get("tenant");
+    const provider = c.url.searchParams.get("provider");
+    const model = c.url.searchParams.get("model");
+    const from = c.url.searchParams.get("from");
+    const to = c.url.searchParams.get("to");
+    if (tenant) { filters.push("l.tenant_id = ?"); params.push(tenant); }
+    if (provider) { filters.push("l.provider = ?"); params.push(provider); }
+    if (model) { filters.push("l.model = ?"); params.push(model); }
+    if (from) { filters.push("l.created_at >= ?"); params.push(from); }
+    if (to) { filters.push("l.created_at <= ?"); params.push(to); }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+    const rows = getDb().prepare(
+      `SELECT l.tenant_id, t.name AS tenant_name, t.slug AS tenant_slug,
+              l.provider, l.model, l.currency,
+              COUNT(*) AS calls, SUM(COALESCE(l.input_tokens, 0)) AS input_tokens,
+              SUM(COALESCE(l.output_tokens, 0)) AS output_tokens,
+              SUM(COALESCE(l.cost, 0)) AS cost, SUM(CASE WHEN l.ok = 1 THEN 1 ELSE 0 END) AS ok,
+              SUM(CASE WHEN l.ok = 0 THEN 1 ELSE 0 END) AS errors
+       FROM ai_logs l JOIN tenants t ON t.id = l.tenant_id
+       ${where}
+       GROUP BY l.tenant_id, l.provider, l.model, l.currency
+       ORDER BY cost DESC`
+    ).all(...params);
+    return sendJson(c.res, 200, rows);
+  });
+
+  router.get("/api/admin/ai-logs", (c) => {
+    gate(c);
+    const params = [];
+    const filters = [];
+    const tenant = c.url.searchParams.get("tenant");
+    const provider = c.url.searchParams.get("provider");
+    const model = c.url.searchParams.get("model");
+    const ok = c.url.searchParams.get("ok");
+    if (tenant) { filters.push("l.tenant_id = ?"); params.push(tenant); }
+    if (provider) { filters.push("l.provider = ?"); params.push(provider); }
+    if (model) { filters.push("l.model = ?"); params.push(model); }
+    if (ok === "ok" || ok === "error") { filters.push("l.ok = ?"); params.push(ok === "ok" ? 1 : 0); }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+    const rows = getDb().prepare(
+      `SELECT l.id, l.tenant_id, t.name AS tenant_name, l.user_id, l.auth_method,
+              l.actor, l.operation_type, l.provider, l.model, l.endpoint, l.status, l.ok, l.duration_ms,
+              l.input_tokens, l.output_tokens, l.cost, l.currency, l.created_at
+       FROM ai_logs l JOIN tenants t ON t.id = l.tenant_id
+       ${where} ORDER BY l.created_at DESC LIMIT 200`
+    ).all(...params);
+    return sendJson(c.res, 200, rows);
+  });
+
   router.put("/api/admin/settings", async (c) => {
     gate(c);
     const body = await readBody(c.req);

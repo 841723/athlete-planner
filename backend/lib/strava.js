@@ -1,5 +1,5 @@
 import { getDb } from "./db.js";
-import { upsertSession, getTenantId } from "./sessions.js";
+import { upsertExternalSession } from "./sessions.js";
 import { mergePlannedWithCompleted } from "./merge.js";
 import { setSyncSource } from "./sync-sources.js";
 
@@ -205,9 +205,9 @@ export async function syncStrava(tenantId, source) {
 
   const existing = new Set(
     getDb()
-      .prepare("SELECT id FROM sessions WHERE tenant_id = ? AND kind = 'completed'")
+      .prepare("SELECT external_activity_id FROM activity_sources WHERE tenant_id = ? AND source = 'strava'")
       .all(tenantId)
-      .map((r) => String(r.id))
+      .map((r) => String(r.external_activity_id))
   );
 
   const newIds = [];
@@ -228,7 +228,7 @@ export async function syncStrava(tenantId, source) {
   for (const id of newIds) {
     const detail = await fetchDetail(tokens, id);
     const session = normalizeStravaActivity(detail);
-    upsertSession(tenantId, "completed", session);
+    upsertExternalSession(tenantId, "strava", id, session);
     imported++;
   }
 

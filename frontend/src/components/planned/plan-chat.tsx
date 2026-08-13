@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bot,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   MessageCircle,
   Send,
@@ -29,7 +27,6 @@ export function PlanChat({ plan }: { plan: Plan }) {
   const sendMutation = useSendPlanChat();
   const cancelMutation = useCancelPlanChat();
   const [draft, setDraft] = useState("");
-  const [expanded, setExpanded] = useState(true);
   const [showLatest, setShowLatest] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -126,12 +123,7 @@ export function PlanChat({ plan }: { plan: Plan }) {
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-dark-400 bg-dark-200/60 shadow-lg">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-dark-300/40"
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-      >
+      <div className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
         <span className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15">
             <MessageCircle className="h-4 w-4 text-accent-light" />
@@ -143,11 +135,9 @@ export function PlanChat({ plan }: { plan: Plan }) {
             </span>
           </span>
         </span>
-        {expanded ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
-      </button>
+      </div>
 
-      {expanded && (
-        <div className="border-t border-dark-400">
+      <div className="border-t border-dark-400">
           <div
             ref={scrollRef}
             onScroll={handleScroll}
@@ -274,8 +264,7 @@ export function PlanChat({ plan }: { plan: Plan }) {
                 : "El chat estará disponible cuando el plan esté completo."}
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

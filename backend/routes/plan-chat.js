@@ -1,8 +1,7 @@
-import { getPlan, updatePlanResponseId, setChatPending } from "../lib/plans.js";
+import { getPlan, updatePlanResponseId, setChatPending, updatePlanChatInstructions } from "../lib/plans.js";
 import { listPlanMessages, addPlanMessage, deletePlanAndSessions } from "../lib/plan-chat.js";
-import { chatWithPlan } from "../lib/trainer.js";
 import { getAiConfigWithKey, getDefaultAiConfig } from "../lib/ai-configs.js";
-import { withTenant } from "../lib/sessions.js";
+import { createJob } from "../lib/jobs.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 function planConfig(c, plan) {
@@ -24,34 +23,6 @@ function getPlanOr404(c, planId) {
   return plan;
 }
 
-// Procesa la respuesta del entrenador fuera del ciclo de la petición HTTP para
-// que la conversación no dependa de que el navegador siga abierto: si el usuario
-// recarga o cierra la pestaña mientras la IA responde, el mensaje se persiste
-// igualmente y el frontend lo recoge al volver a consultar el chat.
-async function runChatReply({ planId, message, previousResponseId, settings, actor, tenantId }) {
-  await withTenant(tenantId, async () => {
-    try {
-      const result = await chatWithPlan({
-        planId,
-        message,
-        previousResponseId,
-        settings,
-        actor,
-      });
-      if (result.responseId) updatePlanResponseId(planId, result.responseId);
-    } catch (err) {
-      console.error("Error al responder en el chat del plan:", err.message);
-      addPlanMessage(
-        planId,
-        "assistant",
-        "No se pudo completar la respuesta en este momento. Vuelve a preguntar cuando quieras."
-      );
-    } finally {
-      setChatPending(planId, false);
-    }
-  });
-}
-
 export function register(router) {
   router.get("/api/plans/:id/chat", (c) => {
     const plan = getPlanOr404(c, c.params.id);
@@ -61,8 +32,20 @@ export function register(router) {
       planCreatedAt: plan.created_at,
       canChat: canChat(plan),
       chatPending: Boolean(plan.chatPending),
+      chatInstructions: plan.chatInstructions ?? "",
       messages: listPlanMessages(plan.id),
     });
+  });
+
+  router.put("/api/plans/:id/chat/settings", async (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    const plan = getPlanOr404(c, c.params.id);
+    if (!plan) return;
+    const body = await readBody(c.req);
+    const instructions = String(body?.instructions ?? "").trim();
+    if (instructions.length > 5000) return sendJson(c.res, 400, { error: "Las instrucciones no pueden superar 5.000 caracteres" });
+    updatePlanChatInstructions(c.tenantId, plan.id, instructions);
+    return sendJson(c.res, 200, { instructions });
   });
 
   router.post("/api/plans/:id/chat", async (c) => {
@@ -98,18 +81,22 @@ export function register(router) {
     addPlanMessage(plan.id, "user", message);
     setChatPending(plan.id, true);
 
-    // Respondemos de inmediato para no bloquear la pestaña; la respuesta llega
-    // en background y el frontend la muestra cuando vuelve a consultar.
-    void runChatReply({
-      planId: plan.id,
-      message,
-      previousResponseId: plan.response_id ?? null,
-      settings: config,
-      actor: c.actor,
+    const job = createJob({
       tenantId: c.tenantId,
+      userId: c.actor?.userId ?? null,
+      type: "plan_chat",
+      dedupeKey: `plan-chat:${plan.id}`,
+      payload: {
+        message,
+        previousResponseId: plan.response_id ?? null,
+        aiConfigId: config.id,
+      },
+      relatedResourceType: "plan",
+      relatedResourceId: plan.id,
+      deepLink: `/${c.tenantId}/planned/${plan.id}`,
     });
 
-    return sendJson(c.res, 200, { pending: true });
+    return sendJson(c.res, 202, { pending: true, jobId: job.id });
   });
 
   router.post("/api/plans/:id/chat/cancel", (c) => {

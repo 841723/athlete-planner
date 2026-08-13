@@ -44,7 +44,10 @@ services:
     environment:
       - NODE_ENV=development
       - OPENCODE_BASE_URL=http://opencode:4096
-    command: ["node", "--watch", "backend/server.js", "--port", "4000"]
+    # npm ci al arrancar: garantiza que node_modules (volumen anónimo) coincida
+    # siempre con package.json/package-lock, p. ej. al añadir una dependencia
+    # nueva como web-push sin necesidad de reconstruir la imagen.
+    command: ["sh", "-c", "npm ci --prefix backend && node --watch backend/server.js --port 4000"]
 
   frontend:
     build:

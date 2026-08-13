@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom";
-import { Cpu, Users } from "lucide-react";
+import { Activity, Cpu, Users } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 
 const TABS = [
   { path: "providers", label: "Proveedores", icon: Cpu },
   { path: "tenants", label: "Tenants", icon: Users },
+  { path: "observability", label: "Operaciones", icon: Activity },
 ];
 
 export function AdminLayout() {

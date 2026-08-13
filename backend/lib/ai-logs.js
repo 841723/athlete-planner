@@ -32,6 +32,7 @@ export function logAiRequest({
   apiKeyId = null,
   authMethod,
   actor = null,
+  operationType = null,
   provider,
   model,
   endpoint,
@@ -49,8 +50,8 @@ export function logAiRequest({
   if (!tenantId) return;
   getDb()
     .prepare(
-      `INSERT INTO ai_logs (id, tenant_id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO ai_logs (id, tenant_id, user_id, api_key_id, auth_method, actor, operation_type, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       randomUUID(),
@@ -59,6 +60,7 @@ export function logAiRequest({
       apiKeyId,
       authMethod,
       actor,
+      operationType,
       provider,
       model,
       endpoint,
@@ -76,7 +78,7 @@ export function logAiRequest({
     );
 }
 
-const LOG_SELECT = `SELECT id, user_id, api_key_id, auth_method, actor, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at`;
+const LOG_SELECT = `SELECT id, user_id, api_key_id, auth_method, actor, operation_type, provider, model, endpoint, api_key_masked, input, response, status, ok, duration_ms, input_tokens, output_tokens, cost, currency, created_at`;
 
 export function listAiLogs(tenantId, { limit = 50, offset = 0, ok = null, provider = null } = {}) {
   pruneAiLogContent();
