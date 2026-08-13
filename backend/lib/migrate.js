@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 import { upsertSession } from "./sessions.js";
 import { seedDefaultEquipment } from "./equipment.js";
-import { seedDefaultAiConfig } from "./ai-configs.js";
 import { seedDefaultGlobalSettings } from "./global-settings.js";
 import { syncSuperAdmins } from "./auth.js";
 
@@ -139,7 +138,6 @@ export function migrate() {
     seedGoals(tenantId);
     seedSettings(tenantId);
     seedDefaultEquipment(tenantId);
-    seedDefaultAiConfig(tenantId);
     const owner = seedOwner(tenantId);
     db.exec("COMMIT");
 

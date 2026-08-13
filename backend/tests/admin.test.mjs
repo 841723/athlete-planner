@@ -101,7 +101,7 @@ test("createAthlete crea tenant + owner + seeds; rechaza slug duplicado", () => 
   assert.equal(members[0].role, "athlete");
   assert.equal(members[0].isOwner, true);
   assert.equal(members[0].email, "sara@example.com");
-  assert.ok(listAiConfigs(athlete.id).length >= 1, "config de IA sembrada");
+  assert.ok(listAiConfigs(athlete.id).length === 0, "config de IA vacía al crear tenant");
 
   assert.throws(() => createAthlete({ name: "Sara", ownerEmail: "sara@example.com" }), /Ya existe un tenant/);
 });

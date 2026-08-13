@@ -590,11 +590,11 @@ export function buildChatUserPrompt(planId, message, options = {}) {
     planned.length > 0
       ? planned.map(formatPlannedSessionForPrompt).join("\n")
       : "(no hay sesiones planificadas para este plan)";
-  const cutoff = format(subWeeks(new Date(), 4), "yyyy-MM-dd");
+  const cutoff = format(subWeeks(new Date(), 2), "yyyy-MM-dd");
   const completed = loadCompletedSessionsSince(cutoff);
   const completedText = completed.length > 0
     ? completed.map(formatCompletedSessionForPrompt).join("\n")
-    : "(no hay actividades realizadas en las últimas 4 semanas)";
+    : "(no hay actividades realizadas en las últimas 2 semanas)";
   const profile = getAthleteProfile();
   const profileText =
     profile && Object.keys(profile).length > 0
@@ -644,7 +644,7 @@ El atleta quiere mejorar principalmente en estos deportes; el plan y tus propues
 PLAN ACTUAL (sesiones planeadas de este plan; [COMPLETADA] = ya realizada y fusionada con la actividad real, [PENDIENTE] = aún por hacer):
 ${planText}
 
-ACTIVIDADES REALIZADAS — ÚLTIMAS 4 SEMANAS (incluyen las fusionadas con sesiones planeadas de este plan y cualquier otra actividad registrada):
+ACTIVIDADES REALIZADAS — ÚLTIMAS 2 SEMANAS (incluyen las fusionadas con sesiones planeadas de este plan y cualquier otra actividad registrada):
 ${completedText}
 ${historyText}
 MENSAJE DEL ATLETA:
@@ -654,7 +654,7 @@ Responde con el JSON indicado en el system prompt.
 `.trim();
 }
 
-function parseChatResponse(response) {
+export function parseChatResponse(response) {
   const jsonMatch = response.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error("No se pudo encontrar JSON válido en la respuesta del chat");
@@ -662,8 +662,12 @@ function parseChatResponse(response) {
   try {
     const parsed = JSON.parse(jsonMatch[0]);
     return {
-      reply: typeof parsed.reply === "string" ? parsed.reply : "",
-      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      reply: typeof parsed.reply === "string" ? parsed.reply.trim() : "",
+      modified_sessions: parsed.modified_sessions === true,
+      sessions: parsed.sessions,
+      modified_profile: parsed.modified_profile === true,
+      updated_profile: parsed.updated_profile,
+      profile_change: typeof parsed.profile_change === "string" ? parsed.profile_change.trim() : "",
     };
   } catch {
     throw new Error("Error al parsear la respuesta JSON del chat");
@@ -672,14 +676,14 @@ function parseChatResponse(response) {
 
 // Huella del contexto que se le envía al entrenador: perfil del atleta,
 // configuración relevante, equipamiento, sesiones del plan (con estado de
-// merge) y actividades completadas de las últimas 4 semanas. Si nada de esto
+// merge) y actividades completadas de las últimas 2 semanas. Si nada de esto
 // cambia, el contexto que ya conoce el proveedor sigue siendo válido y el chat
 // puede reutilizar el hilo anterior enviando solo el mensaje nuevo.
 export function computeContextHash(planId) {
   const profile = getAthleteProfile();
   const settings = getTenantSettings();
   const planned = loadPlannedSessions().filter((s) => s.plan_id === planId);
-  const cutoff = format(subWeeks(new Date(), 4), "yyyy-MM-dd");
+  const cutoff = format(subWeeks(new Date(), 2), "yyyy-MM-dd");
   const completed = loadCompletedSessionsSince(cutoff);
   const state = {
     today: format(new Date(), "yyyy-MM-dd"),
@@ -711,6 +715,44 @@ export function computeContextHash(planId) {
     })),
   };
   return createHash("sha256").update(JSON.stringify(state)).digest("hex");
+}
+
+function validateChatSessions(rawSessions) {
+  if (!Array.isArray(rawSessions)) {
+    throw new Error("La respuesta del chat no contiene la lista de sesiones futura requerida");
+  }
+  for (const session of rawSessions) {
+    if (!session || typeof session !== "object" || Array.isArray(session)) {
+      throw new Error("La respuesta del chat contiene una sesión inválida");
+    }
+    if (!session.sport || typeof session.sport !== "string" || !session.start_date_local) {
+      throw new Error("Cada sesión del chat debe incluir sport y start_date_local");
+    }
+    const date = String(session.start_date_local).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new Error("Cada sesión del chat debe tener una fecha válida");
+    }
+  }
+}
+
+export function applyChatProfileUpdate(tenantId, updatedProfile) {
+  if (!isMeaningful(updatedProfile)) return { updated: false };
+  const normalized = normalizeProfile(updatedProfile);
+  if (!normalized) throw new Error("El perfil actualizado recibido del chat no es válido");
+
+  const current = getAthleteProfile() ?? {};
+  const merged = sanitizeProfile(mergeProfilePreserving(current, normalized));
+  for (const key of ["trainer_behavior", "filosofia", "analisis_requerido"]) {
+    if (current[key] != null && merged[key] == null) merged[key] = current[key];
+  }
+  if (JSON.stringify(merged) === JSON.stringify(current)) {
+    return { updated: false };
+  }
+
+  const versionId = saveProfileVersion(tenantId, merged, "ai");
+  if (!versionId) return { updated: false };
+  saveAthleteProfile(tenantId, merged);
+  return { updated: true };
 }
 
 export async function chatWithPlan({ planId, message, previousResponseId, settings, actor }) {
@@ -767,14 +809,30 @@ export async function chatWithPlan({ planId, message, previousResponseId, settin
   }
 
   const parsed = parseChatResponse(text);
-  const reply = parsed.reply || text;
+  if (!parsed.reply) {
+    throw new Error("La respuesta del chat no contiene un reply válido");
+  }
+  if (parsed.modified_sessions) validateChatSessions(parsed.sessions);
+
+  let profileUpdated = false;
+  if (parsed.modified_profile && isMeaningful(parsed.updated_profile)) {
+    if (!parsed.profile_change) {
+      throw new Error("La respuesta del chat marca el perfil como modificado, pero no incluye los cambios explicados");
+    }
+    profileUpdated = applyChatProfileUpdate(tenantId, parsed.updated_profile).updated;
+  }
+
+  let reply = parsed.reply;
+  if (parsed.modified_profile && parsed.profile_change) {
+    reply += `\n\nActualización del perfil: ${parsed.profile_change}`;
+  }
 
   addPlanMessage(planId, "assistant", reply);
 
   let sessionsUpdated = [];
-  if (parsed.sessions.length > 0) {
+  if (parsed.modified_sessions) {
     sessionsUpdated = replacePlanSessions(planId, parsed.sessions);
   }
 
-  return { reply, sessionsUpdated, responseId, tenantId };
+  return { reply, sessionsUpdated, profileUpdated, responseId, tenantId };
 }

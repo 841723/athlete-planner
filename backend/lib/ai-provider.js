@@ -65,11 +65,15 @@ function isoLocalDate(d) {
 function mockTextFor({ input, systemPrompt }) {
   const combined = `${systemPrompt ?? ""}\n\n${input ?? ""}`;
   if (combined.includes("MENSAJE DEL ATLETA")) {
-    return JSON.stringify({
-      reply:
-        "Respuesta simulada del proveedor mock (sin coste real). Conecta Google Gemini en Configuración → IA para respuestas reales. No se han modificado sesiones.",
-      sessions: [],
-    });
+      return JSON.stringify({
+        reply:
+          "Respuesta simulada del proveedor mock (sin coste real). Conecta Google Gemini en Configuración → IA para respuestas reales. No se han modificado sesiones.",
+        modified_sessions: false,
+        sessions: [],
+        modified_profile: false,
+        updated_profile: {},
+        profile_change: "",
+      });
   }
   if (combined.includes("Genera un plan de entrenamiento")) {
     const today = new Date();

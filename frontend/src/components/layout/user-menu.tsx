@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import { tenantPath } from "@/lib/tenant";
 
 export function UserMenu() {
   const { user, activeTenantId, logout } = useAuth();
   const perms = usePermissions();
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const close = () => setOpen(false);
 
+  useClickOutside(containerRef, close);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         className="btn-icon"
         onClick={() => setOpen(!open)}

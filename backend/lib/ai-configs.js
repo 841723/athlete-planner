@@ -83,8 +83,11 @@ export function seedDefaultAiConfig(tenantId) {
   seedFromLegacy(tenantId);
 }
 
+// Los tenants nuevos arrancan SIN configuración de IA: no se siembra ningún
+// proveedor por defecto. La configuración se crea explícitamente desde
+// Configuración → IA. seedDefaultAiConfig queda disponible como migración
+// puntual para tenants con settings legadas.
 export function listAiConfigs(tenantId) {
-  seedDefaultAiConfig(tenantId);
   return getDb()
     .prepare(
       "SELECT id, name, provider, model, base_url, currency, chat_duration_hours, pricing, is_default FROM ai_configs WHERE tenant_id = ? ORDER BY is_default DESC, created_at ASC"
@@ -104,7 +107,6 @@ export function getAiConfigWithKey(tenantId, configId) {
 }
 
 export function getDefaultAiConfig(tenantId, withKey = false) {
-  seedDefaultAiConfig(tenantId);
   let row = getDb().prepare("SELECT * FROM ai_configs WHERE tenant_id = ? AND is_default = 1").get(tenantId);
   if (!row) {
     row = getDb().prepare("SELECT * FROM ai_configs WHERE tenant_id = ? ORDER BY created_at ASC LIMIT 1").get(tenantId);

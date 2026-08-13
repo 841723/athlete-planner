@@ -3,7 +3,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
 import { seedDefaultEquipment } from "./equipment.js";
-import { seedDefaultAiConfig } from "./ai-configs.js";
 import { seedTenantPrompts } from "./ai-prompts.js";
 import { seedDefaultGlobalSettings } from "./global-settings.js";
 
@@ -80,7 +79,6 @@ export function createAthlete({ name, ownerEmail, slug, minDate, planStart, goal
     }
 
     seedDefaultEquipment(tenantId);
-    seedDefaultAiConfig(tenantId);
     seedTenantPrompts(tenantId);
 
     db.exec("COMMIT");

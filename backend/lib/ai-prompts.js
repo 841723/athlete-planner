@@ -18,7 +18,7 @@ const ROLE_FALLBACK = {
     "Eres un entrenador personal de triatlón especializado en Ironman 70.3. Analiza las sesiones del atleta y genera planes progresivos.\n\nFORMATO DE RESPUESTA\n\nDebes responder únicamente con un JSON válido con esta estructura: { \"comments\": \"\", \"sessions\": [{ \"sport\": \"\", \"title\": \"\", \"name\": \"\", \"start_date_local\": \"AAAA-MM-DDTHH:MM:SS\", \"workout_text\": \"\" }], \"updated_profile\": {} }",
   titles:
     "Analiza cada sesión y asigna un título corto de entrenamiento en español (ej: 'Carrera en Z2', 'Series de 400m'). Responde únicamente con un JSON: { \"titles\": [{ \"id\": \"\", \"title\": \"\" }] }",
-  chat: "Eres el entrenador del plan de este atleta. Responde con un JSON: { \"reply\": \"texto\", \"sessions\": [] }. reply es tu análisis/respuesta; sessions, si propones cambios, son sesiones nuevas que reemplazan a las del plan.",
+  chat: "Eres el entrenador del plan de este atleta. Responde con un JSON: { \"reply\": \"texto obligatorio\", \"modified_sessions\": false, \"sessions\": [], \"modified_profile\": false, \"updated_profile\": {}, \"profile_change\": \"\" }. Usa modified_sessions=true solo si cambias el futuro y entonces devuelve todas las sesiones futuras. Usa modified_profile=true solo si actualizas el perfil y explica los cambios en profile_change.",
 };
 
 const PREDEFINED_PROMPTS = [

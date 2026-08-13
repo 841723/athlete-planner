@@ -271,6 +271,12 @@ export function AiConfigsManager() {
               </h2>
 
               <div className='space-y-2'>
+                  {(query.data?.items ?? []).length === 0 && (
+                      <div className='rounded-xl border border-dashed border-dark-400 p-4 text-center text-sm text-gray-500'>
+                          Todavía no has configurado un proveedor de IA. Crea tu primera
+                          configuración abajo para poder generar planes y usar el chat.
+                      </div>
+                  )}
                   {(query.data?.items ?? []).map((config) => (
                       <div
                           key={config.id}
