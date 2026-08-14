@@ -448,6 +448,13 @@ export interface AiPrompt {
   is_active: boolean;
 }
 
+export interface DefaultPrompt {
+  id: string;
+  name: string;
+  content: string;
+  updated_at: string;
+}
+
 export interface OpencodeModelInfo {
   id: string;
   providerID: string;

@@ -154,9 +154,19 @@ CREATE TABLE IF NOT EXISTS ai_prompts (
   name TEXT NOT NULL,
   content TEXT NOT NULL,
   is_predefined INTEGER NOT NULL DEFAULT 0,
+  default_prompt_id TEXT,
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_prompts_tenant ON ai_prompts(tenant_id);
+
+-- Prompts predefinidos globales gestionados por el administrador: son la plantilla
+-- de los prompt predefinidos (is_predefined=1) que se copian a cada tenant nuevo.
+CREATE TABLE IF NOT EXISTS default_prompts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 
 -- Conversación con el entrenador IA a nivel de tenant (stateful vía response_id).
 CREATE TABLE IF NOT EXISTS chat_messages (

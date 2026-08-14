@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useLocation, Link } from "react-router-dom";
 import {
   Building2,
   Target,
@@ -7,8 +7,10 @@ import {
   Dumbbell,
   Shield,
   RefreshCw,
+  Settings2,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from "@/components/auth/auth-context";
 
 const TABS = [
   { path: "general", label: "General", icon: Building2 },
@@ -23,6 +25,8 @@ const TABS = [
 export function ConfigLayout() {
   const perms = usePermissions();
   const location = useLocation();
+  const { user } = useAuth();
+  const showAdmin = !!user?.isSuperAdmin;
 
   if (!perms.canManageUsers) {
     return (
@@ -36,11 +40,26 @@ export function ConfigLayout() {
 
   return (
     <div className="animate-fade-in max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Configuración</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Nombre del atleta, perfil, objetivos, IA, sincronización y permisos del tenant.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Configuración</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Nombre del atleta, perfil, objetivos, IA, sincronización y permisos del tenant.
+          </p>
+        </div>
+        {showAdmin && (
+          <Link
+            to="/admin"
+            className={`btn px-3 py-1.5 text-sm ${
+              location.pathname.startsWith("/admin")
+                ? "bg-accent/20 text-accent-light"
+                : "text-gray-400 hover:text-gray-200 hover:bg-dark-300"
+            }`}
+          >
+            <Settings2 className="w-4 h-4" />
+            Administración
+          </Link>
+        )}
       </div>
 
       <div className="flex gap-1.5 bg-dark-300/40 p-1.5 rounded-xl flex-wrap">

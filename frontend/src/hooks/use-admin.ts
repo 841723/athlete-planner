@@ -13,6 +13,10 @@ import {
   adminAddMember,
   adminUpdateMemberRole,
   adminRemoveMember,
+  fetchAdminPrompts,
+  createAdminPrompt,
+  updateAdminPrompt,
+  deleteAdminPrompt,
 } from "@/services/api";
 import { invalidateMany } from "@/lib/invalidate";
 
@@ -33,6 +37,10 @@ export function useAdminOpencodeModels() {
 
 export function useAdminTenants() {
   return useQuery({ queryKey: ["admin", "tenants"], queryFn: fetchAdminTenants });
+}
+
+export function useAdminPrompts() {
+  return useQuery({ queryKey: ["admin", "prompts"], queryFn: fetchAdminPrompts });
 }
 
 export function useAdminTenantMembers(tenantId: string | null) {

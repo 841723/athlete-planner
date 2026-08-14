@@ -171,6 +171,7 @@ export function getDb() {
   ensureColumn("ai_logs", "operation_type", "operation_type TEXT");
   ensureColumn("ai_prompts", "role", "role TEXT NOT NULL DEFAULT 'chat'");
   ensureColumn("ai_prompts", "is_active", "is_active INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("ai_prompts", "default_prompt_id", "default_prompt_id TEXT");
   ensureColumn("ai_model_catalog", "provider_id", "provider_id TEXT");
   db.exec(`INSERT OR IGNORE INTO ai_model_catalog
     (provider, model_id, provider_id, name, enabled, input_price, output_price, currency, updated_at)

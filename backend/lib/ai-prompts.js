@@ -224,15 +224,32 @@ export function migrateLegacyPrompts(tenantId) {
 
 export function seedPredefinedPrompts(tenantId) {
   migrateLegacyPrompts(tenantId);
-  const insert = getDb().prepare(
-    "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, created_at) VALUES (?, ?, 'plan', ?, ?, 1, ?)"
+  seedDefaultPrompts();
+  const db = getDb();
+  const insert = db.prepare(
+    "INSERT INTO ai_prompts (id, tenant_id, role, name, content, is_predefined, default_prompt_id, created_at) VALUES (?, ?, 'plan', ?, ?, 1, ?, ?)"
+  );
+  const syncRow = db.prepare(
+    "UPDATE ai_prompts SET name = ?, content = ?, default_prompt_id = ? WHERE id = ?"
   );
   const now = new Date().toISOString();
-  for (const p of PREDEFINED_PROMPTS) {
-    const exists = getDb()
-      .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 1 AND name = ?")
-      .get(tenantId, p.name).cnt;
-    if (exists === 0) insert.run(randomUUID(), tenantId, p.name, p.content, now);
+  const defaults = db.prepare("SELECT id, name, content FROM default_prompts ORDER BY name ASC").all();
+  for (const p of defaults) {
+    // El prompt del tenant se identifica por su vínculo a la plantilla global o,
+    // si aún no está vinculado (tenant existente), por su nombre.
+    const existing = db
+      .prepare(
+        `SELECT id FROM ai_prompts
+         WHERE tenant_id = ? AND role = 'plan' AND is_predefined = 1
+           AND (default_prompt_id = ? OR (default_prompt_id IS NULL AND name = ?))
+         ORDER BY default_prompt_id DESC LIMIT 1`
+      )
+      .get(tenantId, p.id, p.name);
+    if (existing) {
+      syncRow.run(p.name, p.content, p.id, existing.id);
+    } else {
+      insert.run(randomUUID(), tenantId, p.name, p.content, p.id, now);
+    }
   }
   // El prompt de Ironman triatlón se activa por defecto si el tenant no tiene
   // ningún prompt activo (first-run); el atleta puede cambiarlo desde la UI.
@@ -347,4 +364,78 @@ export function getActivePrompt(tenantId) {
     )
     .get(tenantId);
   return row ?? null;
+}
+
+export function seedDefaultPrompts() {
+  const db = getDb();
+  if (db.prepare("SELECT COUNT(*) as cnt FROM default_prompts").get().cnt > 0) return;
+  const insert = db.prepare(
+    "INSERT INTO default_prompts (id, name, content, updated_at) VALUES (?, ?, ?, ?)"
+  );
+  const now = new Date().toISOString();
+  for (const p of PREDEFINED_PROMPTS) {
+    insert.run(randomUUID(), p.name, p.content, now);
+  }
+}
+
+export function getDefaultPrompts() {
+  seedDefaultPrompts();
+  return getDb()
+    .prepare("SELECT id, name, content, updated_at FROM default_prompts ORDER BY name ASC")
+    .all();
+}
+
+export function createDefaultPrompt({ name, content }) {
+  seedDefaultPrompts();
+  const id = randomUUID();
+  getDb()
+    .prepare("INSERT INTO default_prompts (id, name, content, updated_at) VALUES (?, ?, ?, ?)")
+    .run(id, name, content, new Date().toISOString());
+  return id;
+}
+
+export function updateDefaultPrompt(promptId, { name, content }) {
+  const row = getDb().prepare("SELECT id FROM default_prompts WHERE id = ?").get(promptId);
+  if (!row) return false;
+  getDb()
+    .prepare("UPDATE default_prompts SET name = ?, content = ?, updated_at = ? WHERE id = ?")
+    .run(name, content, new Date().toISOString(), promptId);
+  return true;
+}
+
+export function deleteDefaultPrompt(promptId) {
+  const row = getDb().prepare("SELECT id FROM default_prompts WHERE id = ?").get(promptId);
+  if (!row) return false;
+  const db = getDb();
+  db.prepare("DELETE FROM default_prompts WHERE id = ?").run(promptId);
+  // Los prompts ya copiados a los tenants se sincronizan: se borran para que la
+  // plantilla eliminada deje de existir en los atletas existentes.
+  db.prepare("DELETE FROM ai_prompts WHERE default_prompt_id = ? AND is_predefined = 1").run(promptId);
+  return true;
+}
+
+// Re-activa el prompt de Ironman u otro predefinido si el tenant se quedó sin
+// prompt activo (p. ej. al borrar la plantilla que estaba marcada como activa).
+function seedRemainingActivePrompt(tenantId) {
+  const hasActive = getDb()
+    .prepare("SELECT COUNT(*) as cnt FROM ai_prompts WHERE tenant_id = ? AND is_active = 1")
+    .get(tenantId).cnt;
+  if (hasActive > 0) return;
+  const fallback = getDb()
+    .prepare(
+      "SELECT id FROM ai_prompts WHERE tenant_id = ? AND is_predefined = 1 ORDER BY CASE name WHEN 'Ironman Triatlón' THEN 0 ELSE 1 END LIMIT 1"
+    )
+    .get(tenantId);
+  if (fallback) setActivePrompt(fallback.id, tenantId);
+}
+
+// Propaga las plantillas globales a TODOS los tenants existentes (utilizado tras
+// crear/editar/borrar un prompt por defecto desde administración).
+export function propagateDefaultPrompts() {
+  seedDefaultPrompts();
+  const tenants = getDb().prepare("SELECT id FROM tenants").all();
+  for (const t of tenants) {
+    seedPredefinedPrompts(t.id);
+    seedRemainingActivePrompt(t.id);
+  }
 }

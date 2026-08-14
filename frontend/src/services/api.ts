@@ -26,6 +26,7 @@ import type {
   EquipmentResponse,
   EquipmentCategory,
   AiPrompt,
+  DefaultPrompt,
 } from "@/types/session";
 import type { MeResponse, Member, User, TenantRole } from "@/types/auth";
 
@@ -466,4 +467,23 @@ export function duplicatePrompt(promptId: string): Promise<{ id: string }> {
 
 export function deletePrompt(promptId: string): Promise<void> {
   return send(`/prompts/${encodeURIComponent(promptId)}`, "DELETE");
+}
+
+export function fetchAdminPrompts(): Promise<DefaultPrompt[]> {
+  return get("/admin/prompts");
+}
+
+export function createAdminPrompt(payload: { name: string; content: string }): Promise<{ id: string }> {
+  return send("/admin/prompts", "POST", payload);
+}
+
+export function updateAdminPrompt(
+  promptId: string,
+  payload: { name: string; content: string }
+): Promise<{ ok: boolean }> {
+  return send(`/admin/prompts/${encodeURIComponent(promptId)}`, "PUT", payload);
+}
+
+export function deleteAdminPrompt(promptId: string): Promise<void> {
+  return send(`/admin/prompts/${encodeURIComponent(promptId)}`, "DELETE");
 }

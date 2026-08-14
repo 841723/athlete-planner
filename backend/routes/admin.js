@@ -2,6 +2,13 @@
 // de un usuario marcado como superadmin (users.is_superadmin / env ADMIN_EMAILS);
 // nunca a través de API keys.
 import { getDb } from "../lib/db.js";
+import {
+  getDefaultPrompts,
+  createDefaultPrompt,
+  updateDefaultPrompt,
+  deleteDefaultPrompt,
+  propagateDefaultPrompts,
+} from "../lib/ai-prompts.js";
 import { PROVIDER_LIST } from "../lib/providers.js";
 import { getGlobalSettings, updateGlobalSettings, getOpencodeBaseUrl, isProviderEnabled } from "../lib/global-settings.js";
 import { listModels, getAuthStatus, connectAuth } from "../lib/opencode.js";
@@ -296,5 +303,40 @@ export function registerAdmin(router) {
     } catch (err) {
       return sendJson(c.res, 400, { error: err.message });
     }
+  });
+
+  // --- Prompts por defecto (plantilla global para tenants nuevos) ---
+
+  router.get("/api/admin/prompts", (c) => {
+    gate(c);
+    return sendJson(c.res, 200, getDefaultPrompts());
+  });
+
+  router.post("/api/admin/prompts", async (c) => {
+    gate(c);
+    const body = await readBody(c.req);
+    if (!body?.name || !body?.content) return sendJson(c.res, 400, { error: "Falta name o content" });
+    const id = createDefaultPrompt({ name: body.name, content: body.content });
+    propagateDefaultPrompts();
+    return sendJson(c.res, 201, { id });
+  });
+
+  router.put("/api/admin/prompts/:id", async (c) => {
+    gate(c);
+    const body = await readBody(c.req);
+    if (!body?.name || !body?.content) return sendJson(c.res, 400, { error: "Falta name o content" });
+    const updated = updateDefaultPrompt(c.params.id, { name: body.name, content: body.content });
+    if (!updated) return sendJson(c.res, 404, { error: "Prompt no encontrado" });
+    propagateDefaultPrompts();
+    return sendJson(c.res, 200, { ok: true });
+  });
+
+  router.delete("/api/admin/prompts/:id", (c) => {
+    gate(c);
+    const deleted = deleteDefaultPrompt(c.params.id);
+    if (!deleted) return sendJson(c.res, 404, { error: "Prompt no encontrado" });
+    propagateDefaultPrompts();
+    c.res.writeHead(204);
+    return c.res.end();
   });
 }

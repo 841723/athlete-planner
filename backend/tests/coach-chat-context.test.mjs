@@ -8,7 +8,7 @@ const { getDb } = await import("../lib/db.js");
 const { withTenant, upsertSession, getAthleteProfile, saveAthleteProfile } = await import("../lib/sessions.js");
 const { listPlanned } = await import("../lib/planned.js");
 const { buildChatUserPrompt, getRecentSessions, computeContextHash, parseChatResponse, applyChatProfileUpdate } = await import("../lib/trainer.js");
-const { getRolePrompt, getPrompts, savePrompt, setActivePrompt, getActivePrompt } = await import("../lib/ai-prompts.js");
+const { getRolePrompt, getPrompts, savePrompt, setActivePrompt, getActivePrompt, getDefaultPrompts, createDefaultPrompt, updateDefaultPrompt, deleteDefaultPrompt, propagateDefaultPrompts } = await import("../lib/ai-prompts.js");
 const {
   addChatMessage,
   listChatMessages,
@@ -314,6 +314,59 @@ test("el prompt de Ironman triatlón se activa por defecto en primera ejecución
   const active = withTenant(tenantId, () => getActivePrompt(tenantId));
   assert.equal(active.id, ironman.id);
   assert.match(active.content, /IRONMAN/);
+});
+
+test("los prompts por defecto se siembran globalmente y se pueden editar", () => {
+  const defaults = getDefaultPrompts();
+  assert.ok(defaults.length >= 1, "debe existir la plantilla global");
+  const ironman = defaults.find((p) => p.name === "Ironman Triatlón");
+  assert.ok(ironman, "la plantilla global incluye el prompt de Ironman");
+  const id = createDefaultPrompt({ name: "También Natación", content: "Foco en natación" });
+  assert.ok(updateDefaultPrompt(id, { name: "También Natación v2", content: "Foco en natación 2" }));
+  const after = getDefaultPrompts().find((p) => p.id === id);
+  assert.equal(after.name, "También Natación v2");
+  assert.ok(deleteDefaultPrompt(id));
+  assert.ok(!getDefaultPrompts().some((p) => p.id === id));
+});
+
+test("los prompts predefinidos de un tenant salen de la plantilla global", () => {
+  withTenant(tenantId, () => {
+    getDb().prepare("DELETE FROM ai_prompts WHERE tenant_id = ?").run(tenantId);
+  });
+  const prompts = withTenant(tenantId, () => getPrompts(tenantId));
+  const defaults = getDefaultPrompts();
+  for (const d of defaults) {
+    assert.ok(
+      prompts.some((p) => p.name === d.name && p.is_predefined),
+      `el tenant debe tener el predefinido ${d.name}`
+    );
+  }
+});
+
+test("editar una plantilla global propaga los cambios a tenants existentes", () => {
+  const before = withTenant(tenantId, () =>
+    getPrompts(tenantId).find((p) => p.name === "Maratón")
+  );
+  assert.ok(before);
+  const ironman = getDefaultPrompts().find((p) => p.name === "Ironman Triatlón");
+  assert.ok(updateDefaultPrompt(ironman.id, { name: "Ironman Triatlón", content: "Versión actualizada de Ironman" }));
+  propagateDefaultPrompts();
+  const after = withTenant(tenantId, () =>
+    getPrompts(tenantId).find((p) => p.name === "Ironman Triatlón")
+  );
+  assert.equal(after.content, "Versión actualizada de Ironman", "el contenido debe propagarse al tenant existente");
+  assert.ok(after.is_predefined);
+});
+
+test("crear una plantilla global añade el predefinido a tenants existentes", () => {
+  const id = createDefaultPrompt({ name: "Sprint", content: "Velocidad y potencia" });
+  propagateDefaultPrompts();
+  const prompts = withTenant(tenantId, () => getPrompts(tenantId));
+  assert.ok(prompts.some((p) => p.name === "Sprint" && p.is_predefined), "el nuevo predefinido debe llegar al tenant");
+  assert.ok(deleteDefaultPrompt(id));
+  propagateDefaultPrompts();
+  const after = withTenant(tenantId, () => getPrompts(tenantId));
+  assert.ok(!after.some((p) => p.name === "Sprint"), "al borrar la plantilla el predefinido desaparece del tenant");
 });
 
 test("el estado del chat vive en tenant_settings y guarda el hilo", () => {
