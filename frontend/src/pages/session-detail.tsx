@@ -31,7 +31,11 @@ export function SessionDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { activeTenantId } = useAuth();
-  const backTo = (location.state as { from?: string } | null)?.from ?? tenantPath(activeTenantId, "/calendar");
+  const requestedBack = (location.state as { from?: string } | null)?.from;
+  const tenantPrefix = activeTenantId ? `/${activeTenantId}/` : "";
+  const backTo = activeTenantId && requestedBack?.startsWith(tenantPrefix)
+    ? requestedBack
+    : tenantPath(activeTenantId, "/calendar");
   const { data: session, isLoading, error } = useSession(id);
   const { data: allSessions } = useSessions();
   const updateMutation = useUpdateSession();
@@ -43,6 +47,13 @@ export function SessionDetailPage() {
     setNotesLoaded(false);
     window.scrollTo(0, 0);
   }, [id]);
+
+  useEffect(() => {
+    if (session && !notesLoaded) {
+      setNotes(session.notes ?? "");
+      setNotesLoaded(true);
+    }
+  }, [session, notesLoaded]);
 
   const completedSorted = useMemo(
     () =>
@@ -73,11 +84,6 @@ export function SessionDetailPage() {
         </div>
       </div>
     );
-  }
-
-  if (!notesLoaded) {
-    setNotes(session.notes ?? "");
-    setNotesLoaded(true);
   }
 
   const color = getSportColor(session.category);

@@ -25,11 +25,20 @@ function applyAdminFlag(user) {
 // Se ejecuta al arrancar (migrate) para usuarios ya existentes.
 export function syncSuperAdmins() {
   const emails = getAdminEmails();
-  if (emails.length === 0) return;
-  const update = getDb().prepare(
-    "UPDATE users SET is_superadmin = 1 WHERE email = ? AND is_superadmin = 0"
-  );
-  for (const email of emails) update.run(email);
+  const db = getDb();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    if (emails.length === 0) {
+      db.prepare("UPDATE users SET is_superadmin = 0 WHERE is_superadmin = 1").run();
+    } else {
+      const placeholders = emails.map(() => "?").join(", ");
+      db.prepare(`UPDATE users SET is_superadmin = CASE WHEN lower(email) IN (${placeholders}) THEN 1 ELSE 0 END`).run(...emails);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+    throw error;
+  }
 }
 
 export function getGoogleClientId() {

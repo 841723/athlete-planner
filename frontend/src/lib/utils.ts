@@ -5,6 +5,8 @@ import {
   startOfWeek,
   endOfWeek,
   isWithinInterval,
+  endOfDay,
+  startOfDay,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { SportCategory, SPORT_COLORS, SPORT_LABELS } from "@/types/session";
@@ -76,6 +78,10 @@ export function formatDateShort(dateStr: string): string {
   return format(parseISO(dateStr), "EEE d");
 }
 
+export function localDateKey(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function formatTrainingDay(
   dateStr: string,
   weekNumber?: number | null,
@@ -138,8 +144,8 @@ export function isDateInRange(date: string, from: string | null, to: string | nu
   if (!from && !to) return true;
   const d = parseISO(date);
   return isWithinInterval(d, {
-    start: from ? parseISO(from) : new Date(0),
-    end: to ? parseISO(to) : new Date(Infinity),
+    start: from ? startOfDay(parseISO(from)) : new Date(0),
+    end: to ? endOfDay(parseISO(to)) : new Date(Infinity),
   });
 }
 

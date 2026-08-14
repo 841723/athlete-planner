@@ -1,15 +1,13 @@
-import { getDb } from "./lib/db.js";
 import { withTenant } from "./lib/sessions.js";
 import { getDefaultAiConfig } from "./lib/ai-configs.js";
 import { chatWithCoach } from "./lib/trainer.js";
 import { setChatPending, updateChatResponseId, addChatMessage } from "./lib/coach-chat.js";
 import { runSync } from "./lib/sync.js";
 import { sendPushToUser } from "./lib/push.js";
-import { claimNextJob, createJob, finishJob, heartbeatJob } from "./lib/jobs.js";
+import { claimNextJob, cancelJob, finishJob, heartbeatJob, isJobActive } from "./lib/jobs.js";
 
 let started = false;
 let timer = null;
-let automaticSyncAt = 0;
 
 function actorFor(job) {
   return {
@@ -24,10 +22,15 @@ async function processJob(job) {
   const payload = job.payload ?? {};
   const actor = actorFor(job);
   return withTenant(job.tenant_id, async () => {
-    heartbeatJob(job.id);
+    heartbeatJob(job.id, job.lease_id);
     if (job.type === "sync") {
-      const result = await runSync({ force: payload.force === true });
-      finishJob(job.id, "completed", { result });
+      const result = await runSync({ force: payload.force === true, isCancelled: () => !isJobActive(job.id, job.lease_id) });
+      if (!isJobActive(job.id, job.lease_id)) return;
+      if (result?.cancelled) {
+        cancelJob(job.tenant_id, job.id);
+        return;
+      }
+      finishJob(job.id, job.lease_id, "completed", { result });
       if ((result.synced ?? result.newActivities ?? 0) > 0) {
         await sendPushToUser(job.tenant_id, job.user_id, {
           title: "Sincronización completada",
@@ -46,10 +49,12 @@ async function processJob(job) {
         previousResponseId: payload.previousResponseId ?? null,
         settings,
         actor,
+        isCancelled: () => !isJobActive(job.id, job.lease_id),
       });
+      if (result?.cancelled || !isJobActive(job.id, job.lease_id)) return;
       if (result.responseId) updateChatResponseId(job.tenant_id, result.responseId);
       setChatPending(job.tenant_id, false);
-      finishJob(job.id, "completed", { result: { reply: result.reply, profileUpdated: result.profileUpdated } });
+      finishJob(job.id, job.lease_id, "completed", { result: { reply: result.reply, profileUpdated: result.profileUpdated } });
       await sendPushToUser(job.tenant_id, job.user_id, {
         title: "El entrenador ha respondido",
         body: "Hay una nueva respuesta en el chat del entrenador.",
@@ -63,28 +68,15 @@ async function processJob(job) {
 }
 
 async function tick() {
-  if (Date.now() >= automaticSyncAt) {
-    automaticSyncAt = Date.now() + 5 * 60 * 1000;
-    const rows = getDb().prepare(
-      "SELECT tenant_id FROM sync_sources WHERE provider = 'garmin' AND status = 'connected' AND tokens IS NOT NULL"
-    ).all();
-    for (const row of rows) {
-      try {
-        createJob({ tenantId: row.tenant_id, type: "sync", dedupeKey: "sync:garmin", payload: { automatic: true }, deepLink: `/${row.tenant_id}/calendar` });
-      } catch (error) {
-        if (error?.status !== 409) console.error("No se pudo programar sync automática:", error.message);
-      }
-    }
-  }
-
   const job = claimNextJob();
   if (!job) return;
-  const heartbeat = setInterval(() => heartbeatJob(job.id), 30_000);
+  const heartbeat = setInterval(() => heartbeatJob(job.id, job.lease_id), 30_000);
   try {
     await processJob(job);
   } catch (error) {
-    finishJob(job.id, "failed", { error: error?.message ?? String(error) });
-    if (job.type === "coach_chat") {
+    const active = isJobActive(job.id, job.lease_id);
+    finishJob(job.id, job.lease_id, "failed", { error: error?.message ?? String(error) });
+    if (job.type === "coach_chat" && active) {
       withTenant(job.tenant_id, () => {
         setChatPending(job.tenant_id, false);
         addChatMessage("assistant", "No se pudo completar la respuesta en este momento. Vuelve a preguntar cuando quieras.");

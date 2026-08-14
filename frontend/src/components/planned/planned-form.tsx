@@ -126,7 +126,7 @@ export function PlannedFormModal({ open, session, defaultDate, onClose }: Planne
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <form className="card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold">
             {session ? "Editar planificada" : "Nueva planificada"}
@@ -176,12 +176,12 @@ export function PlannedFormModal({ open, session, defaultDate, onClose }: Planne
         {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
         <div className="flex gap-2 justify-end pt-4 border-t border-dark-400">
-          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={saving}>
             {saving ? "Guardando…" : session ? "Guardar cambios" : "Crear"}
           </Button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   updateChatInstructions,
   recoverStaleChat,
 } from "../lib/coach-chat.js";
-import { createJob } from "../lib/jobs.js";
+import { createJob, cancelJob } from "../lib/jobs.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
 
 export function register(router) {
@@ -55,22 +55,27 @@ export function register(router) {
       return sendJson(c.res, 400, { error: "El mensaje no puede estar vacío" });
     }
 
-    // Persist the athlete's message before the provider call so it remains in
-    // the thread even if the model times out or returns an invalid response.
-    addChatMessage("user", message);
-    setChatPending(c.tenantId, true);
-
-    const job = createJob({
-      tenantId: c.tenantId,
-      userId: c.actor?.userId ?? null,
-      type: "coach_chat",
-      dedupeKey: `coach-chat`,
-      payload: {
-        message,
-        previousResponseId: state.chatResponseId ?? null,
-      },
-      deepLink: `/${c.tenantId}/trainer`,
-    });
+    let job;
+    try {
+      // Crear primero el job evita dejar chat_pending bloqueado si falla la
+      // inserción por una carrera o por un error de SQLite.
+      job = createJob({
+        tenantId: c.tenantId,
+        userId: c.actor?.userId ?? null,
+        type: "coach_chat",
+        dedupeKey: `coach-chat`,
+        payload: {
+          message,
+          previousResponseId: state.chatResponseId ?? null,
+        },
+        deepLink: `/${c.tenantId}/trainer`,
+      });
+      addChatMessage("user", message);
+      setChatPending(c.tenantId, true);
+    } catch (error) {
+      if (job?.id) cancelJob(c.tenantId, job.id);
+      throw error;
+    }
 
     return sendJson(c.res, 202, { pending: true, jobId: job.id });
   });

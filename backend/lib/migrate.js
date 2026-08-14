@@ -13,8 +13,6 @@ const PLANNED_DIR = path.join(SESSIONS_DIR, "planned");
 const DATA_DIR = process.env.DATA_DIR ?? path.join(ROOT, "data");
 const PROFILE_PATH = path.join(DATA_DIR, "athlete-profile.json");
 
-const DEFAULT_MIN_DATE = "2026-05-12";
-
 // Objetivos del tenant por defecto (datos del atleta actual, se migran una sola vez a la BD).
 const DEFAULT_GOALS = [
   { week: 21, label: "Media Maratón Logroño", date: "2026-10-04", targetPace: "5:00 min/km" },
@@ -92,7 +90,7 @@ function seedSettings(tenantId) {
     "2026-05-12",
     "2027-04-18",
     "2026-05-11",
-    process.env.MIN_DATE ?? DEFAULT_MIN_DATE
+    process.env.MIN_DATE ?? null
   );
 }
 

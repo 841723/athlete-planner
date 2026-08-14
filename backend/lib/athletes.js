@@ -6,8 +6,6 @@ import { seedDefaultEquipment } from "./equipment.js";
 import { seedTenantPrompts } from "./ai-prompts.js";
 import { seedDefaultGlobalSettings } from "./global-settings.js";
 
-export const DEFAULT_MIN_DATE = "2026-05-12";
-
 export function slugify(name) {
   return name
     .normalize("NFD")
@@ -66,10 +64,10 @@ export function createAthlete({ name, ownerEmail, slug, minDate, planStart, goal
        VALUES (?, ?, ?, ?, ?)`
     ).run(
       tenantId,
-      planStart || DEFAULT_MIN_DATE,
+      planStart || null,
       goalDate || "",
       trainingWeekOneStart || "2026-05-11",
-      minDate || DEFAULT_MIN_DATE
+      minDate || null
     );
 
     if (profile && typeof profile === "object") {

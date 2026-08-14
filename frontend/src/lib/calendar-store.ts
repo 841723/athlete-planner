@@ -90,3 +90,8 @@ export function useCalendarStore() {
     },
   };
 }
+
+export function resetCalendarStore() {
+  state = { currentMonth: new Date(), filters: { ...DEFAULT_FILTERS }, showFilters: false };
+  emit();
+}

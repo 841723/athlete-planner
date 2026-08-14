@@ -227,7 +227,7 @@ export async function callAiChat(settings, { systemPrompt, input, previousRespon
   }
 
   const model = settings?.model || base.defaultModel;
-  const baseUrl = settings?.base_url || base.defaultBaseUrl;
+  const baseUrl = providerId === "gemini" ? base.defaultBaseUrl : (settings?.base_url || base.defaultBaseUrl);
   if (!baseUrl) throw new Error(`Falta base_url para el proveedor ${providerId}`);
 
   const endpoint = chatProvider.buildEndpoint(baseUrl);
@@ -343,7 +343,7 @@ export async function callAi(settings, { systemPrompt, userPrompt }, actor = nul
   }
 
   const model = settings?.model || provider.defaultModel;
-  const baseUrl = settings?.base_url || provider.defaultBaseUrl;
+  const baseUrl = providerId === "gemini" ? provider.defaultBaseUrl : (settings?.base_url || provider.defaultBaseUrl);
   if (!baseUrl) throw new Error(`Falta base_url para el proveedor ${providerId}`);
 
   const endpoint = provider.buildEndpoint(baseUrl, model);

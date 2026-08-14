@@ -90,6 +90,12 @@ export function cancelJob(tenantId, id) {
   return result.changes > 0;
 }
 
+export function isJobActive(id, leaseId) {
+  return Boolean(getDb().prepare(
+    "SELECT 1 FROM jobs WHERE id = ? AND lease_id = ? AND status = 'running'"
+  ).get(id, leaseId));
+}
+
 export function claimNextJob() {
   const db = getDb();
   const cutoff = new Date(Date.now() - LEASE_MS).toISOString();
@@ -106,25 +112,26 @@ export function claimNextJob() {
       return null;
     }
     const startedAt = now();
+    const leaseId = randomUUID();
     const changed = db.prepare(
-      "UPDATE jobs SET status = 'running', attempts = attempts + 1, started_at = ?, heartbeat_at = ? WHERE id = ? AND status = 'pending'"
-    ).run(startedAt, startedAt, row.id).changes;
+      "UPDATE jobs SET status = 'running', attempts = attempts + 1, started_at = ?, heartbeat_at = ?, lease_id = ? WHERE id = ? AND status = 'pending'"
+    ).run(startedAt, startedAt, leaseId, row.id).changes;
     db.exec("COMMIT");
-    return changed ? dto({ ...row, status: "running", started_at: startedAt, heartbeat_at: startedAt, attempts: row.attempts + 1 }) : null;
+    return changed ? dto({ ...row, status: "running", started_at: startedAt, heartbeat_at: startedAt, lease_id: leaseId, attempts: row.attempts + 1 }) : null;
   } catch (error) {
     try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
     throw error;
   }
 }
 
-export function heartbeatJob(id) {
-  getDb().prepare("UPDATE jobs SET heartbeat_at = ? WHERE id = ? AND status = 'running'").run(now(), id);
+export function heartbeatJob(id, leaseId) {
+  getDb().prepare("UPDATE jobs SET heartbeat_at = ? WHERE id = ? AND lease_id = ? AND status = 'running'").run(now(), id, leaseId);
 }
 
-export function finishJob(id, status, { result = null, error = null, progress = null } = {}) {
+export function finishJob(id, leaseId, status, { result = null, error = null, progress = null } = {}) {
   getDb().prepare(
-    "UPDATE jobs SET status = ?, result = ?, error = ?, progress = ?, finished_at = ?, heartbeat_at = ? WHERE id = ? AND status = 'running'"
-  ).run(status, result == null ? null : JSON.stringify(result), error, progress == null ? null : JSON.stringify(progress), now(), now(), id);
+    "UPDATE jobs SET status = ?, result = ?, error = ?, progress = ?, finished_at = ?, heartbeat_at = ? WHERE id = ? AND lease_id = ? AND status = 'running'"
+  ).run(status, result == null ? null : JSON.stringify(result), error, progress == null ? null : JSON.stringify(progress), now(), now(), id, leaseId);
 }
 
 export function updateJobProgress(id, progress) {

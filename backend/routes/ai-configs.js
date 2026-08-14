@@ -48,7 +48,9 @@ function normalizeConfigBody(body, existing = null) {
       provider: providerInfo.id,
       apiKey: body?.apiKey ?? "",
       model: body?.model ?? null,
-      baseUrl: body?.baseUrl ?? null,
+      // Gemini solo usa el endpoint oficial; no se aceptan URLs arbitrarias
+      // porque el backend enviaría allí la API key del tenant.
+      baseUrl: providerInfo.defaultBaseUrl ?? null,
       currency: body?.currency,
       chatDurationHours: body?.chatDurationHours,
       pricing: body?.pricing ?? null,
@@ -89,7 +91,7 @@ export function register(router) {
     }
     const body = await readBody(c.req);
     if (!body?.provider) return sendJson(c.res, 400, { error: "Falta provider" });
-    if (!body?.name?.trim()) return sendJson(c.res, 400, { error: "Falta name" });
+    if (typeof body?.name !== "string" || !body.name.trim()) return sendJson(c.res, 400, { error: "Falta name" });
 
     const { payload, error } = normalizeConfigBody(body);
     if (error) return sendJson(c.res, 400, { error });
@@ -108,7 +110,7 @@ export function register(router) {
     }
     const body = await readBody(c.req);
     if (!body?.provider) return sendJson(c.res, 400, { error: "Falta provider" });
-    if (!body?.name?.trim()) return sendJson(c.res, 400, { error: "Falta name" });
+    if (typeof body?.name !== "string" || !body.name.trim()) return sendJson(c.res, 400, { error: "Falta name" });
 
     const existing = getAiConfigWithKey(c.tenantId, c.params.id);
     if (!existing) return sendJson(c.res, 404, { error: "Configuración de IA no encontrada" });

@@ -26,7 +26,7 @@ test("los jobs se persisten, se reclaman una vez y bloquean duplicados activos",
   assert.equal(claimed.status, "running");
   assert.equal(claimNextJob(), null);
 
-  finishJob(job.id, "completed", { result: { synced: 2 } });
+  finishJob(claimed.id, claimed.lease_id, "completed", { result: { synced: 2 } });
   assert.equal(getJob(tenantId, job.id).status, "completed");
   const next = createJob({ tenantId, type: "sync", dedupeKey: "sync:garmin" });
   assert.equal(next.status, "pending");

@@ -25,6 +25,13 @@ import { getGoals } from "./goals.js";
 import { subDays, subWeeks, format, parseISO, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 
+const MAX_CHAT_RESPONSE_CHARS = 200_000;
+const MAX_CHAT_SESSIONS = 100;
+const CHAT_SPORTS = new Set([
+  "running", "cycling", "virtual_ride", "indoor_cycling", "lap_swimming",
+  "open_water_swimming", "strength_training", "paddelball", "hiking", "walking",
+]);
+
 function requireRolePrompt(role) {
   const prompt = getRolePrompt(getTenantId(), role);
   if (!prompt?.content) {
@@ -253,6 +260,9 @@ function extractJsonObjects(text) {
 }
 
 export function parseChatResponse(response) {
+  if (typeof response !== "string" || response.length > MAX_CHAT_RESPONSE_CHARS) {
+    throw new Error("La respuesta del chat supera el tamaño permitido");
+  }
   const objects = extractJsonObjects(response);
   let parsed = null;
   for (let i = objects.length - 1; i >= 0; i--) {
@@ -334,16 +344,25 @@ function validateChatSessions(rawSessions) {
   if (!Array.isArray(rawSessions)) {
     throw new Error("La respuesta del chat no contiene la lista de sesiones futura requerida");
   }
+  if (rawSessions.length > MAX_CHAT_SESSIONS) {
+    throw new Error(`La respuesta del chat no puede contener más de ${MAX_CHAT_SESSIONS} sesiones`);
+  }
   for (const session of rawSessions) {
     if (!session || typeof session !== "object" || Array.isArray(session)) {
       throw new Error("La respuesta del chat contiene una sesión inválida");
     }
-    if (!session.sport || typeof session.sport !== "string" || !session.start_date_local) {
+    if (!session.sport || typeof session.sport !== "string" || !CHAT_SPORTS.has(session.sport) || !session.start_date_local) {
       throw new Error("Cada sesión del chat debe incluir sport y start_date_local");
     }
     const date = String(session.start_date_local).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const parsedDate = new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
       throw new Error("Cada sesión del chat debe tener una fecha válida");
+    }
+    for (const [key, max] of [["title", 200], ["name", 200], ["workout_text", 10_000]]) {
+      if (session[key] != null && (typeof session[key] !== "string" || session[key].length > max)) {
+        throw new Error(`El campo ${key} de una sesión del chat no es válido`);
+      }
     }
   }
 }
@@ -434,7 +453,7 @@ export function applyChatProfileUpdate(tenantId, updatedProfile) {
   return { updated: true };
 }
 
-export async function chatWithCoach({ message, previousResponseId, settings, actor }) {
+export async function chatWithCoach({ message, previousResponseId, settings, actor, isCancelled = () => false }) {
   const tenantId = getTenantId();
   const state = getChatState(tenantId);
   const baseSystemPrompt = requireRolePrompt("chat");
@@ -475,6 +494,7 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
         { systemPrompt: objectivePrompt, input: `${chatDailyBriefing()}\n\nMENSAJE DEL ATLETA:\n${message}`, previousResponseId },
         actor
       ));
+      if (isCancelled()) return { cancelled: true, tenantId };
     } catch (err) {
       // La interacción anterior caducó (gemini devuelve error por un
       // previous_interaction_id no válido; opencode perdió la sesión) o el
@@ -486,6 +506,7 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
         { systemPrompt: objectivePrompt, input: fullPrompt, previousResponseId: null },
         actor
       ));
+      if (isCancelled()) return { cancelled: true, tenantId };
       updateChatContextHash(tenantId, currentHash);
     }
   } else {
@@ -498,6 +519,7 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
       { systemPrompt: objectivePrompt, input: fullPrompt, previousResponseId: null },
       actor
     ));
+    if (isCancelled()) return { cancelled: true, tenantId };
     updateChatContextHash(tenantId, currentHash);
   }
 
@@ -506,6 +528,7 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
     throw new Error("La respuesta del chat no contiene un reply válido");
   }
   if (parsed.modified_sessions) validateChatSessions(parsed.sessions);
+  if (isCancelled()) return { cancelled: true, tenantId };
 
   let profileUpdated = false;
   if (parsed.modified_profile && isMeaningful(parsed.updated_profile)) {
@@ -520,10 +543,12 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
     reply += `\n\nActualización del perfil: ${parsed.profile_change}`;
   }
 
+  if (isCancelled()) return { cancelled: true, tenantId };
   addChatMessage("assistant", reply);
 
   let sessionsUpdated = [];
   if (parsed.modified_sessions) {
+    if (isCancelled()) return { cancelled: true, tenantId };
     const replacement = replaceFuturePlannedSessions(parsed.sessions);
     sessionsUpdated = replacement.created;
     if (replacement.aborted) {

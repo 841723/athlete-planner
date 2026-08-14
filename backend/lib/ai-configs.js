@@ -138,23 +138,33 @@ export function saveAiConfig(
   if (id) {
     const exists = getDb().prepare("SELECT id FROM ai_configs WHERE tenant_id = ? AND id = ?").get(tenantId, id);
     if (!exists) throw new Error("Configuración de IA no encontrada");
-    getDb()
-      .prepare(
+    const db = getDb();
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      db.prepare(
         `UPDATE ai_configs SET name = ?, provider = ?, api_key = ?, model = ?, base_url = ?, currency = ?, chat_duration_hours = ?, pricing = ?, is_default = ?, updated_at = ?
          WHERE id = ? AND tenant_id = ?`
-      )
-      .run(name, provider, apiKeyValue, model ?? null, baseUrl ?? null, currencyValue, chatValue, pricingValue, isDefault ? 1 : 0, now, cfgId, tenantId);
+      ).run(name, provider, apiKeyValue, model ?? null, baseUrl ?? null, currencyValue, chatValue, pricingValue, isDefault ? 1 : 0, now, cfgId, tenantId);
+      if (isDefault) db.prepare("UPDATE ai_configs SET is_default = 0 WHERE tenant_id = ? AND id != ?").run(tenantId, cfgId);
+      db.exec("COMMIT");
+    } catch (error) {
+      try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+      throw error;
+    }
   } else {
-    getDb()
-      .prepare(
+    const db = getDb();
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      db.prepare(
         `INSERT INTO ai_configs (id, tenant_id, name, provider, api_key, model, base_url, currency, chat_duration_hours, pricing, is_default, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(cfgId, tenantId, name, provider, apiKeyValue, model ?? null, baseUrl ?? null, currencyValue, chatValue, pricingValue, isDefault ? 1 : 0, now, now);
-  }
-
-  if (isDefault) {
-    getDb().prepare("UPDATE ai_configs SET is_default = 0 WHERE tenant_id = ? AND id != ?").run(tenantId, cfgId);
+      ).run(cfgId, tenantId, name, provider, apiKeyValue, model ?? null, baseUrl ?? null, currencyValue, chatValue, pricingValue, isDefault ? 1 : 0, now, now);
+      if (isDefault) db.prepare("UPDATE ai_configs SET is_default = 0 WHERE tenant_id = ? AND id != ?").run(tenantId, cfgId);
+      db.exec("COMMIT");
+    } catch (error) {
+      try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+      throw error;
+    }
   }
 
   return cfgId;
@@ -163,8 +173,16 @@ export function saveAiConfig(
 export function setDefaultAiConfig(tenantId, configId) {
   const row = getDb().prepare("SELECT id FROM ai_configs WHERE tenant_id = ? AND id = ?").get(tenantId, configId);
   if (!row) throw new Error("Configuración de IA no encontrada");
-  getDb().prepare("UPDATE ai_configs SET is_default = 0 WHERE tenant_id = ?").run(tenantId);
-  getDb().prepare("UPDATE ai_configs SET is_default = 1 WHERE tenant_id = ? AND id = ?").run(tenantId, configId);
+  const db = getDb();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare("UPDATE ai_configs SET is_default = 0 WHERE tenant_id = ?").run(tenantId);
+    db.prepare("UPDATE ai_configs SET is_default = 1 WHERE tenant_id = ? AND id = ?").run(tenantId, configId);
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+    throw error;
+  }
 }
 
 export function deleteAiConfig(tenantId, configId) {

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSessions } from "@/hooks/use-sessions";
 
 export function HomePage() {
-  const { data, isLoading } = useSessions();
+  const { data, isLoading, error, refetch } = useSessions();
 
   if (isLoading) {
     return (
@@ -23,6 +23,10 @@ export function HomePage() {
         <Skeleton className="h-40 rounded-2xl" />
       </div>
     );
+  }
+
+  if (error) {
+    return <DataLoadError message={error.message} onRetry={() => void refetch()} />;
   }
 
   const completed = data?.completed ?? [];
@@ -50,6 +54,16 @@ export function HomePage() {
         </div>
         <div className="space-y-4" />
       </div>
+    </div>
+  );
+}
+
+function DataLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="card p-8 text-center">
+      <p className="text-sm text-red-300">No se pudieron cargar los entrenamientos.</p>
+      <p className="mt-1 text-xs text-gray-500">{message}</p>
+      <button type="button" className="btn btn-primary mt-4" onClick={onRetry}>Reintentar</button>
     </div>
   );
 }

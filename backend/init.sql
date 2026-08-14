@@ -64,7 +64,8 @@ CREATE TABLE IF NOT EXISTS jobs (
   created_at TEXT NOT NULL,
   started_at TEXT,
   finished_at TEXT,
-  heartbeat_at TEXT
+  heartbeat_at TEXT,
+  lease_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_tenant_created ON jobs(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON jobs(status, created_at);

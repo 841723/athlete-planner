@@ -48,7 +48,7 @@ export function TenantSwitcher() {
     return () => window.removeEventListener("resize", onResize);
   }, [open]);
 
-  if (!active) return null;
+  if (!active || location.pathname === "/admin" || location.pathname.startsWith("/admin/")) return null;
 
   return (
     <div className="relative min-w-0" ref={containerRef}>

@@ -47,10 +47,11 @@ function parseSummary(line) {
   };
 }
 
-function importNormalizedSessions(dir, ids) {
+function importNormalizedSessions(dir, ids, isCancelled = () => false) {
   let imported = 0;
   if (!fs.existsSync(dir)) return 0;
   for (const file of fs.readdirSync(dir)) {
+    if (isCancelled()) break;
     if (!file.endsWith(".json")) continue;
     const m = file.match(/-(\d+)-/);
     if (!m || !ids.includes(m[1])) continue;
@@ -76,7 +77,7 @@ function connectedSource() {
   return null;
 }
 
-async function syncGarmin({ force = false }) {
+async function syncGarmin({ force = false, isCancelled = () => false }) {
   const tenantId = getTenantId();
   const source = getSyncSource(tenantId, "garmin");
   const rawTokens = getSyncTokensRaw(tenantId, "garmin");
@@ -105,6 +106,7 @@ async function syncGarmin({ force = false }) {
     fs.mkdirSync(sessionsDir, { recursive: true });
 
     const allIds = await fetchAllIds(tokensFile, dateArgs);
+    if (isCancelled()) return { cancelled: true, synced: 0, skipped: 0, filtered: 0, missing: 0, ids: [] };
     const existing = existingIds();
     const missingIds = allIds.filter((id) => !existing.has(id));
 
@@ -122,6 +124,7 @@ async function syncGarmin({ force = false }) {
     if (missingIds.length) {
       await runPython(GARMIN_FETCH, ["list", "--tokens", tokensFile, "--out", listFile, ...dateArgs]);
       for (const id of missingIds) {
+        if (isCancelled()) return { cancelled: true, synced: 0, skipped: 0, filtered: 0, missing: 0, ids: [] };
         await runPython(GARMIN_FETCH, ["details", id, "--list", listFile, "--tokens", tokensFile, "--out", path.join(detailsDir, `${id}.json`)]);
       }
     }
@@ -134,9 +137,10 @@ async function syncGarmin({ force = false }) {
       if (maxDate) syncArgs.push("--max-date", maxDate);
       if (force) syncArgs.push("--force");
       syncOut = await runNode(SYNC_SESSIONS, syncArgs);
-      imported = importNormalizedSessions(sessionsDir, missingIds);
+      imported = importNormalizedSessions(sessionsDir, missingIds, isCancelled);
     }
 
+    if (isCancelled()) return { cancelled: true, synced: imported, skipped: 0, filtered: 0, missing: 0, ids: missingIds };
     const merged = mergePlannedWithCompleted();
 
     return {
@@ -155,7 +159,7 @@ async function syncGarmin({ force = false }) {
   }
 }
 
-export async function runSync({ force = false } = {}) {
+export async function runSync({ force = false, isCancelled = () => false } = {}) {
   if (syncing) {
     const err = new Error("Ya hay una sincronización en curso");
     err.status = 409;
@@ -177,11 +181,13 @@ export async function runSync({ force = false } = {}) {
     if (source === "strava") {
       const stravaSource = getSyncSource(tenantId, "strava");
       const tokens = JSON.parse(stravaSource.tokens);
+      if (isCancelled()) return { source, cancelled: true };
       const result = await syncStrava(tenantId, { tokens, config: JSON.parse(stravaSource.config ?? "{}") });
+      if (isCancelled()) return { source, cancelled: true };
       return { source, ...result };
     }
 
-    return { source: "garmin", ...(await syncGarmin({ force })) };
+    return { source: "garmin", ...(await syncGarmin({ force, isCancelled })) };
   } catch (err) {
     const message = err?.message ?? String(err);
     if (err?.code === "ENOENT" || err?.code === "EACCES") {

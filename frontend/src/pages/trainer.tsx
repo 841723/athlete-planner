@@ -14,11 +14,11 @@ import { CoachOptions } from "@/components/planned/coach-options";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { WorkoutText } from "@/components/session/workout-text";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTrainingDay, getSportColor, getSportLabel } from "@/lib/utils";
+import { formatTrainingDay, getSportColor, getSportLabel, localDateKey } from "@/lib/utils";
 import type { PlannedSessionView } from "@/types/session";
 
 export function TrainerPage() {
-  const { data: sessions, isLoading } = usePlanned();
+  const { data: sessions, isLoading, error, refetch } = usePlanned();
   const permissions = usePermissions();
   const deleteMutation = useDeletePlanned();
 
@@ -39,6 +39,15 @@ export function TrainerPage() {
           <Skeleton className="h-96 rounded-2xl" />
           <Skeleton className="h-96 rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card p-8 text-center">
+        <p className="text-sm text-red-300">No se pudieron cargar las sesiones planificadas.</p>
+        <button type="button" className="btn btn-primary mt-4" onClick={() => void refetch()}>Reintentar</button>
       </div>
     );
   }
@@ -96,7 +105,7 @@ export function TrainerPage() {
       <PlannedFormModal
         open={formOpen}
         session={null}
-        defaultDate={new Date().toISOString().slice(0, 10)}
+        defaultDate={localDateKey()}
         onClose={() => setFormOpen(false)}
       />
       {editingSession && (
@@ -201,7 +210,7 @@ function PlannedSessions({
                     </div>
                     {canEdit && onEditSession && (
                       <button
-                        onClick={() => onEditSession(session)}
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); onEditSession(session); }}
                         title="Editar sesión (fecha, título, texto)"
                         aria-label={`Editar ${session.title ?? session.name}`}
                         className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-gray-200"
@@ -211,7 +220,7 @@ function PlannedSessions({
                     )}
                     {canEdit && onDeleteSession && (
                       <button
-                        onClick={() => onDeleteSession(session.id)}
+                        onClick={(event) => { event.preventDefault(); event.stopPropagation(); onDeleteSession(session.id); }}
                         title="Eliminar sesión"
                         aria-label={`Eliminar ${session.title ?? session.name}`}
                         className="shrink-0 rounded-lg text-gray-500 transition-colors hover:bg-dark-300 hover:text-red-500"

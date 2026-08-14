@@ -1,5 +1,5 @@
 import { parseISO, differenceInDays } from "date-fns";
-import { formatTrainingDay } from "@/lib/utils";
+import { formatTrainingDay, localDateKey } from "@/lib/utils";
 import { useSessions } from "@/hooks/use-sessions";
 import { useMeta } from "@/hooks/use-meta";
 
@@ -49,7 +49,7 @@ export function HeroStats() {
         </div>
         <div className="flex justify-between mt-2 text-xs text-gray-500">
           <span>Semana {currentWeek} de {TOTAL_WEEKS}</span>
-          <span>{formatTrainingDay(today.toISOString(), undefined, meta.trainingWeekOneStart)}</span>
+          <span>{formatTrainingDay(`${localDateKey(today)}T12:00:00`, undefined, meta.trainingWeekOneStart)}</span>
         </div>
       </div>
     </div>

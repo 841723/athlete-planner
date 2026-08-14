@@ -173,7 +173,8 @@ export function getDb() {
   db.exec("PRAGMA busy_timeout = 5000;");
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec(loadInitSql());
-  db.exec("DROP TABLE IF EXISTS activity_tracks;");
+  // activity_tracks ya no forma parte del modelo actual, pero no se destruye
+  // automáticamente: puede contener datos de instalaciones antiguas.
   ensureColumn("users", "is_superadmin", "is_superadmin INTEGER NOT NULL DEFAULT 0");
   ensureColumn("goals", "url", "url TEXT");
   ensureColumn("goals", "is_primary", "is_primary INTEGER NOT NULL DEFAULT 0");
@@ -196,6 +197,7 @@ export function getDb() {
   ensureColumn("ai_prompts", "is_active", "is_active INTEGER NOT NULL DEFAULT 0");
   ensureColumn("ai_prompts", "default_prompt_id", "default_prompt_id TEXT");
   ensureColumn("ai_model_catalog", "provider_id", "provider_id TEXT");
+  ensureColumn("jobs", "lease_id", "lease_id TEXT");
   db.exec(`INSERT OR IGNORE INTO ai_model_catalog
     (provider, model_id, provider_id, name, enabled, input_price, output_price, currency, updated_at)
     SELECT 'opencode', model_id, provider_id, name, enabled, input_price, output_price, 'EUR', updated_at
