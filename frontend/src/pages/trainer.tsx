@@ -1,18 +1,12 @@
 import { useState } from "react";
 import {
-  CheckCircle2,
   ChevronsDownUp,
   ChevronsUpDown,
   ClipboardList,
-  ExternalLink,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-
-import { tenantPath } from "@/lib/tenant";
-import { useAuth } from "@/components/auth/auth-context";
 import { usePlanned, useDeletePlanned } from "@/hooks/use-planned";
 import { usePermissions } from "@/hooks/use-permissions";
 import { CoachChat } from "@/components/planned/coach-chat";
@@ -26,14 +20,13 @@ import type { PlannedSessionView } from "@/types/session";
 export function TrainerPage() {
   const { data: sessions, isLoading } = usePlanned();
   const permissions = usePermissions();
-  const { activeTenantId } = useAuth();
   const deleteMutation = useDeletePlanned();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<PlannedSessionView | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  const orderedSessions = [...(sessions ?? [])].sort((a, b) =>
+  const orderedSessions = (sessions ?? []).filter((session) => !session.merged_with).sort((a, b) =>
     a.start_date_local.localeCompare(b.start_date_local)
   );
 
@@ -76,7 +69,6 @@ export function TrainerPage() {
           <PlannedSessions
             sessions={orderedSessions}
             canEdit={permissions.canEdit}
-            activeTenantId={activeTenantId}
             expandedSessions={expandedSessions}
             setExpandedSessions={setExpandedSessions}
             onEditSession={permissions.canEdit ? setEditingSession : undefined}
@@ -121,7 +113,6 @@ export function TrainerPage() {
 interface PlannedSessionsProps {
   sessions: PlannedSessionView[];
   canEdit: boolean;
-  activeTenantId: string | null;
   expandedSessions: Set<string>;
   setExpandedSessions: (next: (prev: Set<string>) => Set<string>) => void;
   onEditSession?: (session: PlannedSessionView) => void;
@@ -131,7 +122,6 @@ interface PlannedSessionsProps {
 function PlannedSessions({
   sessions,
   canEdit,
-  activeTenantId,
   expandedSessions,
   setExpandedSessions,
   onEditSession,
@@ -209,10 +199,7 @@ function PlannedSessions({
                         {formatTrainingDay(session.start_date_local, session.weekNumber)}
                       </p>
                     </div>
-                    {session.merged_with && (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />
-                    )}
-                    {!session.merged_with && canEdit && onEditSession && (
+                    {canEdit && onEditSession && (
                       <button
                         onClick={() => onEditSession(session)}
                         title="Editar sesión (fecha, título, texto)"
@@ -222,7 +209,7 @@ function PlannedSessions({
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     )}
-                    {!session.merged_with && canEdit && onDeleteSession && (
+                    {canEdit && onDeleteSession && (
                       <button
                         onClick={() => onDeleteSession(session.id)}
                         title="Eliminar sesión"
@@ -234,16 +221,6 @@ function PlannedSessions({
                     )}
                   </div>
                 </summary>
-
-                {session.completed_session && (
-                  <Link
-                    to={tenantPath(activeTenantId, `/session/${session.completed_session.id}`)}
-                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-green-400 hover:text-green-300"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Ver actividad realizada
-                  </Link>
-                )}
 
                 <div className="mt-3">
                   {session.workout_text ? (

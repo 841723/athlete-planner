@@ -132,6 +132,11 @@ test("el contexto del chat incluye solo actividades de los últimos 30 días y s
   assert.doesNotMatch(completedSection, /Actividad antigua/);
 });
 
+test("el contexto del chat incluye la fecha real además del día de entrenamiento", () => {
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt("Prepara la próxima semana"));
+  assert.match(prompt, /Hoy es: \d{4}-\d{2}-\d{2} \([^\n]+ #\d+\)/);
+});
+
 test("el parser del chat respeta los flags de sesiones y perfil", () => {
   const parsed = parseChatResponse(JSON.stringify({
     reply: "He ajustado la semana.",
@@ -212,6 +217,32 @@ test("el feedback del chat no crea sesiones en fechas pasadas", () => {
   const planned = withTenant(tenantId, () => listPlanned());
   assert.ok(!planned.some((session) => session.title === "Sesión en el pasado"));
   assert.ok(planned.some((session) => session.title === "Sesión de hoy"));
+});
+
+test("el feedback del chat conserva el futuro si todas las sesiones propuestas son inválidas", () => {
+  const preservedTitle = "Plan futuro que no se debe perder";
+  withTenant(tenantId, () => replaceFuturePlannedSessions([
+    {
+      sport: "cycling",
+      title: preservedTitle,
+      start_date_local: `${dateAt(3).slice(0, 10)}T08:00:00`,
+      workout_text: "60 min suaves",
+    },
+  ]));
+
+  const result = withTenant(tenantId, () => replaceFuturePlannedSessions([
+    {
+      sport: "running",
+      title: "Sesión con fecha pasada",
+      start_date_local: `${dateAt(-2).slice(0, 10)}T08:00:00`,
+      workout_text: "No debería sustituir el plan",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+
+  assert.equal(result.aborted, true);
+  assert.ok(planned.some((session) => session.title === preservedTitle));
+  assert.ok(!planned.some((session) => session.title === "Sesión con fecha pasada"));
 });
 
 test("el feedback del chat no re-planifica una actividad ya realizada el mismo día", () => {

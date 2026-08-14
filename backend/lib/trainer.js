@@ -70,7 +70,7 @@ export function getRecentSessions(weeks = 8) {
 function formatTrainingDayForPrompt(value) {
   const date = parseISO(value);
   const week = getWeekNumber(date, getTenantSettings()?.training_week_one_start);
-  return `${format(date, "EEEE", { locale: es })} #${week}`;
+  return `${format(date, "yyyy-MM-dd")} (${format(date, "EEEE", { locale: es })} #${week})`;
 }
 
 function formatPlannedSessionForPrompt(session) {
@@ -442,7 +442,11 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
 
   let sessionsUpdated = [];
   if (parsed.modified_sessions) {
-    sessionsUpdated = replaceFuturePlannedSessions(parsed.sessions);
+    const replacement = replaceFuturePlannedSessions(parsed.sessions);
+    sessionsUpdated = replacement.created;
+    if (replacement.aborted) {
+      reply += "\n\nNo he podido añadir las sesiones propuestas porque ninguna tiene una fecha válida de hoy en adelante. Se conserva tu planificación actual.";
+    }
   }
 
   return { reply, sessionsUpdated, profileUpdated, responseId, tenantId };

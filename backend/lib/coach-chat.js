@@ -99,29 +99,51 @@ export function deleteFutureCoachSessions() {
 }
 
 export function replaceFuturePlannedSessions(rawSessions) {
-  // Solo se reemplaza la parte futura propuesta por el entrenador. Las
-  // planificadas pasadas (hayan sido realizadas o no) se conservan intactas.
-  deleteFutureCoachSessions();
-
   const completed = loadCompletedSessions();
   const todayKey = toLocalDateKey(new Date());
 
-  const created = [];
+  // Valida primero la propuesta para no borrar el plan actual si el modelo
+  // devuelve fechas pasadas o sesiones que ya se han realizado.
+  const candidates = [];
+  const rejected = [];
   for (const raw of rawSessions) {
-    if (!raw?.sport || !raw?.start_date_local) continue;
+    if (!raw?.sport || !raw?.start_date_local) {
+      rejected.push({ reason: "missing_fields" });
+      continue;
+    }
     const date = String(raw.start_date_local).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < todayKey) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < todayKey) {
+      rejected.push({ reason: "past_or_invalid_date", date });
+      continue;
+    }
 
-    // No se vuelve a planificar una sesión cuya actividad ya se realizó ese
-    // día y categoría de deporte: impedir que reaparezcan en el calendario.
     const cat = getSportCategory(raw.sport);
     const alreadyDone = completed.some(
       (c) =>
         (c.start_date_local ?? "").slice(0, 10) === date &&
         getSportCategory(c.sport) === cat
     );
-    if (alreadyDone) continue;
+    if (alreadyDone) {
+      rejected.push({ reason: "already_completed", date, sport: raw.sport });
+      continue;
+    }
+    candidates.push(raw);
+  }
 
+  if (rawSessions.length > 0 && candidates.length === 0) {
+    console.warn("El chat no produjo sesiones planificables; se conserva el futuro existente", {
+      tenantId: getTenantId(),
+      rejected,
+    });
+    return { created: [], rejected, aborted: true };
+  }
+
+  // Un array vacío significa explícitamente que el entrenador ha dejado el
+  // futuro sin sesiones. Solo en ese caso, o con candidatos válidos, se borra.
+  deleteFutureCoachSessions();
+
+  const created = [];
+  for (const raw of candidates) {
     const session = {
       schema_version: 2,
       id: randomUUID(),
@@ -135,5 +157,5 @@ export function replaceFuturePlannedSessions(rawSessions) {
     upsertSession(getTenantId(), "planned", session);
     created.push({ ...enrich(session), objectives: buildObjectives(session) });
   }
-  return created;
+  return { created, rejected, aborted: false };
 }
