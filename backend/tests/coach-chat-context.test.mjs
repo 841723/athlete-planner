@@ -7,7 +7,7 @@ process.env.DB_PATH = `/tmp/opencode/coach-chat-context-${randomUUID()}.db`;
 const { getDb } = await import("../lib/db.js");
 const { withTenant, upsertSession, getAthleteProfile, saveAthleteProfile } = await import("../lib/sessions.js");
 const { listPlanned } = await import("../lib/planned.js");
-const { buildChatUserPrompt, getRecentSessions, computeContextHash, parseChatResponse, applyChatProfileUpdate } = await import("../lib/trainer.js");
+const { buildChatUserPrompt, getRecentSessions, computeContextHash, parseChatResponse, applyChatProfileUpdate, chatDailyBriefing } = await import("../lib/trainer.js");
 const { getRolePrompt, getPrompts, savePrompt, setActivePrompt, getActivePrompt, getDefaultPrompts, createDefaultPrompt, updateDefaultPrompt, deleteDefaultPrompt, propagateDefaultPrompts } = await import("../lib/ai-prompts.js");
 const {
   addChatMessage,
@@ -137,6 +137,35 @@ test("el contexto del chat incluye la fecha real además del día de entrenamien
   assert.match(prompt, /Hoy es: \d{4}-\d{2}-\d{2} \([^\n]+ #\d+\)/);
 });
 
+test("los mensajes del chat incluyen la fecha de hoy y los objetivos relevantes", () => {
+  withTenant(tenantId, () => {
+    getDb().prepare("DELETE FROM goals WHERE tenant_id = ?").run(tenantId);
+    getDb().prepare("INSERT INTO goals (tenant_id, week, label, date, is_primary) VALUES (?, ?, ?, ?, ?)").run(tenantId, 1, "Ironman 70.3", dateAt(20).slice(0, 10), 1);
+    getDb().prepare("INSERT INTO goals (tenant_id, week, label, date, is_primary) VALUES (?, ?, ?, ?, ?)").run(tenantId, 2, "Media maratón", dateAt(5).slice(0, 10), 0);
+    getDb().prepare("INSERT INTO goals (tenant_id, week, label, date, is_primary) VALUES (?, ?, ?, ?, ?)").run(tenantId, 3, "Objetivo lejano", dateAt(60).slice(0, 10), 0);
+  });
+
+  const briefing = withTenant(tenantId, () => chatDailyBriefing());
+  assert.match(briefing, /Hoy es: \d{4}-\d{2}-\d{2} \([^\n]+ #\d+\)/);
+  assert.match(briefing, /OBJETIVO PRINCIPAL:/);
+  assert.match(briefing, /Ironman 70\.3/);
+  assert.match(briefing, /Media maratón/);
+  assert.doesNotMatch(briefing, /Objetivo lejano/);
+
+  const prompt = withTenant(tenantId, () => buildChatUserPrompt("¿Sigo bien el plan?"));
+  assert.match(prompt, /OBJETIVO PRINCIPAL:/);
+  assert.match(prompt, /Ironman 70\.3/);
+});
+
+test("el hash de contexto cambia cuando cambian los objetivos", () => {
+  const before = withTenant(tenantId, () => computeContextHash());
+  withTenant(tenantId, () => {
+    getDb().prepare("UPDATE goals SET label = ? WHERE tenant_id = ? AND is_primary = 1").run("Ironman 70.3 (nuevo)", tenantId);
+  });
+  const after = withTenant(tenantId, () => computeContextHash());
+  assert.notEqual(before, after);
+});
+
 test("el parser del chat respeta los flags de sesiones y perfil", () => {
   const parsed = parseChatResponse(JSON.stringify({
     reply: "He ajustado la semana.",
@@ -150,6 +179,36 @@ test("el parser del chat respeta los flags de sesiones y perfil", () => {
   assert.deepEqual(parsed.sessions, []);
   assert.equal(parsed.modified_profile, true);
   assert.equal(parsed.profile_change, "He actualizado la fatiga por la carga acumulada.");
+});
+
+test("el parser ignora el prompt repetido antes del JSON de respuesta", () => {
+  const parsed = parseChatResponse([
+    "PERFIL DEL ATLETA (JSON): {\"datos_del_atleta\": {}}",
+    "MENSAJE DEL ATLETA: prepara la semana",
+    JSON.stringify({
+      reply: "He preparado la semana.",
+      modified_sessions: false,
+      sessions: [],
+      modified_profile: false,
+      updated_profile: {},
+      profile_change: "",
+    }),
+  ].join("\n"));
+
+  assert.equal(parsed.reply, "He preparado la semana.");
+});
+
+test("los mensajes del atleta solo muestran la pregunta aunque reciban un prompt completo", () => {
+  withTenant(tenantId, () => addChatMessage(
+    "user",
+    "PERFIL DEL ATLETA (JSON): {}\n\nMENSAJE DEL ATLETA:\n¿Qué hago esta semana?\n\nResponde con el JSON indicado en el system prompt.",
+  ));
+  const message = withTenant(tenantId, () => listChatMessages()).at(-1);
+  assert.equal(message.content, "¿Qué hago esta semana?");
+  getDb().prepare("DELETE FROM chat_messages WHERE tenant_id = ? AND content = ?").run(
+    tenantId,
+    "¿Qué hago esta semana?",
+  );
 });
 
 test("el contexto del chat marca las planificadas realizadas como completadas", () => {

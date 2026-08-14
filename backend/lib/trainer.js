@@ -21,7 +21,8 @@ import {
 } from "./coach-chat.js";
 import { getEquipmentLabels } from "./equipment.js";
 import { getFocusSports } from "./meta.js";
-import { subDays, subWeeks, format, parseISO } from "date-fns";
+import { getGoals } from "./goals.js";
+import { subDays, subWeeks, format, parseISO, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 
 function requireRolePrompt(role) {
@@ -95,6 +96,42 @@ function formatCompletedSessionForPrompt(session) {
   return `- ${date} | ${session.sport} | ${session.title ?? session.name} | ${metrics || "sin métricas"}${notes}`;
 }
 
+// Objetivo principal y secundarios (dentro de las próximas 4 semanas) para
+// incluirlos en TODOS los mensajes del chat, también los encadenados.
+export function buildGoalsContext() {
+  const goals = getGoals(getTenantId());
+  const todayStart = new Date(`${format(new Date(), "yyyy-MM-dd")}T00:00:00`);
+  const primary = goals.find((g) => g.isPrimary) ?? goals[0];
+  const secondary = goals
+    .filter((g) => g !== primary)
+    .filter((g) => {
+      if (!g.date) return false;
+      const diff = differenceInCalendarDays(parseISO(g.date), todayStart);
+      return diff >= 0 && diff <= 28;
+    });
+
+  const lines = ["OBJETIVO PRINCIPAL:"];
+  lines.push(
+    primary
+      ? `- ${primary.label}${primary.date ? ` (${primary.date})` : ""}`
+      : "- (no hay objetivo definido)"
+  );
+  if (secondary.length > 0) {
+    lines.push("OBJETIVOS SECUNDARIOS (dentro de las próximas 4 semanas):");
+    for (const g of secondary) {
+      lines.push(`- ${g.label}${g.date ? ` (${g.date})` : ""}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+// Breve encabezado (fecha de hoy + objetivos) que acompaña a cada mensaje del
+// chat, incluyendo los turnos encadenados que solo envían la pregunta.
+export function chatDailyBriefing() {
+  const today = formatTrainingDayForPrompt(new Date().toISOString());
+  return `Hoy es: ${today}\n\n${buildGoalsContext()}`;
+}
+
 export function buildChatUserPrompt(message, options = {}) {
   const planned = loadPlannedSessions();
   const planText =
@@ -126,7 +163,6 @@ export function buildChatUserPrompt(message, options = {}) {
   const focusSports = getFocusSports(getTenantId());
   const focusText = focusSports.length > 0 ? focusSports.join(", ") : "running, cycling, swimming";
 
-  const today = formatTrainingDayForPrompt(new Date().toISOString());
   const todayIso = format(new Date(), "yyyy-MM-dd");
 
   let historyText = "";
@@ -142,7 +178,7 @@ export function buildChatUserPrompt(message, options = {}) {
   }
 
   return `
-Hoy es: ${today}
+${chatDailyBriefing()}
 
 IMPORTANTE SOBRE LAS FECHAS: Hoy es ${todayIso}. Todas las "start_date_local" que incluyas en "sessions" deben ser de hoy en adelante (año actual o futuro), nunca de fechas anteriores.
 
@@ -186,24 +222,61 @@ function formatCoachInstructions(profile) {
   return lines.join("\n");
 }
 
+function extractJsonObjects(text) {
+  const objects = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === "{") {
+      if (depth === 0) start = i;
+      depth += 1;
+    } else if (char === "}" && depth > 0) {
+      depth -= 1;
+      if (depth === 0) objects.push(text.slice(start, i + 1));
+    }
+  }
+  return objects;
+}
+
 export function parseChatResponse(response) {
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
+  const objects = extractJsonObjects(response);
+  let parsed = null;
+  for (let i = objects.length - 1; i >= 0; i--) {
+    try {
+      const candidate = JSON.parse(objects[i]);
+      if (candidate && typeof candidate === "object" && typeof candidate.reply === "string") {
+        parsed = candidate;
+        break;
+      }
+    } catch {
+      // Sigue buscando un objeto JSON válido posterior a texto repetido.
+    }
+  }
+  if (!parsed) {
     throw new Error("No se pudo encontrar JSON válido en la respuesta del chat");
   }
-  try {
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      reply: typeof parsed.reply === "string" ? parsed.reply.trim() : "",
-      modified_sessions: parsed.modified_sessions === true,
-      sessions: parsed.sessions,
-      modified_profile: parsed.modified_profile === true,
-      updated_profile: parsed.updated_profile,
-      profile_change: typeof parsed.profile_change === "string" ? parsed.profile_change.trim() : "",
-    };
-  } catch {
-    throw new Error("Error al parsear la respuesta JSON del chat");
-  }
+  return {
+    reply: parsed.reply.trim(),
+    modified_sessions: parsed.modified_sessions === true,
+    sessions: parsed.sessions,
+    modified_profile: parsed.modified_profile === true,
+    updated_profile: parsed.updated_profile,
+    profile_change: typeof parsed.profile_change === "string" ? parsed.profile_change.trim() : "",
+  };
 }
 
 // Huella del contexto que se le envía al entrenador: perfil del atleta,
@@ -229,6 +302,12 @@ export function computeContextHash() {
     equipment: getEquipmentLabels(getTenantId()),
     chatInstructions: getChatState()?.chatInstructions ?? null,
     activePromptId: getActivePrompt(getTenantId())?.id ?? null,
+    goals: getGoals(getTenantId()).map((g) => ({
+      week: g.week,
+      label: g.label,
+      date: g.date ?? null,
+      isPrimary: g.isPrimary,
+    })),
     planned: planned.map((s) => ({
       id: s.id,
       date: (s.start_date_local ?? "").slice(0, 10),
@@ -393,7 +472,7 @@ export async function chatWithCoach({ message, previousResponseId, settings, act
     try {
       ({ text, responseId } = await callAiChat(
         settings,
-        { systemPrompt: objectivePrompt, input: message, previousResponseId },
+        { systemPrompt: objectivePrompt, input: `${chatDailyBriefing()}\n\nMENSAJE DEL ATLETA:\n${message}`, previousResponseId },
         actor
       ));
     } catch (err) {

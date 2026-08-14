@@ -17,12 +17,25 @@ import { buildObjectives } from "./objectives.js";
 // siempre; el chat solo reemplaza el futuro marcado como "coach".
 export const COACH_PLAN_ID = "coach";
 
+function questionOnly(content) {
+  const text = String(content ?? "");
+  const marker = "MENSAJE DEL ATLETA:";
+  const start = text.indexOf(marker);
+  if (start < 0) return text;
+  const questionStart = start + marker.length;
+  const end = text.indexOf("\n\nResponde con el JSON", questionStart);
+  return text.slice(questionStart, end >= 0 ? end : text.length).trim();
+}
+
 export function listChatMessages() {
   return getDb()
     .prepare(
       "SELECT id, tenant_id, role, content, created_at FROM chat_messages WHERE tenant_id = ? ORDER BY created_at"
     )
-    .all(getTenantId());
+    .all(getTenantId())
+    .map((message) =>
+      message.role === "user" ? { ...message, content: questionOnly(message.content) } : message
+    );
 }
 
 export function addChatMessage(role, content) {
@@ -30,7 +43,7 @@ export function addChatMessage(role, content) {
     .prepare(
       "INSERT INTO chat_messages (id, tenant_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)"
     )
-    .run(randomUUID(), getTenantId(), role, content, new Date().toISOString());
+    .run(randomUUID(), getTenantId(), role, role === "user" ? questionOnly(content) : content, new Date().toISOString());
 }
 
 export function getChatState(tenantId = getTenantId()) {

@@ -34,7 +34,7 @@ export function TrainerPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-48 rounded-xl" />
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,30rem)_minmax(0,1fr)_minmax(15rem,18rem)]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,25rem)_minmax(0,1fr)_minmax(15rem,25rem)]">
           <Skeleton className="h-96 rounded-2xl" />
           <Skeleton className="h-96 rounded-2xl" />
           <Skeleton className="h-96 rounded-2xl" />
@@ -64,7 +64,7 @@ export function TrainerPage() {
         )}
       </header>
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,30rem)_minmax(0,1fr)_minmax(15rem,30rem)]">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,25rem)_minmax(0,1fr)_minmax(15rem,25rem)]">
         <div className="min-w-0 space-y-5">
           <PlannedSessions
             sessions={orderedSessions}
