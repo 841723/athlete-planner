@@ -84,6 +84,11 @@ function migrateActivityIds() {
   }
 }
 
+function tableColumns(tableName) {
+  const rows = db.prepare("SELECT name FROM pragma_table_info(?)").all(tableName);
+  return new Set(rows.map((r) => r.name));
+}
+
 function migrateRemovePlans() {
   const db = getDbInstance();
   const migration = "remove-plans-v1";
@@ -103,17 +108,35 @@ function migrateRemovePlans() {
         SELECT pm.id, p.tenant_id, pm.role, pm.content, pm.created_at
         FROM plan_messages pm JOIN plans p ON p.id = pm.plan_id
       `);
-      // El estado del chat del plan activo pasa a tenant_settings.
-      db.exec(`
-        INSERT INTO tenant_settings (tenant_id, chat_pending, chat_response_id, chat_context_hash, chat_instructions)
-        SELECT tenant_id, chat_pending, response_id, context_hash, chat_instructions
-        FROM plans WHERE active = 1
-        ON CONFLICT(tenant_id) DO UPDATE SET
-          chat_pending = excluded.chat_pending,
-          chat_response_id = excluded.chat_response_id,
-          chat_context_hash = excluded.chat_context_hash,
-          chat_instructions = excluded.chat_instructions
-      `);
+      // El estado del chat del plan activo pasa a tenant_settings. La tabla plans
+      // de BDs antiguas puede carecer de las columnas de chat (se añadieron más
+      // adelante): se copia solo lo que exista para que la migración no falle.
+      const planCols = tableColumns("plans");
+      const fields = [];
+      const mapping = [];
+      if (planCols.has("chat_pending")) { fields.push("chat_pending"); mapping.push("chat_pending"); }
+      if (planCols.has("response_id")) { fields.push("chat_response_id"); mapping.push("response_id"); }
+      if (planCols.has("context_hash")) { fields.push("chat_context_hash"); mapping.push("context_hash"); }
+      if (planCols.has("chat_instructions")) { fields.push("chat_instructions"); mapping.push("chat_instructions"); }
+      const hasActive = planCols.has("active");
+      // Solo se migra el estado si la tabla vieja llegó a tener columnas de chat
+      // (BDs muy antiguas no las tienen; no hay nada que conservar más que el
+      // plan activo, que igual se elimina con la tabla).
+      if (fields.length > 0) {
+        const srcFields = mapping.join(", ");
+        const tgtFields = fields.join(", ");
+        // Sin WHERE, SQLite puede interpretar el ON de UPSERT como parte del
+        // SELECT y resolver mal las columnas cuando la tabla antigua no tenía
+        // active.
+        const whereActive = hasActive ? "WHERE active = 1" : "WHERE 1 = 1";
+        const setClause = fields.map((f) => `${f} = excluded.${f}`).join(", ");
+        db.exec(`
+          INSERT INTO tenant_settings (tenant_id, ${tgtFields})
+          SELECT tenant_id, ${srcFields}
+          FROM plans ${whereActive}
+          ON CONFLICT(tenant_id) DO UPDATE SET ${setClause}
+        `);
+      }
     }
 
     // Las sesiones planificadas de IA (plan_id no nulo) pasan al marcador
