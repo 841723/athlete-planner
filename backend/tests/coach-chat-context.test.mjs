@@ -245,6 +245,42 @@ test("el feedback del chat conserva el futuro si todas las sesiones propuestas s
   assert.ok(!planned.some((session) => session.title === "Sesión con fecha pasada"));
 });
 
+test("el feedback del chat corrige sesiones con el año anterior al actual", () => {
+  const target = dateAt(1).slice(0, 10);
+  const lastYear = `${Number(target.slice(0, 4)) - 1}${target.slice(4)}`;
+  const result = withTenant(tenantId, () => replaceFuturePlannedSessions([
+    {
+      sport: "running",
+      title: "Sesión con año corregido",
+      start_date_local: `${lastYear}T08:00:00`,
+      workout_text: "40 min @ Z2",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+  const created = planned.find((s) => s.title === "Sesión con año corregido");
+
+  assert.equal(result.aborted, false);
+  assert.ok(created, "la sesión con el año corregido debe crearse");
+  assert.equal(created.start_date_local.slice(0, 10), target);
+});
+
+test("el feedback del chat rechaza fechas pasadas que no admiten corrección de año", () => {
+  const farPast = `${new Date().getFullYear() - 7}-06-01`;
+  const result = withTenant(tenantId, () => replaceFuturePlannedSessions([
+    {
+      sport: "running",
+      title: "Sesión demasiado antigua",
+      start_date_local: `${farPast}T08:00:00`,
+      workout_text: "No debería crearse",
+    },
+  ]));
+  const planned = withTenant(tenantId, () => listPlanned());
+
+  assert.equal(result.aborted, true);
+  assert.equal(result.created.length, 0);
+  assert.ok(!planned.some((s) => s.title === "Sesión demasiado antigua"));
+});
+
 test("el feedback del chat no re-planifica una actividad ya realizada el mismo día", () => {
   const today = dateAt(0).slice(0, 10);
   withTenant(tenantId, () => upsertSession(tenantId, "completed", {

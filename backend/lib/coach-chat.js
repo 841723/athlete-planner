@@ -98,6 +98,35 @@ export function deleteFutureCoachSessions() {
   }
 }
 
+// Ventana de tolerancia para corregir el año de fechas que el modelo devuelve
+// en el pasado (suele ser el año de su corte de entrenamiento, p.ej. 2025 en
+// vez de 2026): se adelanta el año hasta caer hoy o en el futuro próximo.
+const MAX_ROLL_YEARS = 3;
+const MAX_ROLL_FUTURE_DAYS = 90;
+
+// Devuelve { start, corrected } con la fecha efectiva (posiblemente con el año
+// corregido) o null si la fecha no es corregible dentro de la ventana.
+function resolveProposedStart(startDateLocal, todayKey) {
+  const raw = String(startDateLocal);
+  const dateKey = raw.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  if (dateKey >= todayKey) return { start: raw, corrected: false };
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  let year = Number(match[1]);
+  const rest = `${match[2]}-${match[3]}`;
+  const today = new Date(`${todayKey}T00:00:00`);
+  for (let i = 0; i < MAX_ROLL_YEARS; i++) {
+    year += 1;
+    const candidate = `${String(year).padStart(4, "0")}-${rest}`;
+    const diff = (new Date(`${candidate}T00:00:00`) - today) / 86400000;
+    if (candidate >= todayKey && diff >= 0 && diff <= MAX_ROLL_FUTURE_DAYS) {
+      return { start: `${candidate}${raw.slice(10)}`, corrected: true };
+    }
+  }
+  return null;
+}
+
 export function replaceFuturePlannedSessions(rawSessions) {
   const completed = loadCompletedSessions();
   const todayKey = toLocalDateKey(new Date());
@@ -111,11 +140,12 @@ export function replaceFuturePlannedSessions(rawSessions) {
       rejected.push({ reason: "missing_fields" });
       continue;
     }
-    const date = String(raw.start_date_local).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < todayKey) {
-      rejected.push({ reason: "past_or_invalid_date", date });
+    const resolved = resolveProposedStart(raw.start_date_local, todayKey);
+    if (!resolved) {
+      rejected.push({ reason: "past_or_invalid_date", date: String(raw.start_date_local).slice(0, 10) });
       continue;
     }
+    const date = resolved.start.slice(0, 10);
 
     const cat = getSportCategory(raw.sport);
     const alreadyDone = completed.some(
@@ -127,7 +157,14 @@ export function replaceFuturePlannedSessions(rawSessions) {
       rejected.push({ reason: "already_completed", date, sport: raw.sport });
       continue;
     }
-    candidates.push(raw);
+    if (resolved.corrected) {
+      console.warn("Se corrige el año de una sesión propuesta por el chat", {
+        tenantId: getTenantId(),
+        from: String(raw.start_date_local),
+        to: resolved.start,
+      });
+    }
+    candidates.push({ ...raw, start_date_local: resolved.start });
   }
 
   if (rawSessions.length > 0 && candidates.length === 0) {

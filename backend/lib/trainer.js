@@ -127,6 +127,7 @@ export function buildChatUserPrompt(message, options = {}) {
   const focusText = focusSports.length > 0 ? focusSports.join(", ") : "running, cycling, swimming";
 
   const today = formatTrainingDayForPrompt(new Date().toISOString());
+  const todayIso = format(new Date(), "yyyy-MM-dd");
 
   let historyText = "";
   if (options.includeHistory) {
@@ -142,6 +143,8 @@ export function buildChatUserPrompt(message, options = {}) {
 
   return `
 Hoy es: ${today}
+
+IMPORTANTE SOBRE LAS FECHAS: Hoy es ${todayIso}. Todas las "start_date_local" que incluyas en "sessions" deben ser de hoy en adelante (año actual o futuro), nunca de fechas anteriores.
 
 PERFIL DEL ATLETA (JSON):
 ${profileText}
