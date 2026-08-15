@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, Save, X } from "lucide-react";
 import { useUpdatePlanned } from "@/hooks/use-planned";
-import { formatTrainingDay, getSportColor, getSportLabel } from "@/lib/utils";
+import { formatWeekdayDate, getSportColor, getSportLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AutoTextarea } from "@/components/ui/auto-textarea";
 import type { PlannedSessionView } from "@/types/session";
@@ -58,7 +58,7 @@ export function SessionTextModal({ session, onClose }: SessionTextModalProps) {
         </div>
 
         <p className="text-xs text-gray-500 -mt-2 mb-4">
-          {getSportLabel(session.category)} · {formatTrainingDay(session.start_date_local, session.weekNumber)}
+          {getSportLabel(session.category)} · {formatWeekdayDate(session.start_date_local)}
         </p>
 
         <label className="block text-xs text-gray-400 mb-1.5">Texto del entrenamiento</label>

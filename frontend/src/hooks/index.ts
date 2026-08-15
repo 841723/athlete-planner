@@ -7,6 +7,7 @@ export { useGoals } from "./use-goals";
 export { useMeta } from "./use-meta";
 export { useCoachChat, useSendCoachChat, useCancelCoachChat, useUpdateCoachChatInstructions } from "./use-coach-chat";
 export { usePlanned, useCreatePlanned, useUpdatePlanned, useDeletePlanned } from "./use-planned";
+export { useCreateManualSession, useDeleteManualSession } from "./use-manual-session";
 export {
   usePrompts,
   useCreatePrompt,

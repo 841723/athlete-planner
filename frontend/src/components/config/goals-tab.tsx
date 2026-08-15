@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { parseISO, differenceInDays } from "date-fns";
-import { formatGoalDay, getWeekNumber, safeExternalUrl } from "@/lib/utils";
+import { formatFullDate, getWeekNumber, safeExternalUrl } from "@/lib/utils";
 import { CalendarCheck, Loader2, Plus, Save, Star, Trash } from "lucide-react";
 import { useGoals, useUpdateGoals } from "@/hooks/use-goals";
 import { useMeta } from "@/hooks/use-meta";
@@ -79,14 +79,14 @@ function GoalCard({ goal, planStart, today }: { goal: RaceGoal; planStart: strin
           )}
         </span>
         <span className="text-xs text-gray-500 shrink-0">
-          {goal.date ? formatGoalDay(goal.date, goal.week) : ""}
+          {goal.date ? formatFullDate(goal.date) : ""}
         </span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-400">
           {goal.date
             ? isPast
-               ? `Completado (${formatGoalDay(goal.date, goal.week)})`
+               ? `Completado (${formatFullDate(goal.date)})`
               : `${daysRemaining} días restantes`
             : "Sin fecha"}
         </span>

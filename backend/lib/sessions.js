@@ -164,6 +164,106 @@ export function upsertExternalSession(tenantId, source, externalId, incoming) {
   return session;
 }
 
+const MANUAL_SPORTS = new Set(Object.keys(SPORT_CATEGORIES));
+
+function finiteNonNegative(value, label) {
+  if (value == null || value === "") return undefined;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    const error = new Error(`${label} no es válido`);
+    error.status = 400;
+    throw error;
+  }
+  return number;
+}
+
+function validStart(value) {
+  const start = String(value ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(start)) return false;
+  return !Number.isNaN(new Date(start).getTime());
+}
+
+export function createManualSession(payload = {}) {
+  const sport = String(payload.sport ?? "");
+  const start = String(payload.start_date_local ?? "");
+  if (!MANUAL_SPORTS.has(sport)) {
+    const error = new Error("El deporte no es válido");
+    error.status = 400;
+    throw error;
+  }
+  if (!validStart(start)) {
+    const error = new Error("La fecha y hora no son válidas");
+    error.status = 400;
+    throw error;
+  }
+
+  const title = String(payload.title ?? payload.name ?? "Actividad manual").trim();
+  if (!title || title.length > 200) {
+    const error = new Error("El título es obligatorio y no puede superar 200 caracteres");
+    error.status = 400;
+    throw error;
+  }
+  const notes = payload.notes == null ? undefined : String(payload.notes);
+  if (notes && notes.length > 20_000) {
+    const error = new Error("Las notas no pueden superar 20.000 caracteres");
+    error.status = 400;
+    throw error;
+  }
+
+  const movingTime = finiteNonNegative(payload.moving_time_s, "La duración");
+  const elapsedTime = finiteNonNegative(payload.elapsed_time_s, "La duración transcurrida");
+  const distance = finiteNonNegative(payload.distance_m, "La distancia");
+  const segments = payload.segments == null ? undefined : payload.segments;
+  if (segments !== undefined && (!Array.isArray(segments) || segments.length > 200)) {
+    const error = new Error("La lista de vueltas no es válida");
+    error.status = 400;
+    throw error;
+  }
+
+  const session = {
+    schema_version: 4,
+    id: randomUUID(),
+    source: "manual",
+    sport,
+    title,
+    name: title,
+    start_date_local: start.length === 16 ? `${start}:00` : start,
+    ...(movingTime !== undefined ? { moving_time_s: Math.round(movingTime), elapsed_time_s: Math.round(elapsedTime ?? movingTime) } : {}),
+    ...(distance !== undefined ? { distance_m: distance } : {}),
+    ...(payload.avg_pace_s_per_km != null ? { avg_pace_s_per_km: finiteNonNegative(payload.avg_pace_s_per_km, "El ritmo") } : {}),
+    ...(payload.avg_speed_ms != null ? { avg_speed_ms: finiteNonNegative(payload.avg_speed_ms, "La velocidad") } : {}),
+    ...(segments !== undefined ? { segments } : {}),
+    ...(notes ? { notes } : {}),
+  };
+
+  if (session.avg_pace_s_per_km == null && session.moving_time_s && session.distance_m > 0) {
+    session.avg_pace_s_per_km = session.moving_time_s / (session.distance_m / 1000);
+  }
+  if (session.avg_speed_ms == null && session.moving_time_s && session.distance_m > 0) {
+    session.avg_speed_ms = session.distance_m / session.moving_time_s;
+  }
+
+  upsertSession(getTenantId(), "completed", session);
+  return enrich(session);
+}
+
+export function deleteManualSession(id) {
+  const tenantId = getTenantId();
+  const row = getDb()
+    .prepare("SELECT data, kind FROM sessions WHERE tenant_id = ? AND id = ?")
+    .get(tenantId, String(id));
+  if (!row || row.kind !== "completed") return false;
+  const source = getDb()
+    .prepare("SELECT 1 FROM activity_sources WHERE tenant_id = ? AND activity_id = ? LIMIT 1")
+    .get(tenantId, String(id));
+  if (source) return false;
+  let data;
+  try { data = JSON.parse(row.data); } catch { return false; }
+  if (data.source !== "manual") return false;
+  deleteSession(id);
+  return true;
+}
+
 export function deleteSession(id) {
   const db = getDb();
   db.prepare("DELETE FROM sessions WHERE tenant_id = ? AND id = ?").run(

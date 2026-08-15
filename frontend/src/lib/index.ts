@@ -1,1 +1,1 @@
-export { formatDistance, formatDuration, formatPace, formatSpeed, formatDate, formatDateShort, formatTrainingDay, formatGoalDay, formatWeekLabel, getSportColor, getSportLabel, getWeekNumber, isDateInRange, cn, formatNumber, hexToRgba } from "./utils";
+export { formatDistance, formatDuration, formatPace, formatSpeed, formatDate, formatDateShort, formatFullDate, formatWeekdayDate, formatShortDate, formatTrainerDate, formatWeekLabel, getSportColor, getSportLabel, getWeekNumber, isDateInRange, cn, formatNumber, hexToRgba } from "./utils";

@@ -134,7 +134,7 @@ test("el contexto del chat incluye solo actividades de los últimos 30 días y s
 
 test("el contexto del chat incluye la fecha real además del día de entrenamiento", () => {
   const prompt = withTenant(tenantId, () => buildChatUserPrompt("Prepara la próxima semana"));
-  assert.match(prompt, /Hoy es: \d{4}-\d{2}-\d{2} \([^\n]+ #\d+\)/);
+  assert.match(prompt, /Hoy es: \d{1,2} [a-záéíóú]+ \d{4}/);
 });
 
 test("los mensajes del chat incluyen la fecha de hoy y los objetivos relevantes", () => {
@@ -146,7 +146,7 @@ test("los mensajes del chat incluyen la fecha de hoy y los objetivos relevantes"
   });
 
   const briefing = withTenant(tenantId, () => chatDailyBriefing());
-  assert.match(briefing, /Hoy es: \d{4}-\d{2}-\d{2} \([^\n]+ #\d+\)/);
+  assert.match(briefing, /Hoy es: \d{1,2} [a-záéíóú]+ \d{4}/);
   assert.match(briefing, /OBJETIVO PRINCIPAL:/);
   assert.match(briefing, /Ironman 70\.3/);
   assert.match(briefing, /Media maratón/);
@@ -467,6 +467,13 @@ test("los prompts predefinidos de un tenant salen de la plantilla global", () =>
       `el tenant debe tener el predefinido ${d.name}`
     );
   }
+});
+
+test("el catálogo incluye el prompt predefinido de calistenia", () => {
+  const defaults = getDefaultPrompts();
+  assert.ok(defaults.some((prompt) => prompt.name === "Calistenia"));
+  const prompts = withTenant(tenantId, () => getPrompts(tenantId));
+  assert.ok(prompts.some((prompt) => prompt.name === "Calistenia" && prompt.is_predefined));
 });
 
 test("editar una plantilla global propaga los cambios a tenants existentes", () => {

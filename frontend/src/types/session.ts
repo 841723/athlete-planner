@@ -75,6 +75,13 @@ export interface Session {
 }
 
 export interface SessionSegment {
+  label?: string;
+  pace_text?: string;
+  speed_kmh?: number;
+  name?: string;
+  sets?: number;
+  reps?: number;
+  weight_kg?: number;
   distance_m?: number;
   time_s?: number;
   avg_speed_ms?: number;
@@ -219,6 +226,19 @@ export interface SessionsResponse {
   planned: Session[];
   totals: SessionTotals;
   totalsCompleted: SessionTotalsCompleted;
+}
+
+export interface ManualLap {
+  label?: string;
+  duration_min?: number;
+  distance?: number;
+  pace_text?: string;
+  speed_kmh?: number;
+  heartrate?: number;
+  name?: string;
+  sets?: number;
+  reps?: number;
+  weight_kg?: number;
 }
 
 export interface PlannedSessionView extends Session {

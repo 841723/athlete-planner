@@ -81,6 +81,14 @@ export function fetchSessions(): Promise<SessionsResponse> {
   return get("/sessions");
 }
 
+export function createManualSession(payload: Partial<Session>): Promise<{ session: Session; merged: number }> {
+  return send("/sessions", "POST", payload);
+}
+
+export function deleteSession(id: string): Promise<void> {
+  return send(`/sessions/${encodeURIComponent(id)}`, "DELETE");
+}
+
 export function fetchWeekly(): Promise<WeeklySummary[]> {
   return get("/weekly");
 }

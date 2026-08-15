@@ -4,7 +4,7 @@ import { parseISO } from "date-fns";
 import { format } from "@/lib/date-format";
 import { Save, Loader2, ExternalLink, X } from "lucide-react";
 import type { Session } from "@/types/session";
-import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed } from "@/lib/utils";
+import { getSportColor, getSportLabel, formatDistance, formatDuration, formatPace, formatSpeed, formatFullDate } from "@/lib/utils";
 import { useUpdateSession } from "@/hooks/use-update-session";
 import { useAuth } from "@/components/auth/auth-context";
 import { tenantPath } from "@/lib/tenant";
@@ -65,7 +65,7 @@ export function SessionModal({ session, onClose }: SessionModalProps) {
         )}
 
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <InfoItem label="Fecha" value={format(parseISO(session.start_date_local), "d MMM yyyy")} />
+          <InfoItem label="Fecha" value={formatFullDate(session.start_date_local)} />
           <InfoItem label="Hora" value={format(parseISO(session.start_date_local), "HH:mm")} />
           <InfoItem label="Deporte" value={label} />
           <InfoItem label="Duración" value={(() => { const t = session.time_s ?? 0; return t > 0 ? `${(t / 60).toFixed(0)} min` : "—"; })()} />

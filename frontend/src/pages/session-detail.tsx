@@ -21,6 +21,7 @@ import {
   formatSpeed,
   pacePer100m,
   getFeelLabel,
+  formatFullDate,
 } from "@/lib/utils";
 import { SessionLapsChart } from "@/components/charts/session-laps-chart";
 import { WorkoutText } from "@/components/session/workout-text";
@@ -144,7 +145,7 @@ export function SessionDetailPage() {
             <p className="text-sm text-gray-500 mt-1">{session.name}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            {label} · {format(parseISO(session.start_date_local), "d 'de' MMMM yyyy")} · Semana {session.weekNumber ?? "—"}
+            {label} · {formatFullDate(session.start_date_local)}
           </p>
           {session.location_name && (
             <p className="text-xs text-gray-400 mt-1">📍 {session.location_name}</p>
@@ -191,7 +192,7 @@ export function SessionDetailPage() {
       <div className="card p-5 mb-4">
         <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Estadísticas</h2>
         <div className="grid grid-cols-2 gap-3">
-          <InfoItem label="Fecha" value={format(parseISO(session.start_date_local), "d MMM yyyy")} />
+          <InfoItem label="Fecha" value={formatFullDate(session.start_date_local)} />
           <InfoItem label="Hora" value={format(parseISO(session.start_date_local), "HH:mm")} />
           <InfoItem label="Deporte" value={label} />
           <InfoItem label="Duración" value={time > 0 ? formatDuration(time) : "—"} />
@@ -254,9 +255,16 @@ export function SessionDetailPage() {
                     >
                       {badge.label}
                     </span>
-                    <span className="text-gray-400">Lap {i + 1}</span>
+                    <span className="text-gray-400">{seg.label ?? `Lap ${i + 1}`}</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5">
+                  {isStrength && (seg.name || seg.sets != null || seg.reps != null) ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5">
+                      <SegStat label="Ejercicio" value={seg.name ?? seg.label ?? "—"} />
+                      <SegStat label="Series" value={seg.sets != null ? String(seg.sets) : "—"} />
+                      <SegStat label="Repeticiones" value={seg.reps != null ? String(seg.reps) : "—"} />
+                      <SegStat label="Peso" value={seg.weight_kg != null ? `${seg.weight_kg} kg` : "—"} />
+                    </div>
+                  ) : <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5">
                     <SegStat label="Distancia" value={seg.distance_m ? formatDistance(seg.distance_m) : "—"} />
                     <SegStat label="Tiempo" value={seg.time_s ? formatDuration(seg.time_s) : "—"} />
                     <SegStat
@@ -272,6 +280,8 @@ export function SessionDetailPage() {
                             : "—"
                           : seg.avg_pace_s_per_km
                           ? formatPace(seg.avg_pace_s_per_km)
+                          : seg.pace_text
+                          ? seg.pace_text
                           : seg.avg_speed_ms
                           ? formatSpeed(seg.avg_speed_ms)
                           : "—"
@@ -303,7 +313,7 @@ export function SessionDetailPage() {
                           : "—"
                       }
                     />
-                  </div>
+                  </div>}
                 </div>
               );
             })}
@@ -384,6 +394,7 @@ export function SessionDetailPage() {
       )}
 
       {/* Enlaces externos */}
+      {session.external_id && (
       <div className="flex gap-2 mb-8">
         <a
           href={`https://connect.garmin.com/modern/activity/${session.external_id ?? session.id}`}
@@ -394,6 +405,7 @@ export function SessionDetailPage() {
           <ExternalLink className="w-4 h-4" /> Ver en Garmin
         </a>
       </div>
+      )}
     </div>
   );
 }

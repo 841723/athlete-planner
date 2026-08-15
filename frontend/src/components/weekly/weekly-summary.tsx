@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { WeeklySummary } from "@/types/session";
 import { SportDistribution } from "./sport-distribution";
 import { WeekChart } from "./week-chart";
+import { formatWeekLabel } from "@/lib/utils";
 
 interface WeeklySummaryProps {
   weekly: WeeklySummary[];
@@ -48,7 +49,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
                   }
                 >
                   <td className="py-2 px-3 font-medium whitespace-nowrap">
-                    <span className="text-accent-light font-semibold">Semana #{w.weekNumber}</span>
+                    <span className="text-accent-light font-semibold">{formatWeekLabel(w.weekStart)}</span>
                   </td>
                   <td className="text-right py-2 px-3">{w.sessions}</td>
                   <td className="text-right py-2 px-3">{w.hours}h</td>
@@ -71,7 +72,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
               onClick={() => setSelectedWeek(selectedWeek === w ? null : w)}
             >
               <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-medium text-accent-light">Semana #{w.weekNumber}</span>
+                  <span className="font-medium text-accent-light">{formatWeekLabel(w.weekStart)}</span>
                 <span className="text-xs text-gray-400">{w.hours}h</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -94,7 +95,7 @@ export function WeeklySummary({ weekly }: WeeklySummaryProps) {
         {selectedWeek && (
           <div className="mt-4 p-4 rounded-xl bg-dark-300/50">
             <h3 className="font-semibold mb-2">
-              Semana #{selectedWeek.weekNumber}
+              {formatWeekLabel(selectedWeek.weekStart)}
             </h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
               {Object.entries(selectedWeek.bySport).map(([sport, count]) => (

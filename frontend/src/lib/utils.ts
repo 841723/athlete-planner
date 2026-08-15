@@ -71,35 +71,36 @@ export function formatSpeed(speedMs: number | undefined): string {
 }
 
 export function formatDate(dateStr: string): string {
-  return format(parseISO(dateStr), "d MMM yyyy");
+  return format(parseISO(dateStr), "d MMMM yyyy", { locale: es });
 }
 
 export function formatDateShort(dateStr: string): string {
-  return format(parseISO(dateStr), "EEE d");
+  return format(parseISO(dateStr), "d MMM", { locale: es });
 }
 
 export function localDateKey(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function formatTrainingDay(
-  dateStr: string,
-  weekNumber?: number | null,
-  trainingWeekOneStart = "2026-05-11"
-): string {
-  const date = parseISO(dateStr);
-  const week = weekNumber ?? getWeekNumber(date, trainingWeekOneStart);
-  return `${format(date, "EEEE", { locale: es })} #${week}`;
+// Fechas legibles en español (ya no se usa el formato "día #semana"):
+// - formatFullDate:    "18 abril 2026"       (objetivos y fechas completas)
+// - formatWeekdayDate: "martes 18 abr"       (día de la semana + fecha)
+// - formatShortDate:   "18 abr"              (fecha corta)
+// - formatTrainerDate: "miércoles - 27 dic"  (actividades del entrenador)
+export function formatFullDate(dateStr: string): string {
+  return format(parseISO(dateStr), "d MMMM yyyy", { locale: es });
 }
 
-export function formatGoalDay(
-  dateStr: string,
-  weekNumber?: number | null,
-  trainingWeekOneStart = "2026-05-11"
-): string {
-  const date = parseISO(dateStr);
-  const week = weekNumber ?? getWeekNumber(date, trainingWeekOneStart);
-  return `${format(date, "EEEE", { locale: es })} semana #${week}`;
+export function formatWeekdayDate(dateStr: string): string {
+  return format(parseISO(dateStr), "EEEE d MMM", { locale: es });
+}
+
+export function formatShortDate(dateStr: string): string {
+  return format(parseISO(dateStr), "d MMM", { locale: es });
+}
+
+export function formatTrainerDate(dateStr: string): string {
+  return format(parseISO(dateStr), "EEEE - d MMM", { locale: es });
 }
 
 export function formatWeekLabel(dateStr: string): string {

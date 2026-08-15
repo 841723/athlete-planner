@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import {
   getAthleteProfile,
-  getWeekNumber,
   getTenantId,
   getTenantSettings,
   loadCompletedSessions,
@@ -77,8 +76,7 @@ export function getRecentSessions(weeks = 8) {
 
 function formatTrainingDayForPrompt(value) {
   const date = parseISO(value);
-  const week = getWeekNumber(date, getTenantSettings()?.training_week_one_start);
-  return `${format(date, "yyyy-MM-dd")} (${format(date, "EEEE", { locale: es })} #${week})`;
+  return format(date, "d MMMM yyyy", { locale: es });
 }
 
 function formatPlannedSessionForPrompt(session) {

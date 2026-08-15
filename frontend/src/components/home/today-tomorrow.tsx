@@ -2,7 +2,7 @@ import { addDays } from "date-fns";
 import { format } from "@/lib/date-format";
 import type { Session } from "@/types/session";
 import { WorkoutText } from "@/components/session/workout-text";
-import { formatTrainingDay, getSportColor, getSportLabel, formatDistance, formatDuration, localDateKey } from "@/lib/utils";
+import { formatWeekdayDate, formatShortDate, getSportColor, getSportLabel, formatDistance, formatDuration, localDateKey } from "@/lib/utils";
 
 interface TodayTomorrowProps {
   completed: Session[];
@@ -28,7 +28,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-medium text-gray-400 mb-2">
-             {formatTrainingDay(`${localDateKey(today)}T12:00:00`, todaySessions[0]?.weekNumber)}
+             {formatWeekdayDate(`${localDateKey(today)}T12:00:00`)}
           </h3>
           {todaySessions.length === 0 ? (
             <p className="text-sm text-gray-500">Sin entrenamiento hoy</p>
@@ -42,7 +42,7 @@ export function TodayTomorrow({ completed, planned }: TodayTomorrowProps) {
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-400 mb-2">
-             {formatTrainingDay(`${localDateKey(addDays(today, 1))}T12:00:00`, tomorrowSessions[0]?.weekNumber)}
+             {formatWeekdayDate(`${localDateKey(addDays(today, 1))}T12:00:00`)}
           </h3>
           {tomorrowSessions.length === 0 ? (
             <p className="text-sm text-gray-500">Sin entrenamiento mañana</p>
@@ -77,7 +77,7 @@ function SessionCard({ session, isPlanned }: { session: Session; isPlanned: bool
           <div className="text-xs text-gray-500">
             <span>{label}</span>
             <span className="mx-1">·</span>
-             <span>{formatTrainingDay(session.start_date_local, session.weekNumber)}</span>
+             <span>{formatShortDate(session.start_date_local)}</span>
           </div>
           {isPlanned && session.workout_text ? (
             <div className="mt-2">

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react";import {
+import { SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Trash2, X, Plus } from "lucide-react";import {
   startOfMonth,
   endOfMonth,
   startOfWeek,
@@ -23,7 +23,9 @@ import { tenantPath } from "@/lib/tenant";
 import { useCalendarStore } from "@/lib/calendar-store";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { WorkoutText } from "@/components/session/workout-text";
-import { getWeekNumber, getSportLabel, getSportColor } from "@/lib/utils";
+import { getWeekNumber, getSportLabel, getSportColor, localDateKey, formatFullDate, formatWeekdayDate } from "@/lib/utils";
+import { SyncButton } from "@/components/layout/sync-button";
+import { ManualActivityModal } from "@/components/session/manual-activity-form";
 
 interface CalendarViewProps {
   completed: SessionWithStatus[];
@@ -45,6 +47,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
   const [selectedSession, setSelectedSession] = useState<SessionWithStatus | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const deleteMutation = useDeletePlanned();
   const perms = usePermissions();
 
@@ -108,6 +111,12 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
           </button>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
+          {perms.canEdit && (
+            <button onClick={() => setManualOpen(true)} className="btn btn-primary px-2 sm:px-3 py-1.5 text-sm" title="Añadir actividad realizada">
+              <Plus className="w-4 h-4" /><span className="hidden sm:inline">Añadir actividad</span>
+            </button>
+          )}
+          {perms.canSync && <SyncButton />}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`btn px-2 sm:px-3 py-1.5 text-sm ${
@@ -186,7 +195,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold capitalize">
-                {format(parseISO(selectedDay), "EEEE d 'de' MMMM")}
+                {formatWeekdayDate(selectedDay)}
               </h3>
               <button onClick={() => setSelectedDay(null)} className="text-gray-400 hover:text-white" aria-label="Cerrar">
                 <X className="w-5 h-5" />
@@ -246,7 +255,7 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
               </button>
             </div>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">Fecha planificada</span><span>{format(parseISO(selectedSession.start_date_local), "d MMM yyyy")}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Fecha planificada</span><span>{formatFullDate(selectedSession.start_date_local)}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Deporte</span><span>{getSportLabel(selectedSession.category)}</span></div>
               {selectedSession.workout_text ? (
                 <div className="pt-2 border-t border-dark-400">
@@ -301,6 +310,11 @@ export function CalendarView({ completed, planned, filters, setSport, setDateFro
         open={formOpen}
         session={selectedSession?.status === "planned" ? selectedSession : null}
         onClose={() => setFormOpen(false)}
+      />
+      <ManualActivityModal
+        open={manualOpen}
+        defaultDate={selectedDay ?? localDateKey()}
+        onClose={() => setManualOpen(false)}
       />
     </div>
   );

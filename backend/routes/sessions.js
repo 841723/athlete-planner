@@ -3,10 +3,21 @@ import {
   getSessionTime,
   getSession,
   updateSession,
+  createManualSession,
+  deleteManualSession,
 } from "../lib/sessions.js";
 import { sendJson, readBody, canWrite } from "../lib/http.js";
+import { mergePlannedWithCompleted } from "../lib/merge.js";
 
 export function register(router) {
+  router.post("/api/sessions", async (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    const body = await readBody(c.req);
+    const session = createManualSession(body ?? {});
+    const merged = mergePlannedWithCompleted();
+    return sendJson(c.res, 201, { session, merged });
+  });
+
   router.get("/api/sessions", (c) => {
     const { completed, planned } = loadAllSessions();
     const totals = completed.reduce(
@@ -41,5 +52,12 @@ export function register(router) {
     const updated = updateSession(c.params.id, body ?? {});
     if (!updated) return sendJson(c.res, 404, { error: "Sesión no encontrada" });
     return sendJson(c.res, 200, updated);
+  });
+
+  router.delete("/api/sessions/:id", (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    if (!deleteManualSession(c.params.id)) return sendJson(c.res, 404, { error: "Actividad manual no encontrada" });
+    c.res.writeHead(204);
+    return c.res.end();
   });
 }

@@ -14,7 +14,7 @@ import { CoachOptions } from "@/components/planned/coach-options";
 import { PlannedFormModal } from "@/components/planned/planned-form";
 import { WorkoutText } from "@/components/session/workout-text";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatTrainingDay, getSportColor, getSportLabel, localDateKey } from "@/lib/utils";
+import { formatTrainerDate, getSportColor, getSportLabel, localDateKey, formatDistance, formatDuration } from "@/lib/utils";
 import type { PlannedSessionView } from "@/types/session";
 
 export function TrainerPage() {
@@ -26,9 +26,11 @@ export function TrainerPage() {
   const [editingSession, setEditingSession] = useState<PlannedSessionView | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
-  const orderedSessions = (sessions ?? []).filter((session) => !session.merged_with).sort((a, b) =>
+  const orderedSessions = (sessions ?? []).sort((a, b) =>
     a.start_date_local.localeCompare(b.start_date_local)
   );
+  const pendingSessions = orderedSessions.filter((session) => !session.merged_with);
+  const completedSessions = orderedSessions.filter((session) => session.merged_with);
 
   if (isLoading) {
     return (
@@ -76,7 +78,8 @@ export function TrainerPage() {
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(15rem,25rem)_minmax(0,1fr)_minmax(15rem,25rem)]">
         <div className="min-w-0 space-y-5">
           <PlannedSessions
-            sessions={orderedSessions}
+            sessions={pendingSessions}
+            heading="Entrenamientos"
             canEdit={permissions.canEdit}
             expandedSessions={expandedSessions}
             setExpandedSessions={setExpandedSessions}
@@ -90,6 +93,17 @@ export function TrainerPage() {
                   }
                 : undefined
             }
+          />
+          <PlannedSessions
+            sessions={completedSessions}
+            heading="Realizadas"
+            canEdit={permissions.canEdit}
+            expandedSessions={expandedSessions}
+            setExpandedSessions={setExpandedSessions}
+            onEditSession={permissions.canEdit ? setEditingSession : undefined}
+            onDeleteSession={permissions.canEdit ? (id) => {
+              if (window.confirm("¿Eliminar esta sesión planificada?")) deleteMutation.mutate(id);
+            } : undefined}
           />
         </div>
 
@@ -121,6 +135,7 @@ export function TrainerPage() {
 
 interface PlannedSessionsProps {
   sessions: PlannedSessionView[];
+  heading: string;
   canEdit: boolean;
   expandedSessions: Set<string>;
   setExpandedSessions: (next: (prev: Set<string>) => Set<string>) => void;
@@ -130,6 +145,7 @@ interface PlannedSessionsProps {
 
 function PlannedSessions({
   sessions,
+  heading,
   canEdit,
   expandedSessions,
   setExpandedSessions,
@@ -145,7 +161,7 @@ function PlannedSessions({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-accent-light" />
-          <h2 className="text-lg font-bold">Entrenamientos</h2>
+          <h2 className="text-lg font-bold">{heading}</h2>
           <span className="text-xs text-gray-500">{sessions.length} sesiones</span>
         </div>
         <div className="flex items-center gap-2">
@@ -205,7 +221,7 @@ function PlannedSessions({
                       </h3>
                       <p className="mt-1 text-xs text-gray-500">
                         {getSportLabel(session.category)} ·{" "}
-                        {formatTrainingDay(session.start_date_local, session.weekNumber)}
+                        {formatTrainerDate(session.start_date_local)}
                       </p>
                     </div>
                     {canEdit && onEditSession && (
@@ -232,6 +248,16 @@ function PlannedSessions({
                 </summary>
 
                 <div className="mt-3">
+                  {session.merged_with && session.completed_session && (
+                    <div className="mb-3 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-xs text-green-200">
+                      <div className="mb-1 font-semibold">Realizada</div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-green-100/70">
+                        {session.completed_session.distance_m != null && <span>{formatDistance(session.completed_session.distance_m)}</span>}
+                        {(session.completed_session.time_s ?? session.completed_session.moving_time_s) != null && <span>{formatDuration(session.completed_session.time_s ?? session.completed_session.moving_time_s)}</span>}
+                        {session.completed_session.notes && <span className="basis-full text-green-100/60">{session.completed_session.notes}</span>}
+                      </div>
+                    </div>
+                  )}
                   {session.workout_text ? (
                     <WorkoutText text={session.workout_text} />
                   ) : (

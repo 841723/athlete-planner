@@ -5,8 +5,6 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SyncSource } from "@/types/session";
-import { SyncButton } from "@/components/layout/sync-button";
-import { usePermissions } from "@/hooks/use-permissions";
 
 const PROVIDER_META: Record<string, { label: string; description: string }> = {
   garmin: {
@@ -316,8 +314,6 @@ function GarminCard({ source, defaultMinDate }: { source: SyncSource; defaultMin
 
 export function SyncTab() {
   const { data, isLoading } = useSyncSources();
-  const perms = usePermissions();
-
   if (isLoading) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
@@ -333,7 +329,6 @@ export function SyncTab() {
   return (
     <div className="grid gap-4">
       {garmin && <GarminCard source={garmin} defaultMinDate={defaultMinDate} />}
-      {perms.canSync && <SyncButton />}
       <p className="text-xs text-gray-500">La sincronización manual y automática utilizan el mismo job incremental por tenant.</p>
     </div>
   );
