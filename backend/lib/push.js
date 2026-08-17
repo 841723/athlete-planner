@@ -2,15 +2,40 @@ import crypto from "node:crypto";
 import webpush from "web-push";
 import { getDb } from "./db.js";
 
-const publicKey = process.env.VAPID_PUBLIC_KEY ?? "";
-const privateKey = process.env.VAPID_PRIVATE_KEY ?? "";
-const subject = process.env.VAPID_SUBJECT ?? "mailto:admin@example.com";
-const configured = Boolean(publicKey && privateKey);
+let cachedConfig = null;
+let warnedConfig = null;
 
-if (configured) webpush.setVapidDetails(subject, publicKey, privateKey);
+function getVapidConfig() {
+  const publicKey = String(process.env.VAPID_PUBLIC_KEY ?? "").trim();
+  const privateKey = String(process.env.VAPID_PRIVATE_KEY ?? "").trim();
+  const subject = String(process.env.VAPID_SUBJECT ?? "mailto:admin@example.com").trim();
+  const signature = `${publicKey}|${privateKey}|${subject}`;
+
+  if (cachedConfig?.signature === signature) return cachedConfig;
+
+  let config;
+  if (!publicKey || !privateKey) {
+    config = { signature, enabled: false, publicKey: null, reason: "missing_keys" };
+  } else {
+    try {
+      webpush.setVapidDetails(subject, publicKey, privateKey);
+      config = { signature, enabled: true, publicKey, reason: "ok" };
+    } catch (error) {
+      config = { signature, enabled: false, publicKey: null, reason: "invalid_keypair" };
+      if (warnedConfig !== signature) {
+        warnedConfig = signature;
+        console.warn("Configuración VAPID inválida; las notificaciones push están desactivadas", error?.message ?? error);
+      }
+    }
+  }
+
+  cachedConfig = config;
+  return config;
+}
 
 export function getPushConfig() {
-  return { enabled: configured, publicKey: configured ? publicKey : null };
+  const { enabled, publicKey, reason } = getVapidConfig();
+  return { enabled, publicKey, reason };
 }
 
 function subscriptionId(tenantId, endpoint) {
@@ -62,7 +87,7 @@ export async function sendPushToUser(tenantId, userId, payload) {
 
 async function sendPushWhere(condition, params, payload) {
   try {
-    if (!configured) return { sent: 0, disabled: true };
+    if (!getVapidConfig().enabled) return { sent: 0, disabled: true };
     const db = getDb();
     const rows = db.prepare(`SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE ${condition}`)
       .all(...params);

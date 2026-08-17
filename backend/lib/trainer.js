@@ -431,7 +431,7 @@ function mergeProfilePreserving(currentProfile, updatedProfile) {
   return mergePreserving(currentProfile, updatedProfile);
 }
 
-export function applyChatProfileUpdate(tenantId, updatedProfile) {
+export function applyChatProfileUpdate(tenantId, updatedProfile, { includeVersionId = false } = {}) {
   if (!isMeaningful(updatedProfile)) return { updated: false };
   const normalized = normalizeProfile(updatedProfile);
   if (!normalized) throw new Error("El perfil actualizado recibido del chat no es válido");
@@ -448,7 +448,7 @@ export function applyChatProfileUpdate(tenantId, updatedProfile) {
   const versionId = saveProfileVersion(tenantId, merged, "ai");
   if (!versionId) return { updated: false };
   saveAthleteProfile(tenantId, merged);
-  return { updated: true };
+  return includeVersionId ? { updated: true, versionId } : { updated: true };
 }
 
 export async function chatWithCoach({ message, previousResponseId, settings, actor, isCancelled = () => false }) {

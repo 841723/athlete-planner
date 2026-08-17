@@ -55,7 +55,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-10 pt-6 pb-4 border-t border-white/5 flex flex-col sm:hidden items-center gap-4">
+    <footer className="mt-10 hidden border-t border-white/5 pt-6 pb-4 sm:flex sm:flex-col items-center gap-4">
       <div className="flex items-center gap-2">
         <img src="/edasi-light-long.png" alt="edasi logo" className="h-10" />
       </div>

@@ -6,6 +6,7 @@ import {
   setChatPending,
   updateChatResponseId,
   updateChatInstructions,
+  deleteChatMessages,
   recoverStaleChat,
 } from "../lib/coach-chat.js";
 import { createJob, cancelJob } from "../lib/jobs.js";
@@ -31,6 +32,20 @@ export function register(router) {
     if (instructions.length > 5000) return sendJson(c.res, 400, { error: "Las instrucciones no pueden superar 5.000 caracteres" });
     updateChatInstructions(c.tenantId, instructions);
     return sendJson(c.res, 200, { instructions });
+  });
+
+  router.delete("/api/chat/messages", async (c) => {
+    if (!canWrite(c.membership)) return sendJson(c.res, 403, { error: "No tienes permisos para esta acción" });
+    if (getChatState(c.tenantId).chatPending) {
+      return sendJson(c.res, 409, { error: "No puedes eliminar mensajes mientras el entrenador está respondiendo" });
+    }
+    const body = await readBody(c.req);
+    const ids = Array.isArray(body?.ids) ? body.ids : [];
+    if (ids.length === 0 || ids.length > 50 || ids.some((id) => typeof id !== "string" || id.length > 100)) {
+      return sendJson(c.res, 400, { error: "Selecciona entre 1 y 50 mensajes válidos" });
+    }
+    const deletedIds = deleteChatMessages(c.tenantId, ids);
+    return sendJson(c.res, 200, { deletedIds });
   });
 
   router.post("/api/chat", async (c) => {

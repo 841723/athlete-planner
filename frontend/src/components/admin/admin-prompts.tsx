@@ -136,7 +136,7 @@ export function AdminPrompts() {
             const dirty = val.name !== p.name || val.content !== p.content;
             return (
               <div key={p.id} className="p-3 rounded-xl bg-dark-300/50 space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     className="flex items-center gap-1.5 text-left shrink-0"
                     onClick={() => toggleExpanded(p.id)}
@@ -149,7 +149,7 @@ export function AdminPrompts() {
                     )}
                   </button>
                   <input
-                    className="input flex-1 py-1.5 text-sm min-w-0"
+                    className="input w-full min-w-0 flex-1 py-1.5 text-sm sm:w-auto"
                     value={val.name}
                     onChange={(e) => patchEdit(p.id, { name: e.target.value })}
                   />

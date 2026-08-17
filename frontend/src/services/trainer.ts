@@ -22,6 +22,10 @@ export function updateCoachChatInstructions(instructions: string): Promise<{ ins
   return send("/chat/settings", "PUT", { instructions });
 }
 
+export function deleteCoachChatMessages(ids: string[]): Promise<{ deletedIds: string[] }> {
+  return send("/chat/messages", "DELETE", { ids });
+}
+
 export function fetchProfile(): Promise<Record<string, unknown>> {
   return get("/profile");
 }

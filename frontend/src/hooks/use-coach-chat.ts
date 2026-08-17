@@ -4,6 +4,7 @@ import {
   sendCoachChat,
   cancelCoachChat,
   updateCoachChatInstructions,
+  deleteCoachChatMessages,
 } from "@/services/trainer";
 import { useAuth } from "@/components/auth/auth-context";
 import { useToast } from "@/components/ui/toast";
@@ -21,10 +22,7 @@ export function useCoachChat(enabled: boolean) {
     queryKey: coachChatKey(activeTenantId),
     queryFn: fetchCoachChat,
     enabled: enabled && !!activeTenantId,
-    staleTime: 0,
-    // Mientras el entrenador está generando la respuesta (p. ej. tras recargar
-    // la página), se actualiza el hilo para mostrar la respuesta al llegar.
-    refetchInterval: (query) => (query.state.data?.chatPending ? 2000 : false),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -106,5 +104,19 @@ export function useUpdateCoachChatInstructions() {
       toast({ type: "success", title: "Instrucciones del chat guardadas" });
     },
     onError: (err: Error) => toast({ type: "error", title: "No se pudieron guardar las instrucciones", description: err.message }),
+  });
+}
+
+export function useDeleteCoachChatMessages() {
+  const qc = useQueryClient();
+  const { activeTenantId } = useAuth();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteCoachChatMessages(ids),
+    onSuccess: ({ deletedIds }) => {
+      void qc.invalidateQueries({ queryKey: coachChatKey(activeTenantId) });
+      toast({ type: "success", title: `${deletedIds.length} mensaje${deletedIds.length === 1 ? "" : "s"} eliminado${deletedIds.length === 1 ? "" : "s"}` });
+    },
+    onError: (err: Error) => toast({ type: "error", title: "No se pudieron eliminar los mensajes", description: err.message }),
   });
 }

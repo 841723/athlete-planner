@@ -8,7 +8,7 @@ function value(value: unknown) {
 
 export function AdminObservability() {
   const [filter, setFilter] = useState({ tenant: "", status: "", type: "", provider: "", from: "", to: "" });
-  const sync = useQuery({ queryKey: ["admin-sync-jobs"], queryFn: fetchAdminSyncJobs, refetchInterval: 5000 });
+  const sync = useQuery({ queryKey: ["admin-sync-jobs"], queryFn: fetchAdminSyncJobs });
   const usage = useQuery({ queryKey: ["admin-ai-usage"], queryFn: fetchAdminAiUsage, refetchInterval: 15000 });
   const logs = useQuery({ queryKey: ["admin-ai-logs"], queryFn: fetchAdminAiLogs, refetchInterval: 15000 });
   const matches = (row: Record<string, unknown>) => {

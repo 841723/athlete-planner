@@ -99,7 +99,7 @@ export function PromptsTab() {
             const isActive = !!p.is_active;
             return (
               <div key={p.id} className={`p-3 rounded-xl bg-dark-300/50 space-y-2 ${isActive ? "border border-accent/40" : ""}`}>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     className="flex items-center gap-1.5 text-left shrink-0"
                     onClick={() => toggleExpanded(p.id)}
@@ -112,10 +112,10 @@ export function PromptsTab() {
                     )}
                   </button>
                   {predefined ? (
-                    <span className="text-sm font-medium text-gray-300 truncate min-w-0">{p.name}</span>
+                     <span className="min-w-0 flex-1 whitespace-normal break-words text-sm font-medium text-gray-300">{p.name}</span>
                   ) : (
                     <input
-                      className="input flex-1 py-1.5 text-sm min-w-0"
+                       className="input w-full min-w-0 flex-1 py-1.5 text-sm sm:w-auto"
                       value={val.name}
                       onChange={(e) => patchEdit(p.id, { name: e.target.value })}
                     />

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getDb } from "./db.js";
+import { publishTenantEvent } from "./realtime.js";
 
 const LEASE_MS = 15 * 60 * 1000;
 
@@ -68,7 +69,9 @@ export function createJob({
     }
     throw error;
   }
-  return getJob(tenantId, id);
+  const job = getJob(tenantId, id);
+  publishTenantEvent(tenantId, "job.updated", { job });
+  return job;
 }
 
 export function getJob(tenantId, id) {
@@ -87,6 +90,10 @@ export function cancelJob(tenantId, id) {
   const result = getDb().prepare(
     "UPDATE jobs SET status = 'cancelled', finished_at = ? WHERE tenant_id = ? AND id = ? AND status IN ('pending', 'running')"
   ).run(now(), tenantId, id);
+  if (result.changes > 0) {
+    const job = getJob(tenantId, id);
+    publishTenantEvent(tenantId, "job.updated", { job });
+  }
   return result.changes > 0;
 }
 
@@ -117,7 +124,10 @@ export function claimNextJob() {
       "UPDATE jobs SET status = 'running', attempts = attempts + 1, started_at = ?, heartbeat_at = ?, lease_id = ? WHERE id = ? AND status = 'pending'"
     ).run(startedAt, startedAt, leaseId, row.id).changes;
     db.exec("COMMIT");
-    return changed ? dto({ ...row, status: "running", started_at: startedAt, heartbeat_at: startedAt, lease_id: leaseId, attempts: row.attempts + 1 }) : null;
+    if (!changed) return null;
+    const job = dto({ ...row, status: "running", started_at: startedAt, heartbeat_at: startedAt, lease_id: leaseId, attempts: row.attempts + 1 });
+    publishTenantEvent(job.tenant_id, "job.updated", { job });
+    return job;
   } catch (error) {
     try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
     throw error;
@@ -129,12 +139,18 @@ export function heartbeatJob(id, leaseId) {
 }
 
 export function finishJob(id, leaseId, status, { result = null, error = null, progress = null } = {}) {
-  getDb().prepare(
+  const db = getDb();
+  db.prepare(
     "UPDATE jobs SET status = ?, result = ?, error = ?, progress = ?, finished_at = ?, heartbeat_at = ? WHERE id = ? AND lease_id = ? AND status = 'running'"
   ).run(status, result == null ? null : JSON.stringify(result), error, progress == null ? null : JSON.stringify(progress), now(), now(), id, leaseId);
+  const job = dto(db.prepare("SELECT * FROM jobs WHERE id = ? AND lease_id = ?").get(id, leaseId));
+  if (job) publishTenantEvent(job.tenant_id, "job.updated", { job });
 }
 
 export function updateJobProgress(id, progress) {
-  getDb().prepare("UPDATE jobs SET progress = ?, heartbeat_at = ? WHERE id = ? AND status = 'running'")
+  const db = getDb();
+  db.prepare("UPDATE jobs SET progress = ?, heartbeat_at = ? WHERE id = ? AND status = 'running'")
     .run(JSON.stringify(progress ?? {}), now(), id);
+  const job = dto(db.prepare("SELECT * FROM jobs WHERE id = ?").get(id));
+  if (job) publishTenantEvent(job.tenant_id, "job.updated", { job });
 }

@@ -87,6 +87,24 @@ CREATE TABLE IF NOT EXISTS activity_sources (
 CREATE INDEX IF NOT EXISTS idx_activity_sources_lookup
   ON activity_sources(tenant_id, source, external_activity_id);
 
+CREATE TABLE IF NOT EXISTS session_ai_analyses (
+  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL,
+  input_hash TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+  analysis TEXT,
+  profile_version_id TEXT,
+  provider TEXT,
+  model TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (tenant_id, session_id),
+  FOREIGN KEY (tenant_id, session_id) REFERENCES sessions(tenant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_session_ai_analyses_pending
+  ON session_ai_analyses(tenant_id, status, updated_at DESC);
+
 CREATE TABLE IF NOT EXISTS athlete_profiles (
   tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
   data TEXT NOT NULL,

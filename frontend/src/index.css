@@ -110,3 +110,12 @@
     @apply bg-dark-200/60 backdrop-blur-xl border border-white/5;
   }
 }
+
+/* iOS Safari zooms focused controls below 16px, including installed PWAs. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

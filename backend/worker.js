@@ -3,8 +3,9 @@ import { getDefaultAiConfig } from "./lib/ai-configs.js";
 import { chatWithCoach } from "./lib/trainer.js";
 import { setChatPending, updateChatResponseId, addChatMessage } from "./lib/coach-chat.js";
 import { runSync } from "./lib/sync.js";
+import { analyzeSessions } from "./lib/session-analysis.js";
 import { sendPushToUser } from "./lib/push.js";
-import { claimNextJob, cancelJob, finishJob, heartbeatJob, isJobActive } from "./lib/jobs.js";
+import { claimNextJob, cancelJob, finishJob, heartbeatJob, isJobActive, updateJobProgress } from "./lib/jobs.js";
 
 let started = false;
 let timer = null;
@@ -58,6 +59,27 @@ async function processJob(job) {
       await sendPushToUser(job.tenant_id, job.user_id, {
         title: "El entrenador ha respondido",
         body: "Hay una nueva respuesta en el chat del entrenador.",
+        url: job.deep_link ?? `/${job.tenant_id}/trainer`,
+      });
+      return;
+    }
+
+    if (job.type === "analyze_sessions") {
+      const settings = getDefaultAiConfig(job.tenant_id, true);
+      if (!settings) throw new Error("La configuración de IA ya no existe");
+      const result = await analyzeSessions({
+        tenantId: job.tenant_id,
+        sessionItems: payload.sessions ?? [],
+        settings,
+        actor,
+        isCancelled: () => !isJobActive(job.id, job.lease_id),
+        onProgress: (progress) => updateJobProgress(job.id, progress),
+      });
+      if (result?.cancelled || !isJobActive(job.id, job.lease_id)) return;
+      finishJob(job.id, job.lease_id, "completed", { result });
+      await sendPushToUser(job.tenant_id, job.user_id, {
+        title: "Análisis de entrenamientos completado",
+        body: `${result.analyzed} entrenamiento${result.analyzed === 1 ? "" : "s"} analizado${result.analyzed === 1 ? "" : "s"}.`,
         url: job.deep_link ?? `/${job.tenant_id}/trainer`,
       });
       return;

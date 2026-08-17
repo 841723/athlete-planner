@@ -139,6 +139,28 @@ El buzón conserva avisos como:
 
 Puedes consultar avisos anteriores o vaciar el buzón cuando quieras.
 
+### Notificaciones push del navegador
+
+Para activar las notificaciones push hay que configurar un par de claves VAPID
+en el backend. Genéralas con:
+
+```bash
+cd backend
+npx web-push generate-vapid-keys --json
+```
+
+Añade los valores obtenidos al `.env` del backend:
+
+```env
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:tu-correo@dominio.com
+```
+
+La clave privada nunca se envía al navegador. Después de cambiar estas
+variables hay que reiniciar el backend. En producción, la aplicación debe
+servirse mediante HTTPS; `localhost` es la excepción para desarrollo.
+
 ## Roles
 
 - **Athlete**: propietario y acceso completo.

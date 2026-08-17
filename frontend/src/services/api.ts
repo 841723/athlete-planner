@@ -13,6 +13,7 @@ import type {
   SyncSourcesResponse,
   SyncSource,
   Job,
+  SessionAnalysisSummary,
   AiSettings,
   AiConfigsResponse,
   AiConfigPayload,
@@ -145,6 +146,14 @@ export function fetchJobs(active = false): Promise<Job[]> {
 
 export function cancelJob(id: string): Promise<Job> {
   return send(`/jobs/${encodeURIComponent(id)}/cancel`, "POST");
+}
+
+export function fetchSessionAnalysis(): Promise<SessionAnalysisSummary> {
+  return get("/session-analysis");
+}
+
+export function startSessionAnalysis(): Promise<{ pending: number; jobId: string | null }> {
+  return send("/session-analysis", "POST");
 }
 
 export function fetchAdminSyncJobs(): Promise<Record<string, unknown>[]> {
@@ -430,6 +439,7 @@ export function fetchEquipment(): Promise<EquipmentResponse> {
 export interface PushConfig {
   enabled: boolean;
   publicKey: string | null;
+  reason?: "ok" | "missing_keys" | "invalid_keypair";
 }
 
 export function fetchPushConfig(): Promise<PushConfig> {

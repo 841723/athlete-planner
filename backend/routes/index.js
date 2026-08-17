@@ -18,6 +18,8 @@ import { register as registerEquipment } from "./equipment.js";
 import { register as registerAiConfigs } from "./ai-configs.js";
 import { register as registerPush } from "./push.js";
 import { register as registerJobs } from "./jobs.js";
+import { register as registerEvents } from "./events.js";
+import { register as registerSessionAnalysis } from "./session-analysis.js";
 
 export function buildPublicRouter() {
   const router = createRouter();
@@ -52,5 +54,7 @@ export function buildTenantRouter() {
   registerAiConfigs(router);
   registerPush(router);
   registerJobs(router);
+  registerEvents(router);
+  registerSessionAnalysis(router);
   return router;
 }

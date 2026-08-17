@@ -592,6 +592,20 @@ export interface CoachChatReply {
   jobId?: string;
 }
 
+export interface SessionAnalysisSummary {
+  pendingCount: number;
+  completedCount: number;
+  latest: SessionAnalysisItem[];
+}
+
+export interface SessionAnalysisItem {
+  session_id: string;
+  analysis: { analysis?: string; profileChange?: string } | null;
+  profile_version_id?: string | null;
+  status: "running" | "completed" | "failed";
+  updated_at: string;
+}
+
 export interface EquipmentItem {
   item: string;
   category: string;

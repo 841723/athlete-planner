@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Loader2, MessageCircle, Send, User, X } from "lucide-react";
+import { Bot, Check, Loader2, MessageCircle, Send, Trash2, User, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { format } from "@/lib/date-format";
-import { useCoachChat, useSendCoachChat, useCancelCoachChat, coachChatKey, CHAT_INVALIDATE } from "@/hooks/use-coach-chat";
+import { formatChatTimestamp } from "@/lib/date-format";
+import { useCoachChat, useSendCoachChat, useCancelCoachChat, useDeleteCoachChatMessages, coachChatKey, CHAT_INVALIDATE } from "@/hooks/use-coach-chat";
 import { useAuth } from "@/components/auth/auth-context";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useToast } from "@/components/ui/toast";
@@ -20,15 +20,28 @@ export function CoachChat() {
   const { data, isLoading } = useCoachChat(true);
   const sendMutation = useSendCoachChat();
   const cancelMutation = useCancelCoachChat();
+  const deleteMutation = useDeleteCoachChatMessages();
   const [draft, setDraft] = useState("");
   const [showLatest, setShowLatest] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const shouldStickToBottom = useRef(true);
   const previousMessageCount = useRef(0);
   const wasPending = useRef(false);
   const completionHandled = useRef(false);
   const cancelRequested = useRef(false);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    const maxHeight = 160;
+    input.style.height = `${Math.min(input.scrollHeight, maxHeight)}px`;
+    input.style.overflowY = input.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [draft]);
 
   const canChat = permissions.canEdit && Boolean(data?.canChat);
   const coachWriting = sendMutation.isPending || Boolean(data?.chatPending);
@@ -60,9 +73,8 @@ export function CoachChat() {
     previousMessageCount.current = messageCount;
   }, [data?.messages.length]);
 
-  // Cuando el entrenador pasa de responder a completado (por polling o por
-  // recarga), avisamos y refrescamos los datos que pudo modificar (sesiones
-  // planificadas, semana, gráficas).
+  // Cuando el entrenador termina, el puente SSE invalida el chat y este efecto
+  // avisa y refresca los datos que pudo modificar.
   useEffect(() => {
     const pending = Boolean(data?.chatPending);
 
@@ -114,6 +126,25 @@ export function CoachChat() {
     cancelMutation.mutate();
   }
 
+  function toggleMessage(id: string) {
+    setSelectedMessages((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function deleteSelected() {
+    if (selectedMessages.size === 0 || deleteMutation.isPending) return;
+    deleteMutation.mutate([...selectedMessages], {
+      onSuccess: () => {
+        setSelectedMessages(new Set());
+        setSelectionMode(false);
+      },
+    });
+  }
+
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-dark-400 bg-dark-200/60 shadow-lg">
       <div className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
@@ -128,9 +159,36 @@ export function CoachChat() {
             </span>
           </span>
         </span>
+        {permissions.canEdit && (data?.messages.length ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectionMode((value) => !value);
+              setSelectedMessages(new Set());
+            }}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${selectionMode ? "border-accent/50 bg-accent/15 text-accent-light" : "border-dark-400 text-gray-500 hover:border-accent/40 hover:text-gray-200"}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {selectionMode ? "Cancelar" : "Eliminar mensajes"}
+          </button>
+        )}
       </div>
 
       <div className="border-t border-dark-400">
+        {selectionMode && (
+          <div className="flex items-center justify-between gap-3 border-b border-dark-400 bg-dark-300/30 px-4 py-2.5 text-xs">
+            <span className="text-gray-500">Selecciona las preguntas o respuestas que no quieras conservar para la IA.</span>
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={selectedMessages.size === 0 || deleteMutation.isPending || Boolean(data?.chatPending)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-red-500/15 px-2.5 py-1.5 font-medium text-red-300 transition-colors hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Eliminar{selectedMessages.size > 0 ? ` (${selectedMessages.size})` : ""}
+            </button>
+          </div>
+        )}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
@@ -155,10 +213,20 @@ export function CoachChat() {
           {data?.messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`group flex items-start gap-2 ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
+              {selectionMode && (
+                <button
+                  type="button"
+                  onClick={() => toggleMessage(message.id)}
+                  className={`mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${selectedMessages.has(message.id) ? "border-accent bg-accent text-white" : "border-dark-400 text-transparent hover:border-accent/50"}`}
+                  aria-label={selectedMessages.has(message.id) ? "Quitar mensaje de la selección" : "Seleccionar mensaje"}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+              )}
               <div
-                className={`max-w-[min(48rem,88%)] rounded-2xl px-4 py-3 ${message.role === "user" ? "rounded-br-sm bg-accent/20" : "rounded-bl-sm bg-dark-400/60"}`}
+                className={`max-w-[min(48rem,88%)] rounded-2xl px-4 py-3 transition-colors ${selectedMessages.has(message.id) ? "ring-1 ring-accent/70" : ""} ${message.role === "user" ? "rounded-br-sm bg-accent/20" : "rounded-bl-sm bg-dark-400/60"}`}
               >
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-gray-500">
                   {message.role === "assistant" ? (
@@ -171,7 +239,7 @@ export function CoachChat() {
                     </>
                   )}
                   <span>
-                    · {format(new Date(message.created_at), "HH:mm")}
+                     · {formatChatTimestamp(message.created_at)}
                     {message.localStatus === "sending" && " · Enviando"}
                     {message.localStatus === "failed" && " · No se pudo completar"}
                   </span>
@@ -226,8 +294,9 @@ export function CoachChat() {
           <div className="border-t border-dark-400 p-3 sm:p-4">
             <div className="flex items-end gap-2">
               <textarea
+                ref={inputRef}
                 rows={1}
-                className="input min-h-10 max-h-32 flex-1 resize-y"
+                className="input min-h-10 max-h-40 flex-1 resize-none text-base sm:text-sm"
                 placeholder="Escribe una pregunta para tu entrenador..."
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}

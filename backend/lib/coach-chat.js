@@ -46,6 +46,34 @@ export function addChatMessage(role, content) {
     .run(randomUUID(), getTenantId(), role, role === "user" ? questionOnly(content) : content, new Date().toISOString());
 }
 
+export function deleteChatMessages(tenantId, ids) {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) return [];
+
+  const db = getDb();
+  const placeholders = uniqueIds.map(() => "?").join(", ");
+  const rows = db.prepare(
+    `SELECT id FROM chat_messages WHERE tenant_id = ? AND id IN (${placeholders})`
+  ).all(tenantId, ...uniqueIds);
+  if (rows.length === 0) return [];
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare(`DELETE FROM chat_messages WHERE tenant_id = ? AND id IN (${placeholders})`)
+      .run(tenantId, ...uniqueIds);
+    db.prepare(
+      `INSERT INTO tenant_settings (tenant_id, chat_response_id, chat_context_hash)
+       VALUES (?, NULL, NULL)
+       ON CONFLICT(tenant_id) DO UPDATE SET chat_response_id = NULL, chat_context_hash = NULL`
+    ).run(tenantId);
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* ignore rollback failure */ }
+    throw error;
+  }
+  return rows.map((row) => row.id);
+}
+
 export function getChatState(tenantId = getTenantId()) {
   const row = getDb()
     .prepare(

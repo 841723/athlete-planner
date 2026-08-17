@@ -61,6 +61,7 @@ export function register(router) {
       return sendJson(c.res, 404, { error: "Versión no encontrada" });
     }
     saveAthleteProfile(c.tenantId, version.data);
-    return sendJson(c.res, 200, { ok: true });
+    const newVersionId = saveProfileVersion(c.tenantId, version.data, "user");
+    return sendJson(c.res, 200, { ok: true, versionId: newVersionId, restoredFrom: version.id });
   });
 }

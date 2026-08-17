@@ -14,6 +14,7 @@ import { startWorker } from "./worker.js";
 import { serveStatic, parseCookies, sendJson, sendError } from "./lib/http.js";
 import { buildPublicRouter, buildUserRouter, buildTenantRouter } from "./routes/index.js";
 import { pruneAiLogContent } from "./lib/ai-logs.js";
+import { heartbeat } from "./lib/realtime.js";
 
 const args = process.argv.slice(2);
 const portArg = Number(process.env.PORT ?? 4000);
@@ -92,7 +93,7 @@ async function handleApi(req, res, pathname) {
   const userResult = userRouter.handle(req, res, url, { user, token });
   if (userResult?.matched) return userResult.result;
 
-  const tenantId = req.headers["x-tenant-id"] ?? cookies[TENANT_COOKIE];
+  const tenantId = req.headers["x-tenant-id"] ?? cookies[TENANT_COOKIE] ?? url.searchParams.get("tenantId");
   if (!tenantId) return sendJson(res, 400, { error: "Falta el tenant (X-Tenant-Id)" });
   const membership = getMembership(tenantId, user.id);
   if (!membership) return sendJson(res, 403, { error: "Sin acceso a este tenant" });
@@ -128,6 +129,8 @@ server.listen(port, () => {
   pruneAiLogContent();
   const logCleanup = setInterval(pruneAiLogContent, 24 * 60 * 60 * 1000);
   logCleanup.unref?.();
+  const eventHeartbeat = setInterval(heartbeat, 25_000);
+  eventHeartbeat.unref?.();
   if (migrated.migrated) {
     console.log(
       `Migración de datos completada: ${migrated.completed} sesiones, ${migrated.planned} planificadas.`

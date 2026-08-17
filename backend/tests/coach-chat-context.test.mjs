@@ -19,9 +19,11 @@ const {
   recoverStaleChat,
   replaceFuturePlannedSessions,
   updateChatInstructions,
+  deleteChatMessages,
   COACH_PLAN_ID,
 } = await import("../lib/coach-chat.js");
 const { getProfileHistory } = await import("../lib/profile-history.js");
+const { getSessionAnalysisSummary, listPendingSessionAnalyses, claimSessionAnalysis, completeSessionAnalysis } = await import("../lib/session-analysis.js");
 
 const tenantId = randomUUID();
 const coachPlannedId = randomUUID();
@@ -574,4 +576,43 @@ test("los mensajes del chat se listan por tenant en orden", () => {
   assert.ok(messages.every((m) => m.content && m.role !== "system"));
   const times = messages.map((m) => new Date(m.created_at).getTime());
   assert.deepEqual(times, [...times].sort((a, b) => a - b));
+});
+
+test("elimina mensajes seleccionados y reinicia el hilo del proveedor", () => {
+  let userId;
+  let assistantId;
+  withTenant(tenantId, () => {
+    addChatMessage("user", "pregunta para eliminar");
+    addChatMessage("assistant", "respuesta para conservar");
+    const messages = listChatMessages();
+    userId = messages.find((message) => message.content === "pregunta para eliminar").id;
+    assistantId = messages.find((message) => message.content === "respuesta para conservar").id;
+    updateChatResponseId(tenantId, "thread-to-reset");
+    updateChatContextHash(tenantId, "hash-to-reset");
+  });
+
+  assert.deepEqual(withTenant(tenantId, () => deleteChatMessages(tenantId, [userId])), [userId]);
+  assert.ok(withTenant(tenantId, () => listChatMessages()).some((message) => message.id === assistantId));
+  assert.equal(withTenant(tenantId, () => getChatState(tenantId).chatResponseId), null);
+  assert.equal(withTenant(tenantId, () => getChatState(tenantId).chatContextHash), null);
+});
+
+test("las sesiones vuelven a quedar pendientes si cambian después del análisis", () => {
+  const pending = withTenant(tenantId, () => listPendingSessionAnalyses(tenantId, 20));
+  assert.ok(pending.length > 0);
+  const item = pending[0];
+  withTenant(tenantId, () => {
+    claimSessionAnalysis(tenantId, item.id, item.inputHash, "mock", "mock-1");
+    completeSessionAnalysis(tenantId, item.id, item.inputHash, { analysis: "ok" });
+  });
+  const after = withTenant(tenantId, () => listPendingSessionAnalyses(tenantId, 20));
+  assert.ok(!after.some((candidate) => candidate.id === item.id));
+
+  const row = getDb().prepare("SELECT data FROM sessions WHERE tenant_id = ? AND id = ?").get(tenantId, item.id);
+  const updated = JSON.parse(row.data);
+  updated.notes = `${updated.notes ?? ""} nota nueva`;
+  getDb().prepare("UPDATE sessions SET data = ?, updated_at = ? WHERE tenant_id = ? AND id = ?")
+    .run(JSON.stringify(updated), new Date().toISOString(), tenantId, item.id);
+  assert.ok(withTenant(tenantId, () => listPendingSessionAnalyses(tenantId, 20)).some((candidate) => candidate.id === item.id));
+  assert.ok(withTenant(tenantId, () => getSessionAnalysisSummary(tenantId)).pendingCount > 0);
 });

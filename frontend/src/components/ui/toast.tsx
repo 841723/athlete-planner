@@ -83,33 +83,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           }}
       >
           {children}
-          <div className='fixed top-4 right-4 z-[60] flex flex-col items-end gap-2'>
+          <div className='fixed bottom-4 left-4 right-4 z-[60] flex flex-col items-end gap-2 pointer-events-none md:left-auto md:w-[min(25rem,calc(100vw-2rem))]' aria-live='polite'>
               {toasts.map((t) => (
                   <div
                       key={t.id}
-                      className='card p-4 w-fit max-w-[min(20rem,calc(100vw-2rem))] animate-scale-in shadow-xl relative'
+                      className='pointer-events-auto relative w-full overflow-hidden rounded-2xl border bg-dark-200/95 p-3.5 pl-4 shadow-2xl shadow-black/30 backdrop-blur-md animate-scale-in'
                       style={{
-                          borderColor:
+                          borderLeftColor:
                               t.type === "success"
-                                  ? "rgba(16,185,129,0.35)"
-                                  : "rgba(239,68,68,0.35)",
+                                  ? "#34d399"
+                                  : "#fb7185",
+                          borderLeftWidth: "3px",
                       }}
                   >
-                      <div className='flex items-center justify-center gap-2'>
+                      <div className='flex items-start gap-3'>
                           {t.type === "success" ? (
-                              <CheckCircle2 className='w-5 h-5 text-green-400 flex-shrink-0 mt-0.5' />
-                          ) : (
-                              <XCircle className='w-5 h-5 text-red-400 flex-shrink-0 mt-0.5' />
-                          )}
-                          <div className='flex-1 min-w-0 flex justify-between items-center gap-2'>
-                              <p className='text-sm font-semibold text-white'>
-                                  {t.title}
-                              </p>
-                              {t.description && (
-                                  <p className='text-xs text-gray-400 mt-0.5'>
-                                      {t.description}
-                                  </p>
-                              )}
+                               <CheckCircle2 className='mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-300' />
+                           ) : (
+                               <XCircle className='mt-0.5 h-5 w-5 flex-shrink-0 text-rose-300' />
+                           )}
+                           <div className='min-w-0 flex-1 pr-5'>
+                               <p className='text-sm font-semibold leading-5 text-white'>
+                                   {t.title}
+                               </p>
+                               {t.description && (
+                                   <p className='mt-1 text-xs leading-4 text-gray-400'>
+                                       {t.description}
+                                   </p>
+                               )}
                           </div>
                           <button
                               onClick={() =>
@@ -117,39 +118,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                                       ts.filter((x) => x.id !== t.id),
                                   )
                               }
-                              className='text-gray-500 hover:text-white'
+                               className='absolute right-3 top-3 text-gray-500 transition-colors hover:text-white'
                               aria-label='Cerrar'
                           >
                               <X className='w-3.5 h-3.5' />
                           </button>
                       </div>
 
-                      <style>
-                          {`
-                            @keyframes fadeOut {
-                              from {
-                                opacity: 1;
-                              }
-                              to {
-                                opacity: 0;
-                              }
-                            }
-                          `}
-                      </style>
-                      <div
-                          className='absolute -z-10 inset-0 h-full w-full outline outline-4 outline-offset-[-1px] rounded-2xl'
-                          style={{
-                              outlineColor:
-                                  t.type === "success" ? "#10B981" : "#EF4444",
-                              animation:
-                                  "fadeOut " +
-                                  toast_ttl / 1000 +
-                                  "s ease-in forwards",
-                          }}
-                      />
+                       <div
+                           className='absolute bottom-0 left-0 h-0.5 bg-white/30'
+                           style={{
+                               animation: `toast-progress ${toast_ttl / 1000}s linear forwards`,
+                           }}
+                       />
                   </div>
               ))}
           </div>
+          <style>{`@keyframes toast-progress { from { width: 100%; } to { width: 0%; } }`}</style>
       </ToastContext.Provider>
   );
 }
