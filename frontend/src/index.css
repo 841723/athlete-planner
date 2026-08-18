@@ -113,6 +113,11 @@
 
 /* iOS Safari zooms focused controls below 16px, including installed PWAs. */
 @media (max-width: 767px) {
+  .safe-area-top-header {
+    height: calc(64px + env(safe-area-inset-top));
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
+  }
+
   input,
   textarea,
   select {
